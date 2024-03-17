@@ -2,34 +2,54 @@
     <div>
         <h1>Deck Information</h1>
         <p v-if="loading">Loading...</p>
-        <p v-else>{{ deckName }}</p>
+        <p v-else-if="errorMessage">{{ errorMessage }}</p>
+        <div v-else>
+            <p>Name: {{ sharedDeckInfo.name }}</p>
+            <p>Cards: {{ sharedDeckInfo.cardsCount }}</p>
+            <p>AuthorName: {{ sharedDeckInfo.author.name }}</p>
+            <p>showName: {{ sharedDeckInfo.author.showName }}</p>
+        </div>
     </div>
 </template>
 
 <script>
 import db from '@/firebaseInit';
 import { doc, getDoc } from 'firebase/firestore';
-// import { onMounted, ref } from 'vue';
 
 export default {
     name: 'SharedDeck',
     data() {
         return {
-            deckName: '',
-            loading: true
+            sharedDeckInfo: null,
+            loading: true,
+            errorMessage: ''
         };
     },
     async beforeMount() {
         this.loading = true;
         const deckId = this.$route.params.globalDeckId;
-        const docRef = doc(db, 'shared-decks', deckId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            this.deckName = docSnap.data().name;
-        } else {
-            this.deckName = 'Deck not found';
+        const globalRef = doc(db, 'shared-decks', deckId);
+        try {
+            const globalSnap = await getDoc(globalRef);
+            if (globalSnap.exists()) {
+                const globalDeckInfo = globalSnap.data();
+                const deckRef = doc(db, `users/${globalDeckInfo.userId}/sharedDecks/${globalDeckInfo.deckId}`);
+                const deckSnap = await getDoc(deckRef);
+                if (deckSnap.exists()) {
+                    this.sharedDeckInfo = deckSnap.data();
+                } else {
+                    this.errorMessage = 'Deck not found 2';
+                } 
+            } else {
+                this.errorMessage = 'Deck not found';
+            }
         }
-        this.loading = false;
+        catch(error) {
+            console.error("Failed to fetch document:", error);
+            this.errorMessage = 'Failed to load deck information'; // Set error message on exception
+        } finally {
+            this.loading = false;
+        }
     }
 };
 
