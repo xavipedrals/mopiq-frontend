@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="80px" height="80px" viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>avatar-54</title>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="80" height="80" rx="40"></rect>
+    </defs>
+    <g id="Avatars" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard" transform="translate(-520.000000, -416.000000)">
+            <g id="avatar-54" transform="translate(520.000000, 416.000000)">
+                <mask id="mask-2" fill="white">
+                    <use xlink:href="#path-1"></use>
+                </mask>
+                <g id="Rectangle"></g>
+                <g id="Group" mask="url(#mask-2)">
+                    <g transform="translate(-18.008558, 0.000000)">
+                        <rect id="Rectangle" fill="#EC8F5E" fill-rule="nonzero" x="18.0085583" y="0" width="80" height="80"></rect>
+                        <rect id="Rectangle" fill="#FCD34D" fill-rule="nonzero" transform="translate(51.587192, 63.163273) rotate(-11.000000) translate(-51.587192, -63.163273) " x="7.58719187" y="19.1632728" width="88" height="88" rx="44"></rect>
+                        <g id="Group" stroke-width="1" fill="none" fill-rule="evenodd" transform="translate(46.044553, 51.833597) rotate(9.000000) translate(-46.044553, -51.833597) translate(28.822331, 41.000264)">
+                            <path d="M6.66666667,13.3333333 C6.66666667,17.9357062 11.6412806,21.6666667 17.7777778,21.6666667 C23.914275,21.6666667 28.8888889,17.9357062 28.8888889,13.3333333" id="Path" fill="#000000" fill-rule="nonzero"></path>
+                            <rect id="Rectangle" fill="#000000" fill-rule="nonzero" x="6.2442049e-15" y="5.91199942e-15" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                            <rect id="Rectangle" fill="#000000" fill-rule="nonzero" x="31.1111111" y="1.24087608e-14" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

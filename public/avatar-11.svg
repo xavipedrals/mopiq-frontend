@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="80px" height="80px" viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>avatar-11</title>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="80" height="80" rx="40"></rect>
+    </defs>
+    <g id="Avatars" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard" transform="translate(-1040.000000, 0.000000)">
+            <g id="avatar-11" transform="translate(1040.000000, 0.000000)">
+                <mask id="mask-2" fill="white">
+                    <use xlink:href="#path-1"></use>
+                </mask>
+                <g id="Rectangle"></g>
+                <g id="Group" mask="url(#mask-2)">
+                    <g transform="translate(-12.285343, -19.767847)">
+                        <rect id="Rectangle" fill="#65A30D" fill-rule="nonzero" x="12.2853434" y="19.7678471" width="80" height="80"></rect>
+                        <rect id="Rectangle" fill="#FCD34D" fill-rule="nonzero" transform="translate(62.187491, 62.187491) rotate(133.000000) translate(-62.187491, -62.187491) " x="18.1874907" y="18.1874907" width="88" height="88" rx="13.3333333"></rect>
+                        <g id="Group" stroke-width="1" fill="none" fill-rule="evenodd" transform="translate(59.442907, 54.104191) rotate(-3.000000) translate(-59.442907, -54.104191) translate(44.442907, 46.465302)">
+                            <path d="M8.88888889,13.3333333 C13.3333333,15.5555556 17.7777778,15.5555556 22.2222222,13.3333333" id="Path" stroke="#000000" stroke-width="2.22222222" stroke-linecap="round"></path>
+                            <rect id="Rectangle" fill="#000000" fill-rule="nonzero" x="-2.39836964e-15" y="-3.15629623e-15" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                            <rect id="Rectangle" fill="#000000" fill-rule="nonzero" x="26.6666667" y="-1.60406978e-15" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

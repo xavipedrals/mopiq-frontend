@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="80px" height="80px" viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>avatar-70</title>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="80" height="80" rx="40"></rect>
+    </defs>
+    <g id="Avatars" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard" transform="translate(-1040.000000, -520.000000)">
+            <g id="avatar-70" transform="translate(1040.000000, 520.000000)">
+                <mask id="mask-2" fill="white">
+                    <use xlink:href="#path-1"></use>
+                </mask>
+                <g id="Rectangle"></g>
+                <g id="Group" mask="url(#mask-2)">
+                    <g transform="translate(-7.588983, -18.585941)">
+                        <rect id="Rectangle" fill="#EC8F5E" fill-rule="nonzero" x="7.58898339" y="18.585941" width="80" height="80"></rect>
+                        <rect id="Rectangle" fill="#FCD34D" fill-rule="nonzero" transform="translate(59.814890, 59.814890) rotate(-119.000000) translate(-59.814890, -59.814890) " x="15.8148904" y="15.8148904" width="88" height="88" rx="44"></rect>
+                        <g id="Group" stroke-width="1" fill="none" fill-rule="evenodd" transform="translate(44.833106, 50.659769) rotate(1.000000) translate(-44.833106, -50.659769) translate(34.277550, 43.020880)">
+                            <path d="M4.44444444,13.3333333 C8.88888889,15.5555556 13.3333333,15.5555556 17.7777778,13.3333333" id="Path" stroke="#000000" stroke-width="2.22222222" stroke-linecap="round"></path>
+                            <rect id="Rectangle" fill="#000000" fill-rule="nonzero" x="1.16520863e-13" y="2.2996126e-14" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                            <rect id="Rectangle" fill="#000000" fill-rule="nonzero" x="17.7777778" y="-8.01234397e-15" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

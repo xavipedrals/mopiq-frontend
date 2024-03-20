@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="80px" height="80px" viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>avatar-62</title>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="80" height="80" rx="40"></rect>
+    </defs>
+    <g id="Avatars" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard" transform="translate(-208.000000, -520.000000)">
+            <g id="avatar-62" transform="translate(208.000000, 520.000000)">
+                <mask id="mask-2" fill="white">
+                    <use xlink:href="#path-1"></use>
+                </mask>
+                <g id="Rectangle"></g>
+                <g id="Group" mask="url(#mask-2)" fill-rule="nonzero">
+                    <rect id="Rectangle" fill="#EC8F5E" x="0" y="0" width="80" height="80"></rect>
+                    <rect id="Rectangle" fill="#FCD34D" transform="translate(51.097894, 59.038263) rotate(97.000000) translate(-51.097894, -59.038263) " x="7.09789358" y="15.0382628" width="88" height="88" rx="20"></rect>
+                    <g transform="translate(47.463331, 49.775434) rotate(-7.000000) translate(-47.463331, -49.775434) translate(34.685554, 38.942100)" fill="#000000">
+                        <path d="M2.22222222,13.3333333 C2.22222222,17.9357062 7.19683611,21.6666667 13.3333333,21.6666667 C19.4698306,21.6666667 24.4444444,17.9357062 24.4444444,13.3333333" id="Path"></path>
+                        <rect id="Rectangle" x="1.34063017e-14" y="-1.81637566e-15" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                        <rect id="Rectangle" x="22.2222222" y="9.51927149e-16" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
