@@ -1,5 +1,5 @@
 <template>
-  <div class="full-screen">
+  <div class="full-screen container-xxl">
   <header class="header">
       <div class="logo">
         <!-- <img src="small-logo.png" alt="logo"> -->
@@ -26,12 +26,6 @@ body, html {
   font-family: -apple-system,"Helvetica Neue",Roboto,"Noto Sans","Liberation Sans",Helvetica,Arial,sans-serif
 }
 
-.container-xxl {
-  /* height: 100%; */
-  background: #ffffff;
-  box-shadow: 0 6px 20px 0 #CBD5E1;
-}
-
 .full-screen {
     width: 100%;
     min-height: 100vh; /* 100% of the viewport height */
@@ -40,6 +34,8 @@ body, html {
     justify-content: center;
     align-items: center;
     padding: 50px 0;
+    background: #ffffff;
+    box-shadow: 0 6px 20px 0 #CBD5E1;
 }
 
 .header .logo {
@@ -80,7 +76,6 @@ button {
   padding: 15px 30px;
   cursor: pointer;
   border-radius: 50px !important;
-  font-size: 16px;
   outline: none;
 }
 

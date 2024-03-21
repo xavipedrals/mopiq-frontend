@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="80px" height="80px" viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>avatar-placeholder</title>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="80" height="80" rx="40"></rect>
+    </defs>
+    <g id="Avatars" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard" transform="translate(-936.000000, -746.000000)">
+            <g id="avatar-placeholder" transform="translate(936.000000, 746.000000)">
+                <mask id="mask-2" fill="white">
+                    <use xlink:href="#path-1"></use>
+                </mask>
+                <g id="Rectangle"></g>
+                <g id="Group" mask="url(#mask-2)">
+                    <g transform="translate(-6.950732, -5.556240)">
+                        <rect id="Rectangle" fill="#FCD34D" fill-rule="nonzero" x="6.95073174" y="5.55623986" width="80" height="80"></rect>
+                        <rect id="Rectangle" fill="#CBD5E1" fill-rule="nonzero" transform="translate(52.000821, 52.000821) rotate(5.000000) translate(-52.000821, -52.000821) " x="4.00082116" y="4.00082116" width="96" height="96" rx="48"></rect>
+                        <g id="Group" stroke-width="1" fill="none" fill-rule="evenodd" transform="translate(35.274074, 41.021855) rotate(-5.000000) translate(-35.274074, -41.021855) translate(26.940741, 32.271855)">
+                            <rect id="Rectangle" fill="#64748B" fill-rule="nonzero" x="-7.44432937e-14" y="2.66671708e-14" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                            <rect id="Rectangle" fill="#64748B" fill-rule="nonzero" x="13.3333333" y="3.22578123e-13" width="3.33333333" height="4.44444444" rx="1.66666667"></rect>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
