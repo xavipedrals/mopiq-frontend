@@ -166,13 +166,19 @@
     .cards-container {
         font-size: 1em;
     }
-    
     .author-container {
         border-radius: 18px;
         padding: 14px;
     }
     .author-container img {
         width: 64px;
+        height: 64px;
+        border-radius: 32px;
+    }
+    .author-container .img-background {
+        width: 64px;
+        height: 64px;
+        border-radius: 32px;
     }
     .text-container {
         padding: 0 18px;
@@ -216,26 +222,19 @@ export default {
         try {
             const globalSnap = await getDoc(globalRef);
             if (globalSnap.exists()) {
-                const globalDeckInfo = globalSnap.data();
-                const deckRef = doc(db, `users/${globalDeckInfo.userId}/sharedDecks/${globalDeckInfo.deckId}`);
-                const deckSnap = await getDoc(deckRef);
-                if (deckSnap.exists()) {
-                    const deckData = deckSnap.data();
-                    const topic = getDeckTopicByValue(deckData.category);
-                    var sharedDeckInfo = deckData;
-                    sharedDeckInfo.topic = topic;
-                    sharedDeckInfo.avatarImg = getAvatarImageName(deckData.author.avatarNumber);
-                    sharedDeckInfo.topicImg = `/topics/${topic.imageName}.svg`;
-                    var options = { year: 'numeric', month: 'long', day: 'numeric' };
-                    sharedDeckInfo.dateStr = sharedDeckInfo.lastUpdate.toDate().toLocaleDateString("en-US", options);
-                    this.randomAvatar = getAvatarImageName(Math.floor(Math.random() * 101));
-                    if (sharedDeckInfo.author.imageStoragePath != null) {
-                        this.fetchImage(sharedDeckInfo.author.imageStoragePath);
-                    }
-                    this.sharedDeckInfo = sharedDeckInfo;
-                } else {
-                    this.errorMessage = 'Deck not found 2';
-                } 
+                const deckData = globalSnap.data();
+                const topic = getDeckTopicByValue(deckData.category);
+                var sharedDeckInfo = deckData;
+                sharedDeckInfo.topic = topic;
+                sharedDeckInfo.avatarImg = getAvatarImageName(deckData.author.avatarNumber);
+                sharedDeckInfo.topicImg = `/topics/${topic.imageName}.svg`;
+                var options = { year: 'numeric', month: 'long', day: 'numeric' };
+                sharedDeckInfo.dateStr = sharedDeckInfo.lastUpdate.toDate().toLocaleDateString("en-US", options);
+                this.randomAvatar = getAvatarImageName(Math.floor(Math.random() * 101));
+                if (sharedDeckInfo.author.imageStoragePath != null) {
+                    this.fetchImage(sharedDeckInfo.author.imageStoragePath);
+                }
+                this.sharedDeckInfo = sharedDeckInfo;
             } else {
                 this.errorMessage = 'Deck not found';
             }

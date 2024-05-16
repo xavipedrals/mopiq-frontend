@@ -1,3 +1,8 @@
+# To deploy to Firebase do
+```
+npm run build
+firebase deploy
+```
 # anki
 
 ## Project setup
