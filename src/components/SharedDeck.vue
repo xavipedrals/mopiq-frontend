@@ -231,7 +231,7 @@ export default {
                 var options = { year: 'numeric', month: 'long', day: 'numeric' };
                 sharedDeckInfo.dateStr = sharedDeckInfo.lastUpdate.toDate().toLocaleDateString("en-US", options);
                 this.randomAvatar = getAvatarImageName(Math.floor(Math.random() * 101));
-                if (sharedDeckInfo.author.imageStoragePath != null) {
+                if (sharedDeckInfo.author.imageStoragePath != null && sharedDeckInfo.author.imageStoragePath !== '') {
                     this.fetchImage(sharedDeckInfo.author.imageStoragePath);
                 }
                 this.sharedDeckInfo = sharedDeckInfo;
