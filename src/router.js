@@ -4,9 +4,13 @@ import AboutPage from './components/About.vue';
 import ContactPage from './components/Contact.vue';
 import SharedDeck from './components/SharedDeck.vue';
 import NotFound from './components/404.vue';
+import TermsOfService from './components/TermsOfService.vue';
+import PrivacyPolicy from './components/PrivacyPolicy.vue';
 
 const routes = [
   { path: '/', component: HomePage },
+  { path: '/terms', component: TermsOfService },
+  { path: '/privacy', component: PrivacyPolicy },
   { path: '/about', component: AboutPage },
   { path: '/contact', component: ContactPage },
   { path: '/shared/:globalDeckId', component: SharedDeck },
@@ -16,6 +20,13 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition;
+    } else {
+      return { top: 0 };
+    }
+  },
 });
 
 export default router;

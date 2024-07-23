@@ -1,0 +1,15 @@
+{
+  "applinks": {
+      "details": [
+           {
+             "appIDs": [ "GKFPD6X7D6.com.bestindieapps.Anki" ],
+             "components": [
+              {
+                "/": "/shared/*",
+                "comment": "Matches any URL with a path that starts with /shared/."
+             }
+            ]
+           }
+       ]
+   }
+}

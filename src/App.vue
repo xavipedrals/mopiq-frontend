@@ -9,6 +9,12 @@
   </div>
 </template>
 
+<style>
+#app {
+  width: 100%;
+}
+</style>
+
 <script>
 export default {
   name: 'App',
