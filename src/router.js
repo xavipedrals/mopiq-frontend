@@ -6,11 +6,13 @@ import SharedDeck from './components/SharedDeck.vue';
 import NotFound from './components/404.vue';
 import TermsOfService from './components/TermsOfService.vue';
 import PrivacyPolicy from './components/PrivacyPolicy.vue';
+import SupportPage from './components/Support.vue';
 
 const routes = [
   { path: '/', component: HomePage },
   { path: '/terms', component: TermsOfService },
   { path: '/privacy', component: PrivacyPolicy },
+  { path: '/support', component: SupportPage },
   { path: '/about', component: AboutPage },
   { path: '/contact', component: ContactPage },
   { path: '/shared/:globalDeckId', component: SharedDeck },
