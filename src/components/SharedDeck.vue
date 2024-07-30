@@ -30,9 +30,12 @@
             <div class="calendar-container">
                 <img src="/calendar.svg"/>Shared on {{ sharedDeckInfo.dateStr }}
             </div>
-            <a href="https://apps.apple.com/in/app/anki-flashcards-study-decks/id6443485322" target="_blank" style="text-decoration: none;">
+            <!-- <a href="https://apps.apple.com/in/app/anki-flashcards-study-decks/id6443485322" target="_blank" style="text-decoration: none;">
                 <button class="download-button">Add deck</button>
-            </a>
+            </a> -->
+            <!-- <a href="#" @click.prevent="openDeeplink" style="text-decoration: none;"> -->
+                <button @click="openDeeplink(sharedDeckInfo.globalId)" class="download-button">Add deck</button>
+            <!-- </a> -->
         </div>
     </div>
 </template>
@@ -150,7 +153,7 @@
         margin-bottom: 24px;
     }
     .header-container h1 {
-        font-size: 2em;
+        font-size: 1.8em;
         font-weight: 700;
     }
     .topic-text {
@@ -189,7 +192,10 @@
     .text-container .author-name {
         font-size: 1.2em;
     }
-    
+    .calendar-container {
+        margin-top: 32px;
+        margin-bottom: 48px;
+    }
     .download-button {
         font-size: 1.3em !important;
         font-weight: 400;
@@ -256,6 +262,12 @@ export default {
             .catch((error) => {
                 console.error("Error fetching image:", error);
             });
+        },
+        openDeeplink(globalId) {
+            //There is no reliable way to check if the app was installed right now
+            const appLink = `ankicards://shared/${globalId}`; // Replace with your actual deeplink
+            // const appStoreLink = "https://apps.apple.com/in/app/anki-flashcards-study-decks/id6443485322"; // App Store link
+            window.location = appLink;
         }
     }
 };
