@@ -36,6 +36,7 @@
             <!-- <a href="#" @click.prevent="openDeeplink" style="text-decoration: none;"> -->
                 <button @click="openDeeplink(sharedDeckInfo.globalId)" class="download-button">Add deck</button>
             <!-- </a> -->
+            <p class="bottomText">If you don’t have the app installed download it <a href="https://apps.apple.com/in/app/anki-flashcards-study-decks/id6443485322" target="_blank">here</a>.</p>
         </div>
     </div>
 </template>
@@ -45,7 +46,7 @@
 .container-md {
     display: flex;
     justify-content: center;
-    min-height: 100vh;
+    min-height: 90vh;
     align-items: center; /* Vertical alignment */
     justify-content: center; /* Horizontal alignment, if needed */
 }
@@ -89,7 +90,6 @@
 .cards-container img {
     margin-right: 12px;
 }
-
 .author-container {
     background: #F1F5F9;
     border-radius: 18px;
@@ -141,6 +141,12 @@
 }
 .calendar-container img {
     margin-right: 12px;
+}
+.bottomText {
+    font-size: 1em;
+    color: #64748B;
+    margin-top: 18px;
+    text-align: center;
 }
 @media (max-width: 576px) {
     .deck-container {
@@ -200,6 +206,9 @@
         font-size: 1.3em !important;
         font-weight: 400;
         height: 72px;
+    }
+    .bottomText {
+        font-size: 0.9em;
     }
 }
 </style>

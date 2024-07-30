@@ -30,7 +30,7 @@ body, html {
   justify-content: center;
   align-items: center;
   background: #EFF6FF !important;
-  font-family: -apple-system,"Helvetica Neue",Roboto,"Noto Sans","Liberation Sans",Helvetica,Arial,sans-serif
+  font-family: system-ui,-apple-system,"Helvetica Neue",Roboto,"Noto Sans","Liberation Sans",Helvetica,Arial,sans-serif
 }
 
 .full-screen {
