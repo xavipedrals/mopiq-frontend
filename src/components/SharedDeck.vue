@@ -24,8 +24,7 @@
                 </div>
                 <div class="text-container">
                     <div>Shared by</div>
-                    <div v-if="sharedDeckInfo.author.showName" class="author-name">{{ sharedDeckInfo.author.name }}</div>
-                    <div v-else class="author-name">Anonymous user</div>
+                    <div class="author-name">{{ sharedDeckInfo.author.name }}</div>
                 </div>
             </div>
             <div class="calendar-container">
