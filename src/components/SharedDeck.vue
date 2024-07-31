@@ -2,6 +2,7 @@
     <div class="container-md">
         <p v-if="loading">Loading...</p>
         <p v-else-if="errorMessage">{{ errorMessage }}</p>
+        <p v-else-if="sharedDeckInfo.isShared === false">The deck is no longer being shared</p>
         <div class="deck-container" v-else>
             <div class="header-container">
                 <div>
