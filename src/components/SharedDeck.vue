@@ -18,13 +18,13 @@
             </div>
             <div class="author-container">
                 <div class="img-background">
-                    <img v-if="sharedDeckInfo.author.showImage && sharedDeckInfo.author.imageStoragePath !== ''" :src="userImageUrl" alt="avatar"/>
-                    <img v-else-if="sharedDeckInfo.author.showImage && sharedDeckInfo.author.imageStoragePath === null" :src="sharedDeckInfo.avatarImg" alt="avatar"/>
+                    <img v-if="authorInfo.imageStoragePath !== ''" :src="userImageUrl" alt="avatar"/>
+                    <img v-else-if="authorInfo.imageStoragePath === null" :src="sharedDeckInfo.avatarImg" alt="avatar"/>
                     <img v-else :src="randomAvatar" alt="avatar"/>
                 </div>
                 <div class="text-container">
                     <div>Shared by</div>
-                    <div class="author-name">{{ sharedDeckInfo.author.name }}</div>
+                    <div class="author-name">{{ authorInfo.name }}</div>
                 </div>
             </div>
             <div class="calendar-container">
@@ -36,7 +36,7 @@
             <!-- <a href="#" @click.prevent="openDeeplink" style="text-decoration: none;"> -->
                 <button @click="openDeeplink(sharedDeckInfo.globalId)" class="download-button">Add deck</button>
             <!-- </a> -->
-            <p class="bottomText">If you don’t have the app installed download it <a href="https://apps.apple.com/in/app/anki-flashcards-study-decks/id6443485322" target="_blank">here</a>.</p>
+            <p class="bottomText">If you don’t have the app installed download it <a href="https://apps.apple.com/app/anki-flashcards-study-decks/id6443485322" target="_blank">here</a>.</p>
         </div>
     </div>
 </template>
@@ -224,6 +224,7 @@ export default {
     data() {
         return {
             sharedDeckInfo: null,
+            authorInfo: null,
             loading: true,
             errorMessage: '',
             randomAvatar: '',
@@ -233,25 +234,51 @@ export default {
     async beforeMount() {
         this.loading = true;
         const deckId = this.$route.params.globalDeckId;
-        const globalRef = doc(db, 'shared-decks', deckId);
         try {
-            const globalSnap = await getDoc(globalRef);
-            if (globalSnap.exists()) {
-                const deckData = globalSnap.data();
-                const topic = getDeckTopicByValue(deckData.category);
-                var sharedDeckInfo = deckData;
-                sharedDeckInfo.topic = topic;
-                sharedDeckInfo.avatarImg = getAvatarImageName(deckData.author.avatarNumber);
-                sharedDeckInfo.topicImg = `/topics/${topic.imageName}.svg`;
-                var options = { year: 'numeric', month: 'long', day: 'numeric' };
-                sharedDeckInfo.dateStr = sharedDeckInfo.lastUpdate.toDate().toLocaleDateString("en-US", options);
-                this.randomAvatar = getAvatarImageName(Math.floor(Math.random() * 101));
-                if (sharedDeckInfo.author.imageStoragePath != null && sharedDeckInfo.author.imageStoragePath !== '') {
-                    this.fetchImage(sharedDeckInfo.author.imageStoragePath);
-                }
-                this.sharedDeckInfo = sharedDeckInfo;
+            const globalDeckData = await this.fetchGlobalSharedDeck(deckId);
+            if (globalDeckData.error) {
+                this.errorMessage = globalDeckData.error;
             } else {
-                this.errorMessage = 'Deck not found';
+                const userData = await this.fetchUserData(globalDeckData.ownerId);
+                if (userData.error) {
+                    this.errorMessage = userData.error;
+                } else {
+                    const deckData = await this.fetchLocalSharedDeck(globalDeckData.ownerId, globalDeckData.localDeckId);
+                    if (deckData.error) {
+                        this.errorMessage = deckData.error;
+                    } else {
+                        const topic = getDeckTopicByValue(deckData.category);
+                        var sharedDeckInfo = deckData;
+                        sharedDeckInfo.topic = topic;
+                        this.authorInfo = {
+                            avatarImg: getAvatarImageName(userData.avatarNumber),
+                            name: userData.name,
+                            imageStoragePath: userData.imageStoragePath
+                        };
+                        sharedDeckInfo.topicImg = `/topics/${topic.imageName}.svg`;
+                        var options = { year: 'numeric', month: 'long', day: 'numeric' };
+                        // Ensure lastUpdate is either a Firestore Timestamp or a valid date string
+                        if (sharedDeckInfo.lastUpdate && sharedDeckInfo.lastUpdate.toDate) {
+                            // If lastUpdate is a Firestore Timestamp
+                            sharedDeckInfo.dateStr = sharedDeckInfo.lastUpdate.toDate().toLocaleDateString("en-US", options);
+                        } else if (sharedDeckInfo.lastUpdate instanceof Date) {
+                            // If lastUpdate is already a JavaScript Date
+                            sharedDeckInfo.dateStr = sharedDeckInfo.lastUpdate.toLocaleDateString("en-US", options);
+                        } else if (typeof sharedDeckInfo.lastUpdate === 'string' || typeof sharedDeckInfo.lastUpdate === 'number') {
+                            // If lastUpdate is a timestamp string or numeric value
+                            const date = new Date(sharedDeckInfo.lastUpdate);
+                            sharedDeckInfo.dateStr = date.toLocaleDateString("en-US", options);
+                        } else {
+                            console.error("Invalid lastUpdate value:", sharedDeckInfo.lastUpdate);
+                            sharedDeckInfo.dateStr = "Invalid date";
+                        }
+                        this.randomAvatar = getAvatarImageName(Math.floor(Math.random() * 101));
+                        if (userData.imageStoragePath != null && userData.imageStoragePath !== '') {
+                            this.fetchImage(userData.imageStoragePath);
+                        }
+                        this.sharedDeckInfo = sharedDeckInfo;
+                    }
+                }
             }
         }
         catch(error) {
@@ -277,6 +304,52 @@ export default {
             const appLink = `ankicards://shared/${globalId}`; // Replace with your actual deeplink
             // const appStoreLink = "https://apps.apple.com/in/app/anki-flashcards-study-decks/id6443485322"; // App Store link
             window.location = appLink;
+        },
+        async fetchGlobalSharedDeck(globalId) {
+            const globalDeckRef = doc(db, 'shared-decks', globalId);
+            try {
+                const globalDeckSnap = await getDoc(globalDeckRef);
+                if (globalDeckSnap.exists()) {
+                    return globalDeckSnap.data();
+                } else {
+                    console.error("Global deck not found");
+                    return { error: "Global deck not found" };
+                }
+            } catch(error) {
+                console.error("Error fetching global deck info:", error);
+                return { error: error.message };
+            }
+        },
+        async fetchUserData(userId) {
+            const userRef = doc(db, 'users', userId);
+            try {
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    return userSnap.data();
+                } else {
+                    console.error("User not found");
+                    return { error: "User not found" };
+                }
+            } catch(error) {
+                console.error("Error fetching shared deck info:", error);
+                return { error: error.message };
+            }
+        },
+        async fetchLocalSharedDeck(userId, localDeckId) {
+            const localDeckPath = `users/${userId}/sharedDecks/${localDeckId}`;
+            const localDeckRef = doc(db, localDeckPath);
+            try {
+                const localDeckSnap = await getDoc(localDeckRef);
+                if (localDeckSnap.exists()) {
+                    return localDeckSnap.data();
+                } else {
+                    console.error("Local deck not found");
+                    return { error: "Local deck not found" };
+                }
+            } catch(error) {
+                console.error("Error fetching local shared deck info:", error);
+                return { error: error.message };
+            }
         }
     }
 };
