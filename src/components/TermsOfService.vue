@@ -39,6 +39,8 @@
     <p class="bodyText">• Unless you have otherwise reached written agreement with us, this Agreement does not authorize you to use name of software, trademark, service mark, logo, domain name or any other sign with distinctive brand feature relating to us.</p>
     
     <p class="bodyText textSection">Uploaded content</p>
+
+    <p class="bodyText">• You are responsible for your content.</p>
     
     <p class="bodyText">• As the Software user you may submit us graphics, photos and any other materials (collectively "Content"). You understand that, whether or not the Content is published, we do not guarantee any confidentiality with respect to such Content. You understand and agree that we cannot guarantee that you will be able to retrieve or save posted Content locally, and is not responsible for any loss of the Content.</p> 
     
