@@ -18,9 +18,8 @@
             </div>
             <div class="author-container">
                 <div class="img-background">
-                    <img v-if="authorInfo.imageStoragePath !== ''" :src="userImageUrl" alt="avatar"/>
-                    <img v-else-if="authorInfo.imageStoragePath === null" :src="sharedDeckInfo.avatarImg" alt="avatar"/>
-                    <img v-else :src="randomAvatar" alt="avatar"/>
+                    <img v-if="authorInfo.imageStoragePath && authorInfo.imageStoragePath !== ''" :src="userImageUrl" alt="avatar"/>
+                    <img v-else :src="authorInfo.avatarImg" alt="avatar"/>
                 </div>
                 <div class="text-container">
                     <div>Shared by</div>
@@ -227,7 +226,6 @@ export default {
             authorInfo: null,
             loading: true,
             errorMessage: '',
-            randomAvatar: '',
             userImageUrl: '/avatar/avatar-placeholder.svg'
         };
     },
@@ -255,6 +253,7 @@ export default {
                             name: userData.name,
                             imageStoragePath: userData.imageStoragePath
                         };
+                        console.log(this.authorInfo);
                         sharedDeckInfo.topicImg = `/topics/${topic.imageName}.svg`;
                         var options = { year: 'numeric', month: 'long', day: 'numeric' };
                         // Ensure lastUpdate is either a Firestore Timestamp or a valid date string
@@ -272,7 +271,6 @@ export default {
                             console.error("Invalid lastUpdate value:", sharedDeckInfo.lastUpdate);
                             sharedDeckInfo.dateStr = "Invalid date";
                         }
-                        this.randomAvatar = getAvatarImageName(Math.floor(Math.random() * 101));
                         if (userData.imageStoragePath != null && userData.imageStoragePath !== '') {
                             this.fetchImage(userData.imageStoragePath);
                         }
