@@ -22,6 +22,18 @@ const deckTopics = [
     return topic || deckTopics[deckTopics.length - 1]; // Fallback to other topic
   }
 
+  export function getDeckTopicByPostgresId(id) {
+    if (!id) {
+      return getDeckTopicByValue(0);
+    }
+    const topic = deckTopics.find(topic => topic.imageName === String(id).toLowerCase());
+    return topic || getDeckTopicByValue(0);
+  }
+
+  export function looksLikePostgresSnapshotId(id) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
+  }
+
   export function getAvatarImageName(num) {
     return `/avatar/avatar-${num % 73}.svg`;
   }

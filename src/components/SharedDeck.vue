@@ -214,9 +214,15 @@
 
 <script>
 import { db, storage } from '@/firebaseInit';
+import { supabaseAnonKey, supabaseUrl } from '@/supabaseInit';
 import { doc, getDoc } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
-import { getDeckTopicByValue, getAvatarImageName } from '../utils.js';
+import {
+    getAvatarImageName,
+    getDeckTopicByPostgresId,
+    getDeckTopicByValue,
+    looksLikePostgresSnapshotId
+} from '../utils.js';
 
 export default {
     name: 'SharedDeck',
@@ -233,50 +239,10 @@ export default {
         this.loading = true;
         const deckId = this.$route.params.globalDeckId;
         try {
-            const globalDeckData = await this.fetchGlobalSharedDeck(deckId);
-            if (globalDeckData.error) {
-                this.errorMessage = globalDeckData.error;
+            if (looksLikePostgresSnapshotId(deckId)) {
+                await this.loadPostgresSharedDeck(deckId);
             } else {
-                const userData = await this.fetchUserData(globalDeckData.ownerId);
-                if (userData.error) {
-                    this.errorMessage = userData.error;
-                } else {
-                    const deckData = await this.fetchLocalSharedDeck(globalDeckData.ownerId, globalDeckData.localDeckId);
-                    if (deckData.error) {
-                        this.errorMessage = deckData.error;
-                    } else {
-                        const topic = getDeckTopicByValue(deckData.category);
-                        var sharedDeckInfo = deckData;
-                        sharedDeckInfo.topic = topic;
-                        this.authorInfo = {
-                            avatarImg: getAvatarImageName(userData.avatarNumber),
-                            name: userData.name,
-                            imageStoragePath: userData.imageStoragePath
-                        };
-                        console.log(this.authorInfo);
-                        sharedDeckInfo.topicImg = `/topics/${topic.imageName}.svg`;
-                        var options = { year: 'numeric', month: 'long', day: 'numeric' };
-                        // Ensure lastUpdate is either a Firestore Timestamp or a valid date string
-                        if (sharedDeckInfo.lastUpdate && sharedDeckInfo.lastUpdate.toDate) {
-                            // If lastUpdate is a Firestore Timestamp
-                            sharedDeckInfo.dateStr = sharedDeckInfo.lastUpdate.toDate().toLocaleDateString("en-US", options);
-                        } else if (sharedDeckInfo.lastUpdate instanceof Date) {
-                            // If lastUpdate is already a JavaScript Date
-                            sharedDeckInfo.dateStr = sharedDeckInfo.lastUpdate.toLocaleDateString("en-US", options);
-                        } else if (typeof sharedDeckInfo.lastUpdate === 'string' || typeof sharedDeckInfo.lastUpdate === 'number') {
-                            // If lastUpdate is a timestamp string or numeric value
-                            const date = new Date(sharedDeckInfo.lastUpdate);
-                            sharedDeckInfo.dateStr = date.toLocaleDateString("en-US", options);
-                        } else {
-                            console.error("Invalid lastUpdate value:", sharedDeckInfo.lastUpdate);
-                            sharedDeckInfo.dateStr = "Invalid date";
-                        }
-                        if (userData.imageStoragePath != null && userData.imageStoragePath !== '') {
-                            this.fetchImage(userData.imageStoragePath);
-                        }
-                        this.sharedDeckInfo = sharedDeckInfo;
-                    }
-                }
+                await this.loadFirebaseSharedDeck(deckId);
             }
         }
         catch(error) {
@@ -287,6 +253,81 @@ export default {
         }
     },
     methods: {
+        presentSharedDeck({ deck, topic, lastUpdate, author }) {
+            const sharedDeckInfo = deck;
+            sharedDeckInfo.topic = topic;
+            sharedDeckInfo.topicImg = `/topics/${topic.imageName}.svg`;
+            this.authorInfo = author;
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            if (lastUpdate && lastUpdate.toDate) {
+                sharedDeckInfo.dateStr = lastUpdate.toDate().toLocaleDateString("en-US", options);
+            } else if (lastUpdate instanceof Date) {
+                sharedDeckInfo.dateStr = lastUpdate.toLocaleDateString("en-US", options);
+            } else if (typeof lastUpdate === 'string' || typeof lastUpdate === 'number') {
+                sharedDeckInfo.dateStr = new Date(lastUpdate).toLocaleDateString("en-US", options);
+            } else {
+                console.error("Invalid lastUpdate value:", lastUpdate);
+                sharedDeckInfo.dateStr = "Invalid date";
+            }
+            if (author.imageStoragePath) {
+                this.fetchImage(author.imageStoragePath);
+            }
+            this.sharedDeckInfo = sharedDeckInfo;
+        },
+        async loadPostgresSharedDeck(snapshotId) {
+            const row = await this.fetchPostgresSharedDeck(snapshotId);
+            if (row.error) {
+                this.errorMessage = row.error;
+                return;
+            }
+            if (!row) {
+                this.errorMessage = 'Global deck not found';
+                return;
+            }
+            const topic = getDeckTopicByPostgresId(row.topic);
+            this.presentSharedDeck({
+                deck: {
+                    name: row.name,
+                    cardsCount: row.card_count,
+                    isShared: true,
+                    globalId: row.id
+                },
+                topic,
+                lastUpdate: row.updated_at || row.created_at,
+                author: {
+                    avatarImg: getAvatarImageName(row.author?.avatar_number || 0),
+                    name: row.author?.name || 'Anki user',
+                    imageStoragePath: row.author?.image_storage_path || ''
+                }
+            });
+        },
+        async loadFirebaseSharedDeck(deckId) {
+            const globalDeckData = await this.fetchGlobalSharedDeck(deckId);
+            if (globalDeckData.error) {
+                this.errorMessage = globalDeckData.error;
+                return;
+            }
+            const userData = await this.fetchUserData(globalDeckData.ownerId);
+            if (userData.error) {
+                this.errorMessage = userData.error;
+                return;
+            }
+            const deckData = await this.fetchLocalSharedDeck(globalDeckData.ownerId, globalDeckData.localDeckId);
+            if (deckData.error) {
+                this.errorMessage = deckData.error;
+                return;
+            }
+            this.presentSharedDeck({
+                deck: deckData,
+                topic: getDeckTopicByValue(deckData.category),
+                lastUpdate: deckData.lastUpdate,
+                author: {
+                    avatarImg: getAvatarImageName(userData.avatarNumber),
+                    name: userData.name,
+                    imageStoragePath: userData.imageStoragePath
+                }
+            });
+        },
         fetchImage(path) {
             const pathReference = ref(storage, path);
             getDownloadURL(pathReference)
@@ -302,6 +343,28 @@ export default {
             const appLink = `ankicards://shared/${globalId}`; // Replace with your actual deeplink
             // const appStoreLink = "https://apps.apple.com/in/app/anki-flashcards-study-decks/id6443485322"; // App Store link
             window.location = appLink;
+        },
+        async fetchPostgresSharedDeck(snapshotId) {
+            try {
+                const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_shared_deck_public`, {
+                    method: 'POST',
+                    headers: {
+                        apikey: supabaseAnonKey,
+                        Authorization: `Bearer ${supabaseAnonKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ p_snapshot_id: snapshotId })
+                });
+                if (!response.ok) {
+                    const detail = await response.text();
+                    console.error('Error fetching postgres shared deck:', detail);
+                    return { error: 'Failed to load deck information' };
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching postgres shared deck:', error);
+                return { error: error.message };
+            }
         },
         async fetchGlobalSharedDeck(globalId) {
             const globalDeckRef = doc(db, 'shared-decks', globalId);
