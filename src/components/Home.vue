@@ -5,7 +5,7 @@
         <div class="logo">
           <!-- <img src="small-logo.png" alt="logo"> -->
           <img src = "/logo-small.svg" alt="My Happy SVG"/>
-          Anki Flashcards
+          Mopiq Flashcards
         </div>
       </header>
       <h1>Learn faster.<br>Improve your memory.</h1>

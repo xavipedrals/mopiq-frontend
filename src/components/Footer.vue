@@ -2,7 +2,7 @@
   <div class="container"> 
   <div class="row"> 
     <div class="col text-start"> 
-      <p class="copyright">© 2024 Xavier Pedrals. All rights reserved.</p> 
+      <p class="copyright">© 2025 Xavier Pedrals. All rights reserved.</p> 
     </div> 
     <div class="col text-end"> 
       <ul class="list-inline footer-links"> 
