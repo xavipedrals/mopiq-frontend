@@ -4,8 +4,8 @@
       <router-link to="/">
         <img src = "/logo-small.svg" class="homeLogo" alt="My Happy SVG"/>
       </router-link>
-      <h1 class="textTitle">Support</h1>
-      <p class="bodyText">If you have any doubt, suggestion or would like to report a bug please feel free to send us a mail to:</p>
+      <h1 class="textTitle">{{ $t('supportPage.title') }}</h1>
+      <p class="bodyText">{{ $t('supportPage.body') }}</p>
       <p class="bodyText" style="color:#0A7AFF;">support@ankiflashcards.app</p>
     </div>
     <hr>

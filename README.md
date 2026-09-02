@@ -1,29 +1,31 @@
-# To deploy to Firebase do
-```
-npm run build
-firebase deploy
-```
-# anki
+# Mopiq web
 
-## Project setup
+Vite + Vue 3. TypeScript is enabled with `allowJs`, so existing `.js` / `.vue` files keep working; convert modules to `.ts` as you touch them.
+
+## Setup
+
 ```
 npm install
 ```
 
-### Compiles and hot-reloads for development
+## Develop
+
 ```
-npm run serve
+npm run dev
 ```
 
-### Compiles and minifies for production
+`npm run serve` is the same command (kept for old muscle memory). Dev server defaults to http://localhost:8080/.
+
+## Build
+
 ```
 npm run build
+firebase deploy
 ```
 
-### Lints and fixes files
+## Typecheck / lint
+
 ```
+npm run type-check
 npm run lint
 ```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).

@@ -4,7 +4,7 @@
       <router-link to="/">
       <img src = "/logo-small.svg" class="homeLogo" alt="My Happy SVG"/>
     </router-link>
-    <h1 class="textTitle">Terms of service</h1>
+    <h1 class="textTitle">{{ $t('common.terms') }}</h1>
     <p class="bodyText">Welcome to this Terms of Use (the "Agreement"), this Agreement is a contract between you and Xavier Pedrals ("We","our" or "us") and we want you to know yours and our rights before you use our application (the "App" or "Software") and related services (the "Service"). Please take a few moments to read these Terms before enjoying the App, because once you access, view or use the App, we consider you to consent the terms and conditions described in this document. If you do not agree with this Agreement, please stop using the App immediately.</p>
     
     <p class="bodyText textSection">Scope of the App License</p>

@@ -1,9 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
+import { getFunctions } from 'firebase/functions';
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyDOZJJ4okDK--j4iZHzx750S6rCt8BQ0mc",
   authDomain: "anki-e894e.firebaseapp.com",
@@ -14,9 +14,10 @@ const firebaseConfig = {
   measurementId: "G-HKWN8CG2E8"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
+const functions = getFunctions(app, 'us-central1');
 
-export { db, storage };
+export { app, db, storage, auth, functions };

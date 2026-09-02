@@ -30,10 +30,14 @@ const deckTopics = [
     return topic || getDeckTopicByValue(0);
   }
 
-  export function looksLikePostgresSnapshotId(id) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
-  }
+export function looksLikePostgresSnapshotId(id) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
+}
 
-  export function getAvatarImageName(num) {
-    return `/avatar/avatar-${num % 73}.svg`;
-  }
+export function getAllDeckTopics() {
+  return deckTopics;
+}
+
+export function getAvatarImageName(num) {
+  return `/avatar/avatar-${num % 73}.svg`;
+}

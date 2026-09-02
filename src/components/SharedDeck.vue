@@ -1,15 +1,15 @@
 <template>
     <div class="container-md">
-        <p v-if="loading">Loading...</p>
+        <p v-if="loading">{{ $t('shared.loading') }}</p>
         <p v-else-if="errorMessage">{{ errorMessage }}</p>
-        <p v-else-if="sharedDeckInfo.isShared === false">The deck is no longer being shared</p>
+        <p v-else-if="sharedDeckInfo.isShared === false">{{ $t('shared.notShared') }}</p>
         <div class="deck-container" v-else>
             <div class="header-container">
                 <div>
-                    <div class="topic-text" :style="{ color: sharedDeckInfo.topic.color }">{{ sharedDeckInfo.topic.name.toUpperCase() }}</div>
+                    <div class="topic-text" :style="{ color: sharedDeckInfo.topic.color }">{{ $topic(sharedDeckInfo.topic).toUpperCase() }}</div>
                     <h1>{{ sharedDeckInfo.name }}</h1>
                     <div class="cards-container">
-                        <img src="/cards.svg"/>{{ sharedDeckInfo.cardsCount }} cards
+                        <img src="/cards.svg"/>{{ $t('shared.cards', { count: sharedDeckInfo.cardsCount }) }}
                     </div>
                 </div>
                 <div class="topic-container" :style="{ background: sharedDeckInfo.topic.backgroundColor }">
@@ -22,20 +22,15 @@
                     <img v-else :src="authorInfo.avatarImg" alt="avatar"/>
                 </div>
                 <div class="text-container">
-                    <div>Shared by</div>
+                    <div>{{ $t('shared.sharedBy') }}</div>
                     <div class="author-name">{{ authorInfo.name }}</div>
                 </div>
             </div>
             <div class="calendar-container">
-                <img src="/calendar.svg"/>Shared on {{ sharedDeckInfo.dateStr }}
+                <img src="/calendar.svg"/>{{ $t('shared.sharedOn', { date: dateLabel }) }}
             </div>
-            <!-- <a href="https://apps.apple.com/in/app/anki-flashcards-study-decks/id6443485322" target="_blank" style="text-decoration: none;">
-                <button class="download-button">Add deck</button>
-            </a> -->
-            <!-- <a href="#" @click.prevent="openDeeplink" style="text-decoration: none;"> -->
-                <button @click="openDeeplink(sharedDeckInfo.globalId)" class="download-button">Add deck</button>
-            <!-- </a> -->
-            <p class="bottomText">If you don’t have the app installed download it <a href="https://apps.apple.com/app/anki-flashcards-study-decks/id6443485322" target="_blank">here</a>.</p>
+                <button @click="openDeeplink(sharedDeckInfo.globalId)" class="download-button">{{ $t('shared.addDeck') }}</button>
+            <p class="bottomText" v-html="noAppHtml"></p>
         </div>
     </div>
 </template>
@@ -223,6 +218,8 @@ import {
     getDeckTopicByValue,
     looksLikePostgresSnapshotId
 } from '../utils.js';
+import { APP_STORE_URL } from '../constants';
+import { escapeHtml, localeTag } from '../i18n';
 
 export default {
     name: 'SharedDeck',
@@ -234,6 +231,24 @@ export default {
             errorMessage: '',
             userImageUrl: '/avatar/avatar-placeholder.svg'
         };
+    },
+    computed: {
+        dateLabel() {
+            const lastUpdate = this.sharedDeckInfo?.lastUpdate;
+            if (!lastUpdate) return '';
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const tag = localeTag(this.$i18n.locale);
+            let date;
+            if (lastUpdate && lastUpdate.toDate) date = lastUpdate.toDate();
+            else if (lastUpdate instanceof Date) date = lastUpdate;
+            else date = new Date(lastUpdate);
+            if (Number.isNaN(date.getTime())) return this.$t('shared.invalidDate');
+            return date.toLocaleDateString(tag, options);
+        },
+        noAppHtml() {
+            const here = `<a href="${APP_STORE_URL}" target="_blank" rel="noopener">${escapeHtml(this.$t('shared.here'))}</a>`;
+            return this.$t('shared.noApp', { here });
+        },
     },
     async beforeMount() {
         this.loading = true;
@@ -247,7 +262,7 @@ export default {
         }
         catch(error) {
             console.error("Failed to fetch document:", error);
-            this.errorMessage = 'Failed to load deck information';
+            this.errorMessage = this.$t('shared.loadError');
         } finally {
             this.loading = false;
         }
@@ -257,18 +272,8 @@ export default {
             const sharedDeckInfo = deck;
             sharedDeckInfo.topic = topic;
             sharedDeckInfo.topicImg = `/topics/${topic.imageName}.svg`;
+            sharedDeckInfo.lastUpdate = lastUpdate;
             this.authorInfo = author;
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            if (lastUpdate && lastUpdate.toDate) {
-                sharedDeckInfo.dateStr = lastUpdate.toDate().toLocaleDateString("en-US", options);
-            } else if (lastUpdate instanceof Date) {
-                sharedDeckInfo.dateStr = lastUpdate.toLocaleDateString("en-US", options);
-            } else if (typeof lastUpdate === 'string' || typeof lastUpdate === 'number') {
-                sharedDeckInfo.dateStr = new Date(lastUpdate).toLocaleDateString("en-US", options);
-            } else {
-                console.error("Invalid lastUpdate value:", lastUpdate);
-                sharedDeckInfo.dateStr = "Invalid date";
-            }
             if (author.imageStoragePath) {
                 this.fetchImage(author.imageStoragePath);
             }
@@ -281,7 +286,7 @@ export default {
                 return;
             }
             if (!row) {
-                this.errorMessage = 'Global deck not found';
+                this.errorMessage = this.$t('shared.notFound');
                 return;
             }
             const topic = getDeckTopicByPostgresId(row.topic);
@@ -358,7 +363,7 @@ export default {
                 if (!response.ok) {
                     const detail = await response.text();
                     console.error('Error fetching postgres shared deck:', detail);
-                    return { error: 'Failed to load deck information' };
+                    return { error: this.$t('shared.loadError') };
                 }
                 return await response.json();
             } catch (error) {
@@ -374,7 +379,7 @@ export default {
                     return globalDeckSnap.data();
                 } else {
                     console.error("Global deck not found");
-                    return { error: "Global deck not found" };
+                    return { error: this.$t('shared.notFound') };
                 }
             } catch(error) {
                 console.error("Error fetching global deck info:", error);
@@ -389,7 +394,7 @@ export default {
                     return userSnap.data();
                 } else {
                     console.error("User not found");
-                    return { error: "User not found" };
+                    return { error: this.$t('shared.notFound') };
                 }
             } catch(error) {
                 console.error("Error fetching shared deck info:", error);
@@ -405,7 +410,7 @@ export default {
                     return localDeckSnap.data();
                 } else {
                     console.error("Local deck not found");
-                    return { error: "Local deck not found" };
+                    return { error: this.$t('shared.notFound') };
                 }
             } catch(error) {
                 console.error("Error fetching local shared deck info:", error);

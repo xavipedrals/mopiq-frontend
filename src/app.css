@@ -1,0 +1,219 @@
+:root {
+  /* iOS blue-gray-background / white-background / new-title / new-text */
+  --page-bg: #F8FAFC;
+  --page-dot: #D6DBE3;
+  --title: #1E293D;
+  --text: #475569;
+  --text-secondary: #94A3B8;
+  --card-bg: #FFFFFF;
+  --card-shadow: 0 6px 20px 0 #CBD5E1;
+  --card-border: rgba(15, 23, 42, 0.06);
+  --empty-bar: #E2E8F0;
+  --separator: #E8E6E1;
+  --stat-icon: #CBD5E1;
+  --stat-label: #475569;
+  --blue-button: #0A7AFF;
+  --button-text: #FFFFFF;
+  --blue-button-hover: #0066D6;
+  --secondary-btn-bg: #EFF6FF;
+  --secondary-btn-text: #0A7AFF;
+  --secondary-btn-hover: #DBEAFE;
+  --inset-bg: #F1F5F9;
+  --error: #DC2626;
+  --green: #22C55E;
+  --green-shadow: #16A34A;
+  --stat-orange: #FF9500;
+  --stat-indigo: #5856D6;
+  --stat-cyan: #06B6D4;
+  --stat-lime: #65A30C;
+  --badge-app-bg: #FEF3C7;
+  --badge-app-text: #92400E;
+  --badge-web-bg: #E0F2FE;
+  --badge-web-text: #075985;
+  /* iOS CardAnswer presenterButton* (light) */
+  --grade-again-bg: #FECACA;
+  --grade-again-border: #F87171;
+  --grade-again-text: #B91C1C;
+  --grade-hard-bg: #FEF08A;
+  --grade-hard-border: #FACC15;
+  --grade-hard-text: #A16207;
+  --grade-good-bg: #D9F99D;
+  --grade-good-border: #A3E635;
+  --grade-good-text: #4D7C0F;
+  --grade-easy-bg: #A5F3FC;
+  --grade-easy-border: #22D3EE;
+  --grade-easy-text: #0E7490;
+  --study-webview: #FFFFFF;
+  --ask-ai-bg: #FFFFFF;
+  --ask-ai-text: #4338CA;
+  --ask-ai-border: #A5B4FC;
+  --close-button: #94A3B8;
+  --close-x: #FFFFFF;
+  --slot-empty: #CBD5E1;
+  --slot-current: #64748B;
+  --slot-halo: #CBD5E1;
+  --study-top-rule: #E2E8F0;
+  /* iOS Quiz palette */
+  --quiz-hairline: #E2E8F0;
+  --quiz-rule: #F1F5F9;
+  --quiz-green: #16A34A;
+  --quiz-green-soft: #DCFCE7;
+  --quiz-green-edge: #86EFAC;
+  --quiz-red: #DC2626;
+  --quiz-red-soft: #FEE2E2;
+  --quiz-red-edge: #FCA5A5;
+  --quiz-bar-right: #A3E635;
+  --quiz-bar-wrong: #F87171;
+  --quiz-letter-bg: #F1F5F9;
+  --quiz-letter-border: #E2E8F0;
+  --quiz-pick-bg: #F1F5F9;
+  --quiz-pick-border: #CBD5E1;
+  --quiz-pick-on-bg: #F0F9FF;
+  --quiz-pick-on-border: #38BDF8;
+  --quiz-pick-on-title: #0C4A6E;
+  --quiz-pick-on-text: #0369A1;
+  --quiz-pick-icon-bg: #E2E8F0;
+  /* iOS deck stat cards (StudyDashboardView / StudyStatsView) */
+  --stat-card-border: #D3CEC4;
+  --stat-pill-bg: #F1F5F9;
+  --stat-pill-border: #E2E8F0;
+  --stat-gauge-track: #E2E8F0;
+  --stat-gauge-fill: #22C55E;
+  --stat-new: #0EA5E9;
+  --stat-review: #8B5CF6;
+  --stat-rule: #CBD5E1;
+  --stat-band-rule: #EDF1F6;
+  --skeleton-bg: #E8EDF3;
+  --skeleton-shine: rgba(255, 255, 255, 0.85);
+}
+
+html[data-theme="dark"] body.app-shell {
+  /* iOS dark counterparts of the same named colors */
+  --page-bg: #1E293C;
+  --page-dot: #334155;
+  --title: #F1F5FA;
+  --text: #CBD5E1;
+  --text-secondary: #94A3B8;
+  --card-bg: #334155;
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --card-border: rgba(255, 255, 255, 0.06);
+  --empty-bar: #64758B;
+  --separator: #324054;
+  --stat-icon: #94A3B8;
+  --stat-label: #CBD5E1;
+  --blue-button: #67E8F9;
+  --button-text: #083344;
+  --blue-button-hover: #A5F3FC;
+  --secondary-btn-bg: #334155;
+  --secondary-btn-text: #67E8F9;
+  --secondary-btn-hover: #475569;
+  --inset-bg: #0F172A;
+  --error: #F87171;
+  --green: #22C55E;
+  --green-shadow: #16A34A;
+  --stat-orange: #FF9500;
+  --stat-indigo: #A88BFA;
+  --stat-cyan: #22D3EE;
+  --stat-lime: #A3E635;
+  --badge-app-bg: #422006;
+  --badge-app-text: #FDE68A;
+  --badge-web-bg: #083344;
+  --badge-web-text: #7DD3FC;
+  /* iOS CardAnswer presenterButtonDark* */
+  --grade-again-bg: #7F1D1D;
+  --grade-again-border: #DC2626;
+  --grade-again-text: #FECACA;
+  --grade-hard-bg: #713F12;
+  --grade-hard-border: #CA8A04;
+  --grade-hard-text: #FEF08A;
+  --grade-good-bg: #365314;
+  --grade-good-border: #65A30D;
+  --grade-good-text: #D9F99D;
+  --grade-easy-bg: #164E63;
+  --grade-easy-border: #0891B2;
+  --grade-easy-text: #A5F3FC;
+  --study-webview: #020617;
+  --ask-ai-bg: #1E293B;
+  --ask-ai-text: #FFFFFF;
+  --ask-ai-border: #64748B;
+  --close-button: #94A3B8;
+  --close-x: #1E293C;
+  --slot-empty: #334155;
+  --slot-current: #F8FAFC;
+  --slot-halo: #475569;
+  --study-top-rule: #475569;
+  --quiz-hairline: #475569;
+  --quiz-rule: #475569;
+  --quiz-green: #4ADE80;
+  --quiz-green-soft: #052E16;
+  --quiz-green-edge: #15803D;
+  --quiz-red: #F87171;
+  --quiz-red-soft: #450A0A;
+  --quiz-red-edge: #B91C1C;
+  --quiz-bar-right: #A3E635;
+  --quiz-bar-wrong: #F87171;
+  --quiz-letter-bg: #475569;
+  --quiz-letter-border: #64748B;
+  --quiz-pick-bg: #334155;
+  --quiz-pick-border: #475569;
+  --quiz-pick-on-bg: #082F49;
+  --quiz-pick-on-border: #38BDF8;
+  --quiz-pick-on-title: #F0F9FF;
+  --quiz-pick-on-text: #BAE6FD;
+  --quiz-pick-icon-bg: #64748B;
+  --stat-card-border: transparent;
+  --stat-pill-bg: #1E293B;
+  --stat-pill-border: transparent;
+  --stat-gauge-track: #475569;
+  --stat-gauge-fill: #22C55E;
+  --stat-new: #38BDF8;
+  --stat-review: #A78BFA;
+  --stat-rule: #64748B;
+  --stat-band-rule: #475569;
+  --skeleton-bg: #334155;
+  --skeleton-shine: rgba(255, 255, 255, 0.12);
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: var(--page-bg);
+  background-image: radial-gradient(circle, var(--page-dot) 1.05px, transparent 1.05px);
+  background-size: 22px 22px;
+  background-attachment: fixed;
+  font-family: Inter, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+}
+
+body.app-shell {
+  display: block !important;
+  align-items: stretch !important;
+  background-color: var(--page-bg) !important;
+  background-image: radial-gradient(circle, var(--page-dot) 1.05px, transparent 1.05px) !important;
+  background-size: 22px 22px !important;
+  background-attachment: fixed !important;
+  color: var(--title);
+}
+
+html[data-theme="dark"]:has(body.app-shell) {
+  background-color: #1E293C;
+}
+
+body.app-shell .mopiq-btn {
+  background: var(--blue-button);
+  color: var(--button-text);
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  padding: 12px 28px;
+  cursor: pointer;
+}
+
+body.app-shell .mopiq-btn.secondary {
+  background: var(--secondary-btn-bg);
+  color: var(--secondary-btn-text);
+}
+
+.shell {
+  min-height: 100vh;
+  text-align: left;
+}

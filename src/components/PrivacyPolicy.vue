@@ -4,7 +4,7 @@
       <router-link to="/">
         <img src = "/logo-small.svg" class="homeLogo" alt="My Happy SVG"/>
       </router-link>
-      <h1 class="textTitle">Privacy Policy</h1>
+      <h1 class="textTitle">{{ $t('common.privacy') }}</h1>
       <p class="bodyText">Xavier Pedrals takes the privacy of our customers and users seriously. We recognize that privacy is an important issue, so we design and operate our services with the protection of your privacy in mind. This Privacy Policy explains what kind of information we collect, use, and the security of your information in relation to our mobile services. By using our services, you consent to this privacy policy.</p>
       
       <p class="bodyText textSection">How we protect your information</p>

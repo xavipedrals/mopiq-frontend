@@ -1,7 +1,11 @@
 .DS_Store
 node_modules
 /dist
+*.tsbuildinfo
+node_modules/.tmp
 
+# throwaway design mockups
+/design-scratch
 
 # local env files
 .env.local
