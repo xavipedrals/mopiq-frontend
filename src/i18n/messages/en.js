@@ -78,7 +78,7 @@ export default {
     faqWebQ: 'Can I study on the web?',
     faqWebA: 'Yes. Sign in with the same Apple, Google, or email account you use in the iOS app, then open your decks in the browser.',
     faqEditQ: 'Where do I add or edit cards?',
-    faqEditA: 'On postgres decks you can add and edit text cards on the web, and change deck settings. Images, audio, cloze, and creating new decks are still in the iOS app.',
+    faqEditA: 'The web is mainly for studying. Creating and editing cards here is limited to simple text. For the full experience, use the app on iPhone, iPad, or Mac.',
     language: 'Language',
   },
   login: {
@@ -102,6 +102,7 @@ export default {
     emailInUse: 'That email is already registered.',
     weakPassword: 'Password must be at least 6 characters.',
     cancelled: 'Sign-in was cancelled.',
+    providerOff: 'Apple sign-in is not available on the web yet. Use Google or email, or sign in from the app.',
     generic: 'Could not sign in.',
   },
   decks: {

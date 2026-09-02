@@ -78,7 +78,7 @@ export default {
     faqWebQ: 'Kann ich im Web lernen?',
     faqWebA: 'Ja. Melde dich mit demselben Apple-, Google- oder E-Mail-Konto wie in der iOS-App an und öffne deine Stapel im Browser.',
     faqEditQ: 'Wo füge ich Karten hinzu oder bearbeite sie?',
-    faqEditA: 'Bei Postgres-Stapeln kannst du Textkarten im Web hinzufügen und bearbeiten und die Einstellungen ändern. Bilder, Audio, Lückentext und neue Stapel bleiben in der iOS-App.',
+    faqEditA: 'Das Web ist vor allem zum Lernen da. Karten hier zu erstellen und zu bearbeiten ist auf einfachen Text beschränkt. Für den vollen Funktionsumfang nutze die App auf iPhone, iPad oder Mac.',
     language: 'Sprache',
   },
   login: {
@@ -102,6 +102,7 @@ export default {
     emailInUse: 'Diese E-Mail ist bereits registriert.',
     weakPassword: 'Das Passwort muss mindestens 6 Zeichen haben.',
     cancelled: 'Anmeldung abgebrochen.',
+    providerOff: 'Apple-Anmeldung ist im Web noch nicht verfügbar. Nutze Google oder E-Mail, oder melde dich in der App an.',
     generic: 'Anmeldung nicht möglich.',
   },
   decks: {

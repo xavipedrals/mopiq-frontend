@@ -78,7 +78,7 @@ export default {
     faqWebQ: '¿Puedo estudiar en la web?',
     faqWebA: 'Sí. Inicia sesión con la misma cuenta de Apple, Google o email que usas en iOS y abre tus mazos en el navegador.',
     faqEditQ: '¿Dónde añado o edito tarjetas?',
-    faqEditA: 'En los mazos de postgres puedes añadir y editar tarjetas de texto en la web, y cambiar los ajustes. Imágenes, audio, cloze y crear mazos nuevos siguen en la app de iOS.',
+    faqEditA: 'La web sirve sobre todo para estudiar. Crear y editar tarjetas aquí está limitado a texto simple. Para todas las funciones, usa la app en iPhone, iPad o Mac.',
     language: 'Idioma',
   },
   login: {
@@ -102,6 +102,7 @@ export default {
     emailInUse: 'Ese email ya está registrado.',
     weakPassword: 'La contraseña debe tener al menos 6 caracteres.',
     cancelled: 'Inicio de sesión cancelado.',
+    providerOff: 'El inicio de sesión con Apple aún no está disponible en la web. Usa Google o el email, o entra desde la app.',
     generic: 'No se pudo iniciar sesión.',
   },
   decks: {

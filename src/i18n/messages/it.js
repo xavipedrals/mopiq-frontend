@@ -78,7 +78,7 @@ export default {
     faqWebQ: 'Posso studiare sul web?',
     faqWebA: 'Sì. Accedi con lo stesso account Apple, Google o email dell’app iOS, poi apri i mazzi nel browser.',
     faqEditQ: 'Dove aggiungo o modifico le carte?',
-    faqEditA: 'Nei mazzi postgres puoi aggiungere e modificare carte di testo sul web e cambiare le impostazioni. Immagini, audio, cloze e creazione di mazzi restano nell’app iOS.',
+    faqEditA: 'Il web serve soprattutto a studiare. Creare e modificare carte qui è limitato al testo semplice. Per tutte le funzionalità, usa l’app su iPhone, iPad o Mac.',
     language: 'Lingua',
   },
   login: {
@@ -102,6 +102,7 @@ export default {
     emailInUse: 'Questa email è già registrata.',
     weakPassword: 'La password deve avere almeno 6 caratteri.',
     cancelled: 'Accesso annullato.',
+    providerOff: 'L’accesso con Apple non è ancora disponibile sul web. Usa Google o l’email, oppure accedi dall’app.',
     generic: 'Impossibile accedere.',
   },
   decks: {

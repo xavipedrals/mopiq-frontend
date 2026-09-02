@@ -78,7 +78,7 @@ export default {
     faqWebQ: 'Posso estudar na web?',
     faqWebA: 'Sim. Entra com a mesma conta Apple, Google ou email da app iOS e abre os baralhos no browser.',
     faqEditQ: 'Onde adiciono ou edito cartões?',
-    faqEditA: 'Nos baralhos postgres podes adicionar e editar cartões de texto na web e alterar as definições. Imagens, áudio, cloze e criar baralhos novos continuam na app iOS.',
+    faqEditA: 'A web serve sobretudo para estudar. Criar e editar cartões aqui está limitado a texto simples. Para todas as funcionalidades, usa a app no iPhone, iPad ou Mac.',
     language: 'Idioma',
   },
   login: {
@@ -102,6 +102,7 @@ export default {
     emailInUse: 'Esse email já está registado.',
     weakPassword: 'A palavra-passe deve ter pelo menos 6 caracteres.',
     cancelled: 'Início de sessão cancelado.',
+    providerOff: 'O início de sessão com Apple ainda não está disponível na web. Usa Google ou o email, ou entra na app.',
     generic: 'Não foi possível entrar.',
   },
   decks: {

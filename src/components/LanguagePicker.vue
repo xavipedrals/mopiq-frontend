@@ -1,18 +1,22 @@
 <template>
   <div class="language-picker">
-    <label v-if="compact" class="sr-only" for="language-select">{{ $t('home.language') }}</label>
-    <select
-      v-if="compact"
-      id="language-select"
-      class="language-select"
-      :value="preference || 'system'"
-      @change="onSelect($event.target.value)"
-    >
-      <option value="system">{{ $t('profile.system') }}</option>
-      <option v-for="language in languages" :key="language.code" :value="language.code">
-        {{ language.nativeName }}
-      </option>
-    </select>
+    <div v-if="compact" class="language-select-wrap">
+      <label class="sr-only" for="language-select">{{ $t('home.language') }}</label>
+      <select
+        id="language-select"
+        class="language-select"
+        :value="preference || 'system'"
+        @change="onSelect($event.target.value)"
+      >
+        <option value="system">{{ $t('profile.system') }}</option>
+        <option v-for="language in languages" :key="language.code" :value="language.code">
+          {{ language.nativeName }}
+        </option>
+      </select>
+      <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M4.2 6.2 8 10l3.8-3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </div>
     <div v-else class="language-list" role="radiogroup" :aria-label="$t('profile.language')">
       <button
         type="button"
@@ -72,17 +76,30 @@ export default {
 </script>
 
 <style scoped>
+.language-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
 .language-select {
   appearance: none;
   border: 1px solid #E2E8F0;
   background: #fff;
   color: #0F172A;
   border-radius: 999px;
-  padding: 8px 14px;
+  padding: 8px 34px 8px 14px;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+}
+.chevron {
+  position: absolute;
+  right: 12px;
+  width: 14px;
+  height: 14px;
+  color: #64748B;
+  pointer-events: none;
 }
 .language-list {
   background: var(--inset-bg);

@@ -78,7 +78,7 @@ export default {
     faqWebQ: 'Puis-je étudier sur le web ?',
     faqWebA: 'Oui. Connectez-vous avec le même compte Apple, Google ou e-mail que sur iOS, puis ouvrez vos paquets dans le navigateur.',
     faqEditQ: 'Où ajouter ou modifier des cartes ?',
-    faqEditA: 'Sur les paquets postgres, vous pouvez ajouter et modifier des cartes texte sur le web, et changer les réglages. Images, audio, cloze et création de paquets restent dans l’app iOS.',
+    faqEditA: 'Le web sert surtout à étudier. Créer et modifier des cartes ici se limite au texte simple. Pour toutes les fonctionnalités, utilisez l’app sur iPhone, iPad ou Mac.',
     language: 'Langue',
   },
   login: {
@@ -102,6 +102,7 @@ export default {
     emailInUse: 'Cet e-mail est déjà enregistré.',
     weakPassword: 'Le mot de passe doit contenir au moins 6 caractères.',
     cancelled: 'Connexion annulée.',
+    providerOff: 'La connexion Apple n’est pas encore disponible sur le web. Utilisez Google ou l’e-mail, ou connectez-vous depuis l’app.',
     generic: 'Impossible de se connecter.',
   },
   decks: {

@@ -362,12 +362,12 @@ export default {
                 });
                 if (!response.ok) {
                     const detail = await response.text();
-                    console.error('Error fetching postgres shared deck:', detail);
+                    console.error('Error fetching shared deck:', detail);
                     return { error: this.$t('shared.loadError') };
                 }
                 return await response.json();
             } catch (error) {
-                console.error('Error fetching postgres shared deck:', error);
+                console.error('Error fetching shared deck:', error);
                 return { error: error.message };
             }
         },

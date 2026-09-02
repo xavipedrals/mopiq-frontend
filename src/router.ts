@@ -7,7 +7,6 @@ import NotFound from './components/404.vue';
 import TermsOfService from './components/TermsOfService.vue';
 import PrivacyPolicy from './components/PrivacyPolicy.vue';
 import SupportPage from './components/Support.vue';
-import LoginPage from './components/Login.vue';
 import DecksPage from './components/Decks.vue';
 import DeckDetailPage from './components/DeckDetail.vue';
 import StudySessionPage from './components/StudySession.vue';
@@ -18,7 +17,13 @@ import { hydrateLanguageFromProfile } from './api/mopiq';
 
 const routes: RouteRecordRaw[] = [
   { path: '/', component: HomePage },
-  { path: '/login', component: LoginPage, meta: { guestOnly: true } },
+  {
+    path: '/login',
+    redirect: (to) => ({
+      path: '/',
+      query: { login: '1', ...(typeof to.query.next === 'string' ? { next: to.query.next } : {}) },
+    }),
+  },
   { path: '/decks', component: DecksPage, meta: { requiresAuth: true, appShell: true } },
   { path: '/decks/:deckId', component: DeckDetailPage, meta: { requiresAuth: true, appShell: true } },
   { path: '/decks/:deckId/study', component: StudySessionPage, meta: { requiresAuth: true, appShell: true } },
@@ -45,13 +50,13 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
-  if (to.path === '/' || to.path === '/login') {
+  if (to.path === '/') {
     if (isLoggedIn()) return { path: '/decks' };
     return true;
   }
   await authReady;
   if (to.meta.requiresAuth && !isLoggedIn()) {
-    return { path: '/login', query: { next: to.fullPath } };
+    return { path: '/', query: { login: '1', next: to.fullPath } };
   }
   if (to.meta.guestOnly && isLoggedIn()) {
     return { path: '/decks' };

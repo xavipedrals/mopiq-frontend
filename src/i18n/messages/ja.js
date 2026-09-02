@@ -78,7 +78,7 @@ export default {
     faqWebQ: 'ウェブでも学習できますか？',
     faqWebA: 'はい。iOSアプリと同じApple、Google、またはメールアカウントでサインインし、ブラウザでデッキを開きます。',
     faqEditQ: 'カードの追加・編集はどこで？',
-    faqEditA: 'postgresデッキでは、ウェブでテキストカードの追加・編集と設定変更ができます。画像、音声、穴埋め、新規デッキ作成はiOSアプリのままです。',
+    faqEditA: 'ウェブは主に学習用です。カードの作成・編集は簡単なテキストに限られます。すべての機能を使うには、iPhone、iPad、またはMacのアプリをご利用ください。',
     language: '言語',
   },
   login: {
@@ -102,6 +102,7 @@ export default {
     emailInUse: 'そのメールはすでに登録されています。',
     weakPassword: 'パスワードは6文字以上にしてください。',
     cancelled: 'サインインがキャンセルされました。',
+    providerOff: 'Appleでのサインインはウェブではまだ使えません。Googleかメールを使うか、アプリからサインインしてください。',
     generic: 'サインインできませんでした。',
   },
   decks: {

@@ -1,14 +1,14 @@
 <template>
   <div class="landing">
-    <header class="nav">
-      <div class="inner nav-inner">
+    <header class="landing-bar">
+      <div class="inner bar-inner">
         <a class="brand" href="#top">
           <img src="/logo-small.svg" alt="">
           <span>Mopiq</span>
         </a>
         <div class="nav-actions">
           <LanguagePicker compact />
-          <router-link class="btn ghost" to="/login">{{ $t('common.signIn') }}</router-link>
+          <button type="button" class="btn ghost" @click="openLogin">{{ $t('common.signIn') }}</button>
           <a class="btn primary" :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.downloadApp') }}</a>
         </div>
       </div>
@@ -27,7 +27,7 @@
           </p>
           <div class="hero-ctas">
             <a class="btn primary lg" :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.downloadApp') }}</a>
-            <router-link class="btn ghost lg" to="/login">{{ $t('home.signInWeb') }}</router-link>
+            <button type="button" class="btn ghost lg" @click="openLogin">{{ $t('home.signInWeb') }}</button>
           </div>
           <p class="fine">{{ $t('home.fine') }}</p>
         </div>
@@ -132,7 +132,7 @@
             <p>{{ $t('home.ctaBody') }}</p>
             <div class="hero-ctas">
               <a class="btn primary lg" :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.downloadAppStore') }}</a>
-              <router-link class="btn ghost lg" to="/login">{{ $t('common.signIn') }}</router-link>
+              <button type="button" class="btn ghost lg" @click="openLogin">{{ $t('common.signIn') }}</button>
             </div>
           </div>
           <img class="phone solo" src="/marketing/hero-sync.png" :alt="$t('home.devicesAlt')">
@@ -174,6 +174,7 @@
         <p class="copy">{{ $t('common.copyright', { year }) }}</p>
       </div>
     </footer>
+    <Login :open="loginOpen" :next="loginNext" @dismiss="closeLogin" />
   </div>
 </template>
 
@@ -181,13 +182,15 @@
 import { APP_STORE_URL } from '../constants';
 import { authReady, isLoggedIn } from '../auth/session';
 import LanguagePicker from './LanguagePicker.vue';
+import Login from './Login.vue';
 
 export default {
   name: 'HomePage',
-  components: { LanguagePicker },
+  components: { LanguagePicker, Login },
   data() {
     return {
       storeUrl: APP_STORE_URL,
+      loginOpen: false,
       topics: [
         { name: 'medicine', imageName: 'medicine', backgroundColor: '#E0F2FE' },
         { name: 'languages', imageName: 'languages', backgroundColor: '#FEF3C7' },
@@ -204,10 +207,36 @@ export default {
     year() {
       return new Date().getFullYear();
     },
+    loginNext() {
+      const next = this.$route.query.next;
+      return typeof next === 'string' ? next : '';
+    },
+  },
+  watch: {
+    '$route.query.login': {
+      immediate: true,
+      handler(value) {
+        this.loginOpen = value === '1' || value === 'true';
+      },
+    },
   },
   async created() {
     await authReady;
     if (isLoggedIn()) this.$router.replace('/decks');
+  },
+  methods: {
+    openLogin() {
+      this.loginOpen = true;
+      if (this.$route.query.login === '1') return;
+      this.$router.replace({ path: '/', query: { ...this.$route.query, login: '1' } });
+    },
+    closeLogin() {
+      this.loginOpen = false;
+      if (!this.$route.query.login) return;
+      const query = { ...this.$route.query };
+      delete query.login;
+      this.$router.replace({ path: '/', query });
+    },
   },
 };
 </script>
@@ -223,7 +252,7 @@ export default {
   padding-left: 24px;
   padding-right: 24px;
 }
-.nav {
+.landing-bar {
   position: sticky;
   top: 0;
   z-index: 20;
@@ -231,10 +260,11 @@ export default {
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
-.nav-inner {
+.bar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   gap: 16px;
   padding-top: 14px;
   padding-bottom: 14px;
@@ -243,24 +273,37 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-right: auto;
+  flex: 0 0 auto;
   text-decoration: none;
   color: #0A7AFF;
   font-weight: 700;
   font-size: 1.2rem;
 }
 .brand img { width: 34px; height: 24px; }
-.nav-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.nav-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-left: auto;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
   text-decoration: none;
+  font: inherit;
   font-weight: 600;
   font-size: 0.95rem;
   padding: 10px 18px;
   border: 1px solid transparent;
   line-height: 1.2;
+  background: transparent;
+  cursor: pointer;
 }
 .btn.primary {
   background: #0A7AFF;
