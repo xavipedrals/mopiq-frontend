@@ -1,4 +1,7 @@
 export const APP_STORE_URL = 'https://apps.apple.com/app/anki-flashcards-study-decks/id6443485322';
+export const APP_STORE_ID = '6443485322';
+export const SITE_URL = 'https://mopiq.app';
+export const HELP_CENTER_URL = 'https://pattern-safflower-f6f.notion.site/Mopiq-Flashcards-Help-Center-153d54f05ccd8064b251d28c41948094';
 export const APP_DEEPLINK_SCHEME = 'ankicards://';
 export const ANKI_DAY_STARTS_AT_HOUR = 4;
 export const PAGE_SIZE = 20;

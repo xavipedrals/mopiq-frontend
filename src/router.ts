@@ -6,12 +6,12 @@ import SharedDeck from './components/SharedDeck.vue';
 import NotFound from './components/404.vue';
 import TermsOfService from './components/TermsOfService.vue';
 import PrivacyPolicy from './components/PrivacyPolicy.vue';
-import SupportPage from './components/Support.vue';
 import DecksPage from './components/Decks.vue';
 import DeckDetailPage from './components/DeckDetail.vue';
 import StudySessionPage from './components/StudySession.vue';
 import QuizSessionPage from './components/QuizSession.vue';
 import ProfilePage from './components/Profile.vue';
+import { HELP_CENTER_URL } from './constants';
 import { authReady, isLoggedIn } from './auth/session';
 import { hydrateLanguageFromProfile } from './api/mopiq';
 
@@ -31,7 +31,14 @@ const routes: RouteRecordRaw[] = [
   { path: '/profile', component: ProfilePage, meta: { requiresAuth: true, appShell: true } },
   { path: '/terms', component: TermsOfService },
   { path: '/privacy', component: PrivacyPolicy },
-  { path: '/support', component: SupportPage },
+  {
+    path: '/support',
+    component: { render: () => null },
+    beforeEnter() {
+      window.location.replace(HELP_CENTER_URL);
+      return false;
+    },
+  },
   { path: '/about', component: AboutPage },
   { path: '/contact', component: ContactPage },
   { path: '/shared/:globalDeckId', component: SharedDeck },

@@ -3,7 +3,33 @@
     <div class="container-xl">
       <AppHeader />
       <div class="page">
-        <p v-if="loading">{{ $t('profile.loading') }}</p>
+        <div v-if="loading" aria-busy="true">
+          <div class="hero">
+            <div class="avatar-block">
+              <SkeletonBlock class="s-ring" w="140px" h="140px" radius="50%" />
+              <SkeletonBlock class="s-level" w="48px" h="48px" radius="50%" />
+            </div>
+            <SkeletonBlock class="s-name" w="min(240px, 62vw)" h="1.7rem" radius="9px" />
+            <SkeletonBlock class="s-meta" w="min(190px, 52vw)" h="1rem" radius="6px" />
+            <SkeletonBlock class="s-meta" w="min(220px, 58vw)" h="0.95rem" radius="6px" />
+          </div>
+          <div class="stats">
+            <div v-for="n in 4" :key="n" class="stat">
+              <SkeletonBlock class="s-stat-icon" w="28px" h="28px" radius="9px" />
+              <SkeletonBlock class="s-stat-value" w="64%" h="2rem" radius="10px" />
+              <SkeletonBlock w="48%" h="1rem" radius="6px" />
+            </div>
+          </div>
+          <div class="account">
+            <SkeletonBlock class="s-row" w="100%" h="57px" radius="18px" />
+            <SkeletonBlock w="100%" h="51px" radius="50px" />
+            <div class="legal">
+              <a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a>
+              <router-link to="/privacy">{{ $t('common.privacy') }}</router-link>
+              <router-link to="/terms">{{ $t('common.terms') }}</router-link>
+            </div>
+          </div>
+        </div>
         <p v-else-if="error" class="error">{{ error }}</p>
         <div v-else-if="settingsOpen" class="settings">
           <button type="button" class="back" @click="settingsOpen = false">{{ $t('profile.settingsBack') }}</button>
@@ -129,7 +155,7 @@
             </button>
             <p v-if="logoutError" class="error">{{ logoutError }}</p>
             <div class="legal">
-              <router-link to="/support">{{ $t('common.support') }}</router-link>
+              <a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a>
               <router-link to="/privacy">{{ $t('common.privacy') }}</router-link>
               <router-link to="/terms">{{ $t('common.terms') }}</router-link>
             </div>
@@ -143,22 +169,25 @@
 <script>
 import AppHeader from './AppHeader.vue';
 import LanguagePicker from './LanguagePicker.vue';
+import SkeletonBlock from './SkeletonBlock.vue';
 import { fetchUserProfile, updateUserProfileLocale } from '../api/mopiq';
 import { logout } from '../auth/session';
 import { getAvatarImageName } from '../utils';
 import { formatJoinedDate, formatStudiedTime, getLevelAndPercentage } from '../profile/experience';
 import { adoptFromProfileIfNeeded, localeForProfileSync, localeTag } from '../i18n';
 import { getTheme, setTheme } from '../theme/theme';
+import { HELP_CENTER_URL } from '../constants';
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 60;
 
 export default {
   name: 'ProfilePage',
-  components: { AppHeader, LanguagePicker },
+  components: { AppHeader, LanguagePicker, SkeletonBlock },
   data() {
     return {
       loading: true,
       loggingOut: false,
+      helpUrl: HELP_CENTER_URL,
       error: '',
       logoutError: '',
       avatarFailed: false,
@@ -333,6 +362,13 @@ h1 {
 .indigo { color: var(--stat-indigo); }
 .cyan { color: var(--stat-cyan); }
 .lime { color: var(--stat-lime); }
+.s-ring { position: absolute; left: 14px; top: 0; }
+.s-level { position: absolute; right: 4px; bottom: 12px; }
+.s-name { margin-top: 6px; }
+.s-meta { margin-top: 10px; }
+.s-stat-icon { margin-bottom: 16px; }
+.s-stat-value { margin-bottom: 12px; }
+.s-row { margin-bottom: 12px; }
 .menu-row {
   display: flex;
   align-items: center;

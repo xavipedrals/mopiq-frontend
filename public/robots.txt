@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /decks
+Disallow: /profile
+Disallow: /login
+Disallow: /about
+Disallow: /contact
+
+Sitemap: https://mopiq.app/sitemap.xml

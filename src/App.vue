@@ -1,10 +1,5 @@
 <template>
   <div id="app">
-    <!-- <nav>
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link> |
-      <router-link to="/contact">Contact</router-link>
-    </nav> -->
     <router-view/>
   </div>
 </template>
@@ -16,7 +11,26 @@
 </style>
 
 <script>
+import { i18nState } from './i18n';
+import { applySeo } from './seo';
+
 export default {
   name: 'App',
+  computed: {
+    locale() {
+      return i18nState.locale;
+    },
+  },
+  watch: {
+    locale() {
+      applySeo(this.$route);
+    },
+    $route: {
+      immediate: true,
+      handler(to) {
+        applySeo(to);
+      },
+    },
+  },
 };
 </script>

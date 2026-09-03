@@ -119,11 +119,19 @@
 .download-button {
     font-size: 1.5em !important;
     font-weight: 300;
-    /* padding: 15px 30px; */
+    letter-spacing: 1.5px;
+    background-color: #0A7AFF;
+    color: #ffffff;
+    border: none;
+    outline: none;
+    padding: 15px 30px;
     width: 100%;
     height: 80px;
     cursor: pointer;
     border-radius: 14px !important;
+}
+.download-button:hover {
+    background-color: #0056b3;
 }
 .calendar-container {
     display: flex;

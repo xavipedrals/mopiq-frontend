@@ -4,7 +4,7 @@
     <ul class="footer-links">
       <li><router-link to="/privacy">{{ $t('common.privacy') }}</router-link></li>
       <li><router-link to="/terms">{{ $t('common.terms') }}</router-link></li>
-      <li><router-link to="/support">{{ $t('common.support') }}</router-link></li>
+      <li><a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a></li>
     </ul>
   </div>
 </template>
@@ -40,8 +40,13 @@
 </style>
 
 <script>
+import { HELP_CENTER_URL } from '../constants';
+
 export default {
   name: 'FooterComponent',
+  data() {
+    return { helpUrl: HELP_CENTER_URL };
+  },
   computed: {
     year() {
       return new Date().getFullYear();

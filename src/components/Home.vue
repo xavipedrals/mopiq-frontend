@@ -3,7 +3,7 @@
     <header class="landing-bar">
       <div class="inner bar-inner">
         <a class="brand" href="#top">
-          <img src="/logo-small.svg" alt="">
+          <img src="/logo-small.svg" alt="Mopiq">
           <span>Mopiq</span>
         </a>
         <div class="nav-actions">
@@ -29,7 +29,6 @@
             <a class="btn primary lg" :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.downloadApp') }}</a>
             <button type="button" class="btn ghost lg" @click="openLogin">{{ $t('home.signInWeb') }}</button>
           </div>
-          <p class="fine">{{ $t('home.fine') }}</p>
         </div>
         <div class="hero-visual">
           <img class="phone" src="/marketing/hero-study.png" :alt="$t('home.heroStudyAlt')">
@@ -48,17 +47,17 @@
         <p class="section-lede">{{ $t('home.featuresLede') }}</p>
         <div class="feature-grid">
           <article class="feature">
-            <img src="/marketing/hero-quiz.png" alt="Quiz in Mopiq">
+            <img src="/marketing/hero-quiz.png" :alt="$t('home.featureQuizAlt')">
             <h3>{{ $t('home.featureCreateTitle') }}</h3>
             <p>{{ $t('home.featureCreateBody') }}</p>
           </article>
           <article class="feature">
-            <img src="/marketing/hero-decks.png" alt="Premade decks in Mopiq">
+            <img src="/marketing/hero-decks.png" :alt="$t('home.featurePremadeAlt')">
             <h3>{{ $t('home.featurePremadeTitle') }}</h3>
             <p>{{ $t('home.featurePremadeBody') }}</p>
           </article>
           <article class="feature">
-            <img src="/marketing/hero-results.png" alt="Study results in Mopiq">
+            <img src="/marketing/hero-results.png" :alt="$t('home.featureSrsAlt')">
             <h3>{{ $t('home.featureSrsTitle') }}</h3>
             <p>{{ $t('home.featureSrsBody') }}</p>
           </article>
@@ -104,24 +103,37 @@
         </div>
       </section>
 
-      <section class="proof inner">
-        <h2>{{ $t('home.proofTitle') }}</h2>
-        <div class="quotes">
-          <blockquote>
-            <div class="stars" aria-label="5 stars">★★★★★</div>
-            <p>{{ $t('home.quote1') }}</p>
-            <cite>{{ $t('home.quoteCite') }}</cite>
-          </blockquote>
-          <blockquote>
-            <div class="stars" aria-label="5 stars">★★★★★</div>
-            <p>{{ $t('home.quote2') }}</p>
-            <cite>{{ $t('home.quoteCite') }}</cite>
-          </blockquote>
-          <blockquote>
-            <div class="stars" aria-label="5 stars">★★★★★</div>
-            <p>{{ $t('home.quote3') }}</p>
-            <cite>{{ $t('home.quoteCite') }}</cite>
-          </blockquote>
+      <section class="proof" :aria-label="$t('home.proofTitle')">
+        <div class="inner">
+          <h2>{{ $t('home.proofTitle') }}</h2>
+          <p class="section-lede">{{ $t('home.proofLede') }}</p>
+        </div>
+        <div class="reviews-marquee">
+          <div class="reviews-track">
+            <div
+              v-for="copy in 2"
+              :key="copy"
+              class="reviews-group"
+              :aria-hidden="copy === 2 ? 'true' : undefined"
+            >
+              <article
+                v-for="review in reviews"
+                :key="`${copy}-${review.id}`"
+                class="review-card"
+              >
+                <header class="review-head">
+                  <span class="review-avatar" :style="{ background: review.color }">{{ review.initials }}</span>
+                  <div class="review-who">
+                    <strong>{{ review.name }}</strong>
+                    <span>{{ $t('home.reviews.' + review.id + '.role') }}</span>
+                  </div>
+                  <div class="stars" :aria-label="$t('home.reviewStars')">★★★★★</div>
+                </header>
+                <p>{{ $t('home.reviews.' + review.id + '.quote') }}</p>
+                <cite>{{ $t('home.reviewSource') }}</cite>
+              </article>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -163,13 +175,13 @@
     <footer class="legal">
       <div class="inner legal-inner">
         <div class="legal-brand">
-          <img src="/logo-small.svg" alt="">
+          <img src="/logo-small.svg" alt="Mopiq">
           <span>{{ $t('common.brand') }}</span>
         </div>
         <nav class="legal-links" :aria-label="$t('common.legal')">
           <router-link to="/privacy">{{ $t('common.privacy') }}</router-link>
           <router-link to="/terms">{{ $t('common.terms') }}</router-link>
-          <router-link to="/support">{{ $t('common.support') }}</router-link>
+          <a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a>
         </nav>
         <p class="copy">{{ $t('common.copyright', { year }) }}</p>
       </div>
@@ -179,7 +191,7 @@
 </template>
 
 <script>
-import { APP_STORE_URL } from '../constants';
+import { APP_STORE_URL, HELP_CENTER_URL } from '../constants';
 import { authReady, isLoggedIn } from '../auth/session';
 import LanguagePicker from './LanguagePicker.vue';
 import Login from './Login.vue';
@@ -190,7 +202,22 @@ export default {
   data() {
     return {
       storeUrl: APP_STORE_URL,
+      helpUrl: HELP_CENTER_URL,
       loginOpen: false,
+      reviews: [
+        { id: 'lucy', name: 'Lucy', initials: 'L', color: '#DBEAFE' },
+        { id: 'tootrey', name: 'TootRey', initials: 'T', color: '#FEF3C7' },
+        { id: 'anakolll', name: 'Anakolll', initials: 'A', color: '#FCE7F3' },
+        { id: 'rolando', name: 'Rolando', initials: 'R', color: '#CCFBF1' },
+        { id: 'valihovk', name: 'Valihovk', initials: 'V', color: '#E0F2FE' },
+        { id: 'sam', name: 'Sam', initials: 'S', color: '#ECFCCB' },
+        { id: 'swobat', name: 'Swobat', initials: 'S', color: '#FFEDD5' },
+        { id: 'lerni', name: 'Lerni', initials: 'L', color: '#EDE9FE' },
+        { id: 'joy', name: 'Joy', initials: 'J', color: '#FCE7F3' },
+        { id: 'marcus', name: 'Marcus', initials: 'M', color: '#DBEAFE' },
+        { id: 'zso', name: 'Zso', initials: 'Z', color: '#FEF3C7' },
+        { id: 'clinsch', name: 'Clinsch', initials: 'C', color: '#CCFBF1' },
+      ],
       topics: [
         { name: 'medicine', imageName: 'medicine', backgroundColor: '#E0F2FE' },
         { name: 'languages', imageName: 'languages', backgroundColor: '#FEF3C7' },
@@ -362,7 +389,6 @@ h1 {
   gap: 12px;
   margin: 28px 0 12px;
 }
-.fine { color: #64748B; font-size: 0.95rem; }
 .hero-visual {
   position: relative;
   min-height: 520px;
@@ -489,28 +515,107 @@ h2 { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800; margin-bottom: 12px;
 }
 .topic-icon img { width: 100%; }
 
-.quotes {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 28px;
+.reviews-marquee {
+  overflow: hidden;
+  margin-top: 36px;
+  padding: 10px 0 24px;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
-blockquote {
+.reviews-track {
+  display: flex;
+  width: max-content;
+  animation: reviews-marquee 80s linear infinite;
+  will-change: transform;
+}
+.reviews-marquee:hover .reviews-track,
+.reviews-marquee:focus-within .reviews-track {
+  animation-play-state: paused;
+}
+.reviews-group {
+  display: flex;
+  gap: 16px;
+  padding-right: 16px;
+}
+.review-card {
+  flex: 0 0 340px;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 22px;
-  padding: 24px;
+  padding: 22px 24px 20px;
   margin: 0;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
-.stars { color: #F5B400; letter-spacing: 2px; margin-bottom: 12px; }
-blockquote p { color: #1E293B; font-size: 1.05rem; line-height: 1.45; }
-cite {
+.review-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.review-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #0F172A;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+.review-who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.review-who strong {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+.review-who span {
+  color: #64748B;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.stars {
+  color: #F5B400;
+  letter-spacing: 1px;
+  font-size: 0.78rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+.review-card p {
+  color: #1E293B;
+  font-size: 1.02rem;
+  line-height: 1.45;
+  margin: 0;
+  flex: 1 1 auto;
+}
+.review-card cite {
   display: block;
   margin-top: 14px;
   font-style: normal;
   color: #64748B;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 600;
+}
+@keyframes reviews-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reviews-marquee {
+    overflow-x: auto;
+    mask-image: none;
+    -webkit-mask-image: none;
+    padding: 0 24px;
+  }
+  .reviews-track { animation: none; }
+  .reviews-group[aria-hidden="true"] { display: none; }
 }
 
 .download {
@@ -574,7 +679,7 @@ cite {
 .copy { color: #64748B; margin: 0; font-size: 0.92rem; }
 
 @media (max-width: 900px) {
-  .hero, .feature-grid, .quotes, .download, .strip, .goal-grid { grid-template-columns: 1fr; }
+  .hero, .feature-grid, .download, .strip, .goal-grid { grid-template-columns: 1fr; }
   .hero { padding-top: 28px; }
   .hero-visual { min-height: 0; }
   .phone-back { display: none; }
@@ -586,5 +691,10 @@ cite {
   .inner { padding-left: 16px; padding-right: 16px; }
   .landing { padding-bottom: 36px; }
   .btn.lg { width: 100%; }
+  .review-card { flex-basis: 292px; padding: 18px 18px 16px; }
+  .reviews-marquee {
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  }
 }
 </style>

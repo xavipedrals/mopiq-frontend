@@ -42,7 +42,7 @@
         <button type="button" class="text-btn" @click="retrySaves">{{ $t('study.retrySave') }}</button>
       </div>
 
-      <p v-if="loading">{{ $t('study.preparing') }}</p>
+      <RobotLoader v-if="loading" :title="$t('study.preparing')" />
       <p v-else-if="loadError" class="error">{{ loadError }}</p>
       <div v-else-if="done" class="done">
         <h1>{{ $t('study.doneTitle') }}</h1>
@@ -177,6 +177,7 @@ import {
   gradeCounts,
 } from '../study/sessionProgress';
 import AskAISheet from './AskAISheet.vue';
+import RobotLoader from './RobotLoader.vue';
 import StudyCheckpoint from './StudyCheckpoint.vue';
 import StudyLimitSheet from './StudyLimitSheet.vue';
 
@@ -208,7 +209,7 @@ const GRADE_BUTTONS = [
 
 export default {
   name: 'StudySessionPage',
-  components: { AskAISheet, StudyCheckpoint, StudyLimitSheet },
+  components: { AskAISheet, RobotLoader, StudyCheckpoint, StudyLimitSheet },
   data() {
     return {
       loading: true,
