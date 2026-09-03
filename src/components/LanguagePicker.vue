@@ -92,6 +92,7 @@ export default {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+  max-width: 11rem;
 }
 .chevron {
   position: absolute;

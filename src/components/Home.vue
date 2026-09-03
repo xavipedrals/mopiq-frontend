@@ -9,7 +9,7 @@
         <div class="nav-actions">
           <LanguagePicker compact />
           <button type="button" class="btn ghost" @click="openLogin">{{ $t('common.signIn') }}</button>
-          <a class="btn primary" :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.downloadApp') }}</a>
+          <a class="btn primary header-download" :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.downloadApp') }}</a>
         </div>
       </div>
     </header>
@@ -272,6 +272,8 @@ export default {
 .landing {
   color: #0F172A;
   padding-bottom: 48px;
+  max-width: 100%;
+  overflow-x: clip;
 }
 .inner {
   max-width: 1120px;
@@ -286,13 +288,15 @@ export default {
   background: rgba(247, 248, 250, 0.88);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  overflow-x: clip;
 }
 .bar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 16px;
+  min-width: 0;
+  gap: 12px;
   padding-top: 14px;
   padding-bottom: 14px;
 }
@@ -301,21 +305,23 @@ export default {
   align-items: center;
   gap: 10px;
   margin-right: auto;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   text-decoration: none;
   color: #0A7AFF;
   font-weight: 700;
   font-size: 1.2rem;
 }
-.brand img { width: 34px; height: 24px; }
+.brand img { width: 34px; height: 24px; flex-shrink: 0; }
 .nav-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
   margin-left: auto;
-  flex: 0 0 auto;
-  flex-wrap: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 .btn {
   display: inline-flex;
@@ -517,6 +523,7 @@ h2 { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800; margin-bottom: 12px;
 
 .reviews-marquee {
   overflow: hidden;
+  max-width: 100%;
   margin-top: 36px;
   padding: 10px 0 24px;
   mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
@@ -691,6 +698,7 @@ h2 { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800; margin-bottom: 12px;
   .inner { padding-left: 16px; padding-right: 16px; }
   .landing { padding-bottom: 36px; }
   .btn.lg { width: 100%; }
+  .header-download { display: none; }
   .review-card { flex-basis: 292px; padding: 18px 18px 16px; }
   .reviews-marquee {
     mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);

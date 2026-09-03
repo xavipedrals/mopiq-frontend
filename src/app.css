@@ -217,3 +217,8 @@ body.app-shell .mopiq-btn.secondary {
   min-height: 100vh;
   text-align: left;
 }
+
+html, body {
+  max-width: 100%;
+  overflow-x: clip;
+}
