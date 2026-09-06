@@ -192,6 +192,7 @@
 
 <script>
 import { APP_STORE_URL, HELP_CENTER_URL } from '../constants';
+import { trackAnonymousLandingVisit } from '../analytics';
 import { authReady, isLoggedIn } from '../auth/session';
 import LanguagePicker from './LanguagePicker.vue';
 import Login from './Login.vue';
@@ -249,7 +250,15 @@ export default {
   },
   async created() {
     await authReady;
-    if (isLoggedIn()) this.$router.replace('/decks');
+    if (isLoggedIn()) {
+      this.$router.replace('/decks');
+      return;
+    }
+    void trackAnonymousLandingVisit({
+      loggedIn: false,
+      path: this.$route.path,
+      nextQuery: this.loginNext,
+    });
   },
   methods: {
     openLogin() {

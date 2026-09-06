@@ -12,6 +12,7 @@ import StudySessionPage from './components/StudySession.vue';
 import QuizSessionPage from './components/QuizSession.vue';
 import ProfilePage from './components/Profile.vue';
 import { HELP_CENTER_URL } from './constants';
+import { markArrivedViaShare } from './analytics';
 import { authReady, isLoggedIn } from './auth/session';
 import { hydrateLanguageFromProfile } from './api/mopiq';
 
@@ -57,6 +58,9 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
+  if (to.path.startsWith('/shared/')) {
+    markArrivedViaShare();
+  }
   if (to.path === '/') {
     if (isLoggedIn()) return { path: '/decks' };
     return true;
