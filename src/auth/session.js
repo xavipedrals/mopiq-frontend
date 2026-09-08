@@ -13,6 +13,7 @@ import {
 import { auth, functions } from '../firebaseInit';
 import { supabase } from '../supabaseInit';
 import { registerWebDevice } from '../api/userDevice';
+import { trackWebLogin } from '../analytics';
 
 const getSupabaseTokens = httpsCallable(functions, 'getSupabaseTokensV1');
 
@@ -135,6 +136,7 @@ export async function loginWithEmail(email, password) {
   await getAccessToken();
   notify();
   trackWebSession();
+  void trackWebLogin();
 }
 
 export async function registerWithEmail(name, email, password) {
@@ -153,6 +155,7 @@ export async function loginWithGoogle() {
   await getAccessToken();
   notify();
   trackWebSession();
+  void trackWebLogin();
 }
 
 export async function loginWithApple() {
@@ -163,6 +166,7 @@ export async function loginWithApple() {
   await getAccessToken();
   notify();
   trackWebSession();
+  void trackWebLogin();
 }
 
 export async function resetPassword(email) {

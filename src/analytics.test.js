@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import {
   LANDING_VISIT_KEY,
+  LOGIN_EVENT,
   SHARE_VISIT_KEY,
   markArrivedViaShare,
   markLandingTracked,
@@ -52,5 +53,11 @@ describe('shouldTrackAnonymousLanding', () => {
     assert.equal(shouldTrackAnonymousLanding({ loggedIn: false, path: '/', nextQuery: '' }), false);
     assert.equal(globalThis.sessionStorage.getItem(SHARE_VISIT_KEY), '1');
     assert.equal(globalThis.sessionStorage.getItem(LANDING_VISIT_KEY), null);
+  });
+});
+
+describe('web login event', () => {
+  it('uses a distinct Firebase event from landing visits', () => {
+    assert.equal(LOGIN_EVENT, 'web_login');
   });
 });
