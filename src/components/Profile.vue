@@ -68,6 +68,17 @@
             <h3>{{ $t('profile.language') }}</h3>
             <LanguagePicker @change="onLanguageChange" />
           </section>
+          <section v-if="showDebugSettings" class="appearance">
+            <h3>Debug</h3>
+            <label class="debug-row">
+              <span>Unlimited study (debug)</span>
+              <input
+                type="checkbox"
+                :checked="unlimitedStudyOn"
+                @change="onUnlimitedStudyChange"
+              >
+            </label>
+          </section>
         </div>
         <template v-else>
           <div class="hero">
@@ -177,6 +188,7 @@ import { formatJoinedDate, formatStudiedTime, getLevelAndPercentage } from '../p
 import { adoptFromProfileIfNeeded, localeForProfileSync, localeTag } from '../i18n';
 import { getTheme, setTheme } from '../theme/theme';
 import { HELP_CENTER_URL } from '../constants';
+import { isDebugUnlimitedStudy, setDebugUnlimitedStudy } from '../debug/flags';
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 60;
 
@@ -193,6 +205,7 @@ export default {
       avatarFailed: false,
       settingsOpen: false,
       theme: getTheme(),
+      unlimitedStudyOn: isDebugUnlimitedStudy(),
       profile: {
         name: '',
         email: '',
@@ -231,6 +244,9 @@ export default {
       if (this.avatarFailed) return getAvatarImageName(this.profile.avatarNumber || 0);
       return this.profile.avatarUrl || getAvatarImageName(this.profile.avatarNumber || 0);
     },
+    showDebugSettings() {
+      return import.meta.env.DEV;
+    },
   },
   async created() {
     try {
@@ -249,6 +265,11 @@ export default {
     setAppearance(theme) {
       this.theme = theme;
       setTheme(theme);
+    },
+    onUnlimitedStudyChange(event) {
+      const enabled = event.target.checked;
+      this.unlimitedStudyOn = enabled;
+      setDebugUnlimitedStudy(enabled);
     },
     async onLanguageChange() {
       try {
@@ -414,6 +435,24 @@ h1 {
   text-transform: uppercase;
   color: var(--text-secondary);
   margin: 0 0 12px;
+}
+.debug-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  border-radius: 18px;
+  padding: 16px 18px;
+  color: var(--title);
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+.debug-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--blue-button);
 }
 .theme-toggle {
   display: grid;

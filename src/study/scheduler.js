@@ -94,6 +94,42 @@ function reviewEasyInterval(card, config) {
   );
 }
 
+function startOfLocalDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Matches iOS CalendarHelper / web ankiDay.js (day starts at 04:00).
+const ANKI_DAY_STARTS_AT_HOUR = 4;
+
+function ankiDayStart(date = new Date()) {
+  const supposed = startOfLocalDay(date);
+  supposed.setHours(supposed.getHours() + ANKI_DAY_STARTS_AT_HOUR);
+  if (supposed <= date) return supposed;
+  return new Date(supposed.getTime() - 24 * 3600 * 1000);
+}
+
+function isReviewDueTodayOrOverdue(card, now = new Date()) {
+  if (card.dueDate == null) return true;
+  const due = new Date(card.dueDate);
+  if (Number.isNaN(due.getTime())) return true;
+  return ankiDayStart(due).getTime() <= ankiDayStart(now).getTime();
+}
+
+function remainingSecondsUntilDue(card, now = new Date()) {
+  if (card.dueDate == null) return 0;
+  const due = new Date(card.dueDate).getTime();
+  if (Number.isNaN(due)) return 0;
+  return Math.max(0, Math.trunc((due - now.getTime()) / 1000));
+}
+
+function hardWouldPostpone(card, config, now = new Date()) {
+  const hardDue = now.getTime() + reviewHardInterval(card, config) * 1000;
+  const currentDue = card.dueDate ? new Date(card.dueDate).getTime() : now.getTime();
+  return hardDue >= currentDue;
+}
+
 function reviewEaseAfter(card, answer, config) {
   const current = card.easeFactor || config.defaultEaseFactor;
   switch (answer) {
@@ -168,7 +204,30 @@ function updateLearning(card, answer, config) {
   return next;
 }
 
-function updateReview(card, answer, config) {
+function applyOffScheduleHard(card, config, now = new Date()) {
+  const next = cloneCard(card);
+  next.easeFactor = reviewEaseAfter(next, ANSWERS.HARD, config);
+  next.state = STATES.REVIEW;
+  next.reviewCount = (next.reviewCount || 0) + 1;
+  if (hardWouldPostpone(card, config, now)) {
+    return next;
+  }
+  next.intervalSecs = reviewHardInterval(card, config);
+  return setDue(next);
+}
+
+function updateReview(card, answer, config, now = new Date()) {
+  const offSchedule = !isReviewDueTodayOrOverdue(card, now);
+  if (offSchedule && (answer === ANSWERS.GOOD || answer === ANSWERS.EASY)) {
+    const next = cloneCard(card);
+    next.state = STATES.REVIEW;
+    next.reviewCount = (next.reviewCount || 0) + 1;
+    return next;
+  }
+  if (offSchedule && answer === ANSWERS.HARD) {
+    return applyOffScheduleHard(card, config, now);
+  }
+
   let next = cloneCard(card);
   // iOS ReviewCardStatus.update applies the new ease factor before the interval.
   next.easeFactor = reviewEaseAfter(next, answer, config);
@@ -268,6 +327,15 @@ export function previewIntervals(card, config) {
     };
   }
   if (state === STATES.REVIEW) {
+    if (!isReviewDueTodayOrOverdue(card)) {
+      const remaining = remainingSecondsUntilDue(card);
+      return {
+        [ANSWERS.AGAIN]: reviewAgainInterval(config),
+        [ANSWERS.HARD]: hardWouldPostpone(card, config) ? remaining : reviewHardInterval(card, config),
+        [ANSWERS.GOOD]: remaining,
+        [ANSWERS.EASY]: remaining,
+      };
+    }
     return {
       [ANSWERS.AGAIN]: reviewAgainInterval(config),
       [ANSWERS.HARD]: reviewHardInterval(card, config),

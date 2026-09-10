@@ -217,7 +217,7 @@ describe('review (iOS ReviewCardStatusTest)', () => {
     assert.equal(preview.GOOD, 216000);
   });
 
-  it('Hard → Good → Easy → Again matches iOS testMultiSteps seconds', () => {
+  it('Hard → Good → Easy → Again does not compound after Hard moves due into the future', () => {
     const config = iosConfig();
     let card = reviewCard();
     let ease = 2500;
@@ -227,17 +227,17 @@ describe('review (iOS ReviewCardStatusTest)', () => {
     const first = iosInt(86400 * 1.2 * 1);
     assert.equal(card.intervalSecs, first);
     assert.equal(card.easeFactor, ease);
+    const dueAfterHard = new Date(card.dueDate).getTime();
 
     card = applyAnswer(card, ANSWERS.GOOD, config);
-    const second = iosInt(first * (ease / 1000) * 1);
-    assert.equal(card.intervalSecs, second);
+    assert.equal(card.intervalSecs, first);
     assert.equal(card.easeFactor, ease);
+    assert.equal(new Date(card.dueDate).getTime(), dueAfterHard);
 
     card = applyAnswer(card, ANSWERS.EASY, config);
-    ease += 100;
-    const third = iosInt(second * (ease / 1000) * 1.3 * 1);
-    assert.equal(card.intervalSecs, third);
+    assert.equal(card.intervalSecs, first);
     assert.equal(card.easeFactor, ease);
+    assert.equal(new Date(card.dueDate).getTime(), dueAfterHard);
 
     card = applyAnswer(card, ANSWERS.AGAIN, config);
     ease -= 200;
@@ -254,6 +254,89 @@ describe('review (iOS ReviewCardStatusTest)', () => {
     assert.equal(applyAnswer(card, ANSWERS.GOOD, config).intervalSecs, maxSecs);
     assert.equal(applyAnswer(card, ANSWERS.EASY, config).intervalSecs, maxSecs);
     assert.equal(applyAnswer(card, ANSWERS.HARD, config).intervalSecs, iosInt(100 * 86400 * 1.2));
+  });
+});
+
+describe('off-schedule review (iOS ReviewCardStatusTest)', () => {
+  function futureReviewCard({ daysUntilDue = 1, intervalDays = 90, ...extra } = {}) {
+    return reviewCard({
+      intervalSecs: intervalDays * 86400,
+      dueDate: new Date(Date.now() + daysUntilDue * 86400 * 1000),
+      ...extra,
+    });
+  }
+
+  it('Easy twice does not compound after the first on-schedule review', () => {
+    const config = iosConfig();
+    const first = applyAnswer(reviewCard(), ANSWERS.EASY, config);
+    const second = applyAnswer(first, ANSWERS.EASY, config);
+    assert.equal(second.intervalSecs, first.intervalSecs);
+    assert.equal(second.easeFactor, first.easeFactor);
+    assert.equal(new Date(second.dueDate).getTime(), new Date(first.dueDate).getTime());
+    assert.equal(second.reviewCount, 2);
+    assert.equal(second.state, STATES.REVIEW);
+  });
+
+  it('Good and Easy freeze due, interval, and ease', () => {
+    const config = iosConfig();
+    const card = futureReviewCard({ daysUntilDue: 1, intervalDays: 90 });
+    const originalDue = new Date(card.dueDate).getTime();
+
+    const afterGood = applyAnswer(card, ANSWERS.GOOD, config);
+    assert.equal(afterGood.intervalSecs, card.intervalSecs);
+    assert.equal(afterGood.easeFactor, 2500);
+    assert.equal(new Date(afterGood.dueDate).getTime(), originalDue);
+    assert.equal(afterGood.reviewCount, 1);
+
+    const afterEasy = applyAnswer(card, ANSWERS.EASY, config);
+    assert.equal(afterEasy.intervalSecs, card.intervalSecs);
+    assert.equal(afterEasy.easeFactor, 2500);
+    assert.equal(new Date(afterEasy.dueDate).getTime(), originalDue);
+    assert.equal(afterEasy.reviewCount, 1);
+  });
+
+  it('Again still lapses a future-due card', () => {
+    const config = iosConfig();
+    const updated = applyAnswer(futureReviewCard({ daysUntilDue: 5, intervalDays: 90 }), ANSWERS.AGAIN, config);
+    assert.equal(updated.intervalSecs, 600);
+    assert.equal(updated.state, STATES.RELEARNING);
+    assert.equal(updated.easeFactor, 2300);
+    assert.equal(updated.lapseCount, 1);
+  });
+
+  it('Hard does not postpone past the current due', () => {
+    const config = iosConfig();
+    const card = futureReviewCard({ daysUntilDue: 1, intervalDays: 90 });
+    const originalDue = new Date(card.dueDate).getTime();
+    const updated = applyAnswer(card, ANSWERS.HARD, config);
+    assert.equal(updated.intervalSecs, card.intervalSecs);
+    assert.equal(new Date(updated.dueDate).getTime(), originalDue);
+    assert.equal(updated.easeFactor, 2350);
+    assert.equal(updated.state, STATES.REVIEW);
+  });
+
+  it('Hard pulls due in when the Hard interval is sooner', () => {
+    const config = iosConfig();
+    const card = futureReviewCard({ daysUntilDue: 5, intervalDays: 1 });
+    const originalDue = new Date(card.dueDate).getTime();
+    const updated = applyAnswer(card, ANSWERS.HARD, config);
+    assert.equal(updated.intervalSecs, iosInt(86400 * 1.2));
+    assert.ok(new Date(updated.dueDate).getTime() < originalDue);
+    assert.equal(updated.easeFactor, 2350);
+  });
+
+  it('preview times show remaining until the current due', () => {
+    const config = iosConfig();
+    const card = futureReviewCard({ daysUntilDue: 1, intervalDays: 90 });
+    const preview = previewIntervals(card, config);
+    const remaining = Math.max(
+      0,
+      Math.trunc((new Date(card.dueDate).getTime() - Date.now()) / 1000)
+    );
+    assert.equal(preview.AGAIN, 600);
+    assert.ok(Math.abs(preview.GOOD - remaining) <= 1);
+    assert.ok(Math.abs(preview.EASY - remaining) <= 1);
+    assert.ok(Math.abs(preview.HARD - remaining) <= 1);
   });
 });
 
