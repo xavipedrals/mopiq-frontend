@@ -1,6 +1,59 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { durationParts, gaugeProgress, histogramShares, shortDate } from './deckStats.js';
+import { durationParts, gaugeProgress, histogramShares, shortDate, todayStatsFromCounts } from './deckStats.js';
+
+describe('todayStatsFromCounts', () => {
+  it('caps new cards by the daily allowance and reviews by the live due queue', () => {
+    assert.deepEqual(todayStatsFromCounts({
+      cardCount: 100,
+      progressCount: 10,
+      newStudiedToday: 5,
+      rawDueCount: 30,
+      newCardsPerDay: 20,
+      maxReviewsPerDay: 100,
+    }), {
+      statsAvailable: true,
+      newRemainingToday: 15,
+      reviewDueToday: 30,
+      cardsForToday: 45,
+    });
+  });
+
+  it('drops new cards once today’s allowance is used, and caps a huge due pile', () => {
+    assert.equal(todayStatsFromCounts({
+      cardCount: 80,
+      progressCount: 60,
+      newStudiedToday: 20,
+      rawDueCount: 500,
+      newCardsPerDay: 20,
+      maxReviewsPerDay: 200,
+    }).newRemainingToday, 0);
+    assert.equal(todayStatsFromCounts({
+      cardCount: 80,
+      progressCount: 60,
+      newStudiedToday: 20,
+      rawDueCount: 500,
+      newCardsPerDay: 20,
+      maxReviewsPerDay: 200,
+    }).reviewDueToday, 200);
+  });
+
+  it('treats an untouched deck as all-new, limited by newCardsPerDay', () => {
+    assert.deepEqual(todayStatsFromCounts({
+      cardCount: 48,
+      progressCount: 0,
+      newStudiedToday: 0,
+      rawDueCount: 0,
+      newCardsPerDay: 20,
+      maxReviewsPerDay: 200,
+    }), {
+      statsAvailable: true,
+      newRemainingToday: 20,
+      reviewDueToday: 0,
+      cardsForToday: 20,
+    });
+  });
+});
 
 describe('gaugeProgress', () => {
   it('matches the iOS dashboard ring, including the 1% floor', () => {

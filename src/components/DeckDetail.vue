@@ -147,7 +147,7 @@ import {
   fetchAnswerHistogram,
   fetchCardsPage,
   fetchDeck,
-  fetchDeckList,
+  fetchDeckTodayStats,
   fetchFreeStudyQuota,
   fetchSeenCount,
   fetchStudiedTodayCount,
@@ -248,8 +248,11 @@ export default {
     },
     async loadListStats(deckId) {
       try {
-        const list = await fetchDeckList();
-        this.listStats = list.find((row) => row.id === deckId) || null;
+        const deck = (this.deck?.id === deckId && this.deck.config)
+          ? this.deck
+          : await fetchDeck(deckId);
+        if (!this.deck) this.deck = deck;
+        this.listStats = await fetchDeckTodayStats(deck);
       } catch {
         // The dashboard falls back to em dashes when stats are unavailable.
       } finally {
@@ -356,6 +359,8 @@ export default {
         topic,
       });
       this.settingsOpen = false;
+      this.statsPending = true;
+      this.loadListStats(this.deck.id);
     },
     onCardSaved({ card, created }) {
       if (created) {
@@ -366,6 +371,8 @@ export default {
         this.cards = this.cards.map((row) => (row.id === card.id ? { ...row, ...card } : row));
       }
       this.closeEditor();
+      this.statsPending = true;
+      this.loadListStats(this.deck.id);
     },
   },
 };

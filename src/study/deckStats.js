@@ -1,5 +1,34 @@
 import { toDate } from '../profile/experience.js';
 
+/**
+ * Remaining new/review for the dashboard, matching get_user_deck_list_stats
+ * once the cohort gate is off: min(daily allowance left, live unseen/due).
+ */
+export function todayStatsFromCounts({
+  cardCount = 0,
+  progressCount = 0,
+  newStudiedToday = 0,
+  rawDueCount = 0,
+  newCardsPerDay = 20,
+  maxReviewsPerDay = 200,
+} = {}) {
+  const cards = Math.max(0, Number(cardCount) || 0);
+  const progress = Math.max(0, Number(progressCount) || 0);
+  const newStudied = Math.max(0, Number(newStudiedToday) || 0);
+  const rawDue = Math.max(0, Number(rawDueCount) || 0);
+  const newCap = Math.max(0, Number(newCardsPerDay) || 0);
+  const reviewCap = Math.max(0, Number(maxReviewsPerDay) || 0);
+  const unseen = Math.max(0, cards - progress);
+  const newRemainingToday = Math.min(Math.max(0, newCap - newStudied), unseen);
+  const reviewDueToday = Math.min(reviewCap, rawDue);
+  return {
+    statsAvailable: true,
+    newRemainingToday,
+    reviewDueToday,
+    cardsForToday: newRemainingToday + reviewDueToday,
+  };
+}
+
 /** iOS StudyDashboardView.displayProgress: never render a truly empty ring. */
 export function gaugeProgress({ cardsForToday = 0, cardsStudiedToday = 0 } = {}) {
   const forToday = Math.max(0, Number(cardsForToday) || 0);

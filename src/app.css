@@ -52,7 +52,6 @@
   --slot-empty: #CBD5E1;
   --slot-current: #64748B;
   --slot-halo: #CBD5E1;
-  --study-top-rule: #E2E8F0;
   /* iOS Quiz palette */
   --quiz-hairline: #E2E8F0;
   --quiz-rule: #F1F5F9;
@@ -141,7 +140,6 @@ html[data-theme="dark"] body.app-shell {
   --slot-empty: #334155;
   --slot-current: #F8FAFC;
   --slot-halo: #475569;
-  --study-top-rule: #475569;
   --quiz-hairline: #475569;
   --quiz-rule: #475569;
   --quiz-green: #4ADE80;

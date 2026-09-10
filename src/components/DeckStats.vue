@@ -8,8 +8,10 @@
         </svg>
         <p class="ring-num">
           <SkeletonBlock v-if="waitingForStats" w="2.4ch" h="0.7em" radius="12px" />
-          <DoneBadge v-else-if="hasStats && cardsForToday === 0" class="ring-seal" />
-          <span v-else>{{ hasStats ? cardsForToday : '—' }}</span>
+          <template v-else>
+            <DoneBadge v-if="hasStats && cardsForToday === 0" class="ring-seal" />
+            <span>{{ hasStats ? cardsForToday : '—' }}</span>
+          </template>
         </p>
       </div>
       <p class="ring-label">{{ $t('deck.cardsToStudyToday') }}</p>
@@ -18,16 +20,20 @@
         <div class="chip new">
           <p class="chip-count">
             <SkeletonBlock v-if="waitingForStats" w="2.4ch" h="0.8em" radius="7px" />
-            <DoneBadge v-else-if="hasStats && newCount === 0" class="chip-seal" />
-            <span v-else>{{ hasStats ? newCount : '—' }}</span>
+            <template v-else>
+              <DoneBadge v-if="hasStats && newCount === 0" class="chip-seal" />
+              <span>{{ hasStats ? newCount : '—' }}</span>
+            </template>
           </p>
           <p class="chip-label">{{ $t('deck.newCards') }}</p>
         </div>
         <div class="chip review">
           <p class="chip-count">
             <SkeletonBlock v-if="waitingForStats" w="2.4ch" h="0.8em" radius="7px" />
-            <DoneBadge v-else-if="hasStats && reviewCount === 0" class="chip-seal" />
-            <span v-else>{{ hasStats ? reviewCount : '—' }}</span>
+            <template v-else>
+              <DoneBadge v-if="hasStats && reviewCount === 0" class="chip-seal" />
+              <span>{{ hasStats ? reviewCount : '—' }}</span>
+            </template>
           </p>
           <p class="chip-label">{{ $t('deck.toReview') }}</p>
         </div>
@@ -115,10 +121,10 @@ export default {
   },
   computed: {
     hasStats() {
-      return Boolean(this.listStats);
+      return Boolean(this.listStats?.statsAvailable);
     },
     waitingForStats() {
-      return this.statsPending && !this.listStats;
+      return this.statsPending && !this.hasStats;
     },
     cardsForToday() {
       return this.listStats?.cardsForToday || 0;
@@ -131,8 +137,8 @@ export default {
     },
     dashArray() {
       const filled = gaugeProgress({
-        cardsForToday: this.cardsForToday,
-        cardsStudiedToday: this.studiedToday,
+        cardsForToday: this.hasStats ? this.cardsForToday : 0,
+        cardsStudiedToday: this.hasStats ? this.studiedToday : 0,
       }) * ARC_LENGTH;
       return `${filled.toFixed(2)} ${ARC_LENGTH}`;
     },
@@ -216,6 +222,8 @@ export default {
   bottom: 8%;
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   font-size: 3.1rem;
   font-weight: 800;
@@ -246,6 +254,8 @@ export default {
 .chip-count {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 6px;
   margin: 0 0 2px;
   font-size: 1.45rem;
   font-weight: 700;

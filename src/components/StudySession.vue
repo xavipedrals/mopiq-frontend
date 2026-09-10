@@ -515,7 +515,6 @@ export default {
   height: 60px;
   padding: 0;
   overflow: visible;
-  border-bottom: 1px solid var(--study-top-rule);
 }
 .study-close,
 .top-balance {

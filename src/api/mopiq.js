@@ -17,6 +17,7 @@ import {
 } from '../i18n';
 import { applyDeckSettings } from '../study/deckSettings';
 import { editorTextToHtml, replaceFrontBackFields } from '../study/cardFields';
+import { todayStatsFromCounts } from '../study/deckStats';
 
 function throwIfError(error, fallback) {
   if (error) {
@@ -249,6 +250,84 @@ export async function fetchAnswerHistogram(deckId) {
     ? 0
     : Math.round(((counts.EASY * 1 + counts.GOOD * 0.66 + counts.HARD * 0.33) / total) * 100);
   return { counts, total, grade };
+}
+
+async function countCardStates(deckId, fallback, applyFilters) {
+  let query = supabase
+    .from('user_card_states')
+    .select('card_id', { count: 'exact', head: true })
+    .eq('deck_version_id', deckId);
+  if (applyFilters) query = applyFilters(query);
+  const { count, error } = await query;
+  throwIfError(error, fallback);
+  return count || 0;
+}
+
+function mapTodayStatsRow(deckId, row) {
+  return {
+    id: deckId,
+    statsAvailable: true,
+    newRemainingToday: Number(row?.new_remaining_today) || 0,
+    reviewDueToday: Number(row?.review_due_today) || 0,
+    cardsForToday: Number(row?.cards_for_today) || 0,
+  };
+}
+
+function rpcMissing(error) {
+  const code = String(error?.code || '');
+  const message = String(error?.message || '');
+  return code === 'PGRST202' || code === '42883' || /get_user_deck_today_stats/i.test(message);
+}
+
+/**
+ * Same remaining-new / live-due math as get_user_deck_list_stats, via a
+ * per-deck RPC that is not cohort-gated. Falls back to client counts only
+ * when that RPC has not been deployed yet.
+ */
+export async function fetchDeckTodayStats(deck) {
+  const deckId = deck?.id;
+  if (!deckId) return { id: deckId, ...todayStatsFromCounts() };
+  const { data, error } = await supabase.rpc('get_user_deck_today_stats', {
+    p_deck_id: deckId,
+    p_study_day_start: toIso(ankiDayStart()),
+    p_study_day_end_exclusive: toIso(ankiDayEndExclusive()),
+  });
+  if (!error) {
+    const row = Array.isArray(data) ? data[0] : data;
+    return mapTodayStatsRow(deckId, row);
+  }
+  if (!rpcMissing(error)) throwIfError(error, 'Could not load today’s stats');
+  return fetchDeckTodayStatsFromCardStates(deck);
+}
+
+async function fetchDeckTodayStatsFromCardStates(deck) {
+  const deckId = deck.id;
+  const config = deck.config || parseDeckConfig(deck.extraConfig);
+  const dayStart = toIso(ankiDayStart());
+  const dayEnd = toIso(ankiDayEndExclusive());
+  const fallback = 'Could not load today’s stats';
+  const [progressCount, newStudiedToday, rawDueCount] = await Promise.all([
+    countCardStates(deckId, fallback),
+    countCardStates(deckId, fallback, (query) => query
+      .not('first_reviewed_at', 'is', null)
+      .gte('first_reviewed_at', dayStart)
+      .lt('first_reviewed_at', dayEnd)),
+    countCardStates(deckId, fallback, (query) => query
+      .in('state', ['LEARNING', 'RELEARNING', 'REVIEW'])
+      .eq('suspended', false)
+      .lt('due_date', dayEnd)),
+  ]);
+  return {
+    id: deckId,
+    ...todayStatsFromCounts({
+      cardCount: deck.cardCount || 0,
+      progressCount,
+      newStudiedToday,
+      rawDueCount,
+      newCardsPerDay: config.newCardsPerDay,
+      maxReviewsPerDay: config.maxReviewsPerDay,
+    }),
+  };
 }
 
 /** Cards touched during the current Anki day, for the dashboard ring. */
