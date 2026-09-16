@@ -212,7 +212,7 @@ export default {
       this.$router.replace(safe);
     },
     friendly(error) {
-      console.error('Sign-in failed', error?.code || error);
+      console.error('Sign-in failed', error?.code || error, error?.details || error);
       const code = error?.code || '';
       if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
         return this.$t('login.badCredentials');
@@ -221,6 +221,9 @@ export default {
       if (code === 'auth/weak-password') return this.$t('login.weakPassword');
       if (code === 'auth/popup-closed-by-user') return this.$t('login.cancelled');
       if (code === 'auth/operation-not-allowed') return this.$t('login.providerOff');
+      const details = error?.details;
+      if (typeof details === 'string' && details.trim()) return details;
+      if (details && typeof details === 'object' && details.message) return String(details.message);
       return error?.message || this.$t('login.generic');
     },
   },

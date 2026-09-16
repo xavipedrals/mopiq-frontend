@@ -24,6 +24,7 @@ export const authReady = new Promise((resolve) => {
 
 const listeners = new Set();
 let currentUser = null;
+let accessTokenInFlight = null;
 
 function notify() {
   for (const fn of listeners) fn(currentUser);
@@ -53,6 +54,15 @@ function trackWebSession() {
 }
 
 export async function getAccessToken() {
+  if (accessTokenInFlight) return accessTokenInFlight;
+  const pending = loadAccessToken().finally(() => {
+    if (accessTokenInFlight === pending) accessTokenInFlight = null;
+  });
+  accessTokenInFlight = pending;
+  return pending;
+}
+
+async function loadAccessToken() {
   if (!auth.currentUser) return null;
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (!userError && userData.user) {

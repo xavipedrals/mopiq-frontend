@@ -60,6 +60,7 @@
           ></iframe>
         </div>
         <div class="controls">
+          <StudyKeyboardToast v-if="keyboardHintKind" :kind="keyboardHintKind" @dismiss="dismissKeyboardHint" />
           <template v-if="!showAnswer">
             <div v-if="writing" class="write-box">
               <label class="write-label" for="study-write-answer">{{ $t('study.typeAnswer') }}</label>
@@ -164,6 +165,11 @@
 
 <script>
 import { fetchAllStudyCards, fetchDeck, fetchFreeStudyQuota, fetchMediaMap, incrementFreeStudyQuota, submitReview } from '../api/mopiq';
+import { fetchKeyboardHintHistory, saveKeyboardHintHistory } from '../api/keyboardHints';
+import { onSessionChange } from '../auth/session';
+import { createKeyboardHintHistory, desktopKeyboardLikely, isKeyboardEvidence, isTypingTarget,
+  studyShortcutAction, visibleKeyboardHint } from '../study/keyboardHints';
+import StudyKeyboardToast from './StudyKeyboardToast.vue';
 import { ankiDayString } from '../study/ankiDay';
 import { backHtml, cardDocument, cardPlainText, frontHtml } from '../study/cardHtml';
 import { applyQuota, FREE_CARD_DAILY_LIMIT, isDailyLimitReached } from '../study/freeStudyQuota';
@@ -209,9 +215,18 @@ const GRADE_BUTTONS = [
 
 export default {
   name: 'StudySessionPage',
-  components: { AskAISheet, RobotLoader, StudyCheckpoint, StudyLimitSheet },
+  components: { StudyKeyboardToast, AskAISheet, RobotLoader, StudyCheckpoint, StudyLimitSheet },
   data() {
     return {
+      keyboardAvailable: false,
+      keyboardTyping: false,
+      keyboardPageActive: false,
+      keyboardHintState: { ready: false, shortcutUsed: false, questionSeen: false, answerSeen: false },
+      keyboardHintHistory: null,
+      keyboardHintUserId: null,
+      unsubKeyboardSession: null,
+      questionHintDismissed: false,
+      answerHintVisible: false,
       loading: true,
       leaving: false,
       loadError: '',
@@ -244,6 +259,19 @@ export default {
     };
   },
   computed: {
+    keyboardHintKind() {
+      return visibleKeyboardHint({
+        ready: this.keyboardHintState.ready,
+        active: this.keyboardPageActive && !this.loading && !this.leaving && !this.loadError
+          && !this.done && !!this.current && !this.limitReached && !this.askAiOpen && !this.checkpointOpen,
+        keyboard: this.keyboardAvailable,
+        typing: this.writing || this.keyboardTyping,
+        showingAnswer: this.showAnswer,
+        flags: this.keyboardHintState,
+        questionDismissed: this.questionHintDismissed,
+        answerVisible: this.answerHintVisible,
+      });
+    },
     gradeButtons() {
       return GRADE_BUTTONS.map((grade) => ({
         ...grade,
@@ -301,7 +329,32 @@ export default {
       return FREE_CARD_DAILY_LIMIT;
     },
   },
+  watch: {
+    keyboardHintKind: {
+      flush: 'post',
+      handler(kind) {
+        if (kind === 'question') this.keyboardHintHistory?.mark({ questionSeen: true });
+        if (kind === 'answer') {
+          this.answerHintVisible = true;
+          this.keyboardHintHistory?.mark({ answerSeen: true });
+        }
+      },
+    },
+  },
   async created() {
+    this.keyboardAvailable = desktopKeyboardLikely({
+      maxTouchPoints: navigator.maxTouchPoints,
+      mobile: navigator.userAgentData?.mobile || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent),
+      finePointer: window.matchMedia('(hover: hover) and (pointer: fine)').matches,
+    });
+    this.updateKeyboardFocus();
+    this.unsubKeyboardSession = onSessionChange(this.resetKeyboardHintHistory);
+    document.addEventListener('focusin', this.updateKeyboardFocus);
+    document.addEventListener('focusout', this.onKeyboardFocusOut);
+    document.addEventListener('visibilitychange', this.updateKeyboardFocus);
+    window.addEventListener('focus', this.updateKeyboardFocus);
+    window.addEventListener('blur', this.updateKeyboardFocus);
+    window.addEventListener('online', this.retryKeyboardHintSave);
     window.addEventListener('keydown', this.onKey);
     window.addEventListener('beforeunload', this.onBeforeUnload);
     this.reviewSync = createReviewSyncQueue({ submit: submitReview });
@@ -346,6 +399,14 @@ export default {
     }
   },
   beforeUnmount() {
+    this.unsubKeyboardSession?.();
+    this.keyboardHintHistory?.dispose();
+    document.removeEventListener('focusin', this.updateKeyboardFocus);
+    document.removeEventListener('focusout', this.onKeyboardFocusOut);
+    document.removeEventListener('visibilitychange', this.updateKeyboardFocus);
+    window.removeEventListener('focus', this.updateKeyboardFocus);
+    window.removeEventListener('blur', this.updateKeyboardFocus);
+    window.removeEventListener('online', this.retryKeyboardHintSave);
     window.removeEventListener('keydown', this.onKey);
     window.removeEventListener('beforeunload', this.onBeforeUnload);
     this.unsubReviewSync?.();
@@ -355,6 +416,40 @@ export default {
     }
   },
   methods: {
+    resetKeyboardHintHistory(user) {
+      const userId = user?.supabaseUid || null;
+      if (userId === this.keyboardHintUserId) return;
+      this.keyboardHintHistory?.dispose();
+      this.keyboardHintUserId = userId;
+      this.questionHintDismissed = false;
+      this.answerHintVisible = false;
+      this.keyboardHintState = { ready: false, shortcutUsed: false, questionSeen: false, answerSeen: false };
+      if (!userId) { this.keyboardHintHistory = null; return; }
+      let storage;
+      try { storage = window.localStorage; } catch { /* Private browsing may disable storage. */ }
+      this.keyboardHintHistory = createKeyboardHintHistory({
+        userId, storage,
+        load: () => fetchKeyboardHintHistory(userId),
+        save: (flags) => saveKeyboardHintHistory(userId, flags),
+        onChange: (state) => { this.keyboardHintState = state; },
+      });
+      void this.keyboardHintHistory.hydrate();
+    },
+    updateKeyboardFocus() {
+      this.keyboardPageActive = document.visibilityState !== 'hidden' && document.hasFocus();
+      this.keyboardTyping = isTypingTarget(document.activeElement);
+    },
+    onKeyboardFocusOut() {
+      // focusout runs before the next active element has been assigned.
+      this.$nextTick(this.updateKeyboardFocus);
+    },
+    retryKeyboardHintSave() {
+      void this.keyboardHintHistory?.flush();
+    },
+    dismissKeyboardHint() {
+      if (this.showAnswer) this.answerHintVisible = false;
+      else this.questionHintDismissed = true;
+    },
     async leave() {
       if (this.leaving) return;
       this.leaving = true;
@@ -387,6 +482,7 @@ export default {
       this.shownAt = Date.now();
     },
     resetCardUi() {
+      this.answerHintVisible = false;
       this.showAnswer = false;
       this.writing = false;
       this.draftAnswer = '';
@@ -422,6 +518,7 @@ export default {
       this.showAnswer = true;
     },
     reveal() {
+      if (this.keyboardHintKind === 'question') this.questionHintDismissed = true;
       this.showAnswer = true;
       this.writing = false;
     },
@@ -480,17 +577,15 @@ export default {
       this.sessionStartedAt = Date.now();
     },
     onKey(event) {
-      if (this.done || this.limitReached || this.loading || !this.current || this.askAiOpen || this.writing || this.checkpointOpen) return;
-      const tag = event.target && event.target.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      if (event.code === 'Space' || event.key === ' ') {
-        event.preventDefault();
-        if (!this.showAnswer) this.reveal();
-        return;
-      }
-      if (!this.showAnswer) return;
-      const map = { Digit1: 'AGAIN', Digit2: 'HARD', Digit3: 'GOOD', Digit4: 'EASY' };
-      if (map[event.code]) this.answer(map[event.code]);
+      if (isKeyboardEvidence(event)) this.keyboardAvailable = true;
+      if (this.done || this.leaving || this.limitReached || this.loading || !this.current
+          || this.askAiOpen || this.writing || this.checkpointOpen) return;
+      const action = studyShortcutAction(event, this.showAnswer);
+      if (!action) return;
+      event.preventDefault();
+      this.keyboardHintHistory?.mark({ shortcutUsed: true });
+      if (action === 'reveal') this.reveal();
+      else this.answer(action);
     },
   },
 };

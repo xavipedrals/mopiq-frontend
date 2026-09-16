@@ -3,7 +3,8 @@ import { getDownloadURL, ref as storageRef } from 'firebase/storage';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, storage } from '../firebaseInit';
 import { getAccessToken, getCurrentUser } from '../auth/session';
-import { CARD_PAGE_SIZE, FETCH_PAGE_SIZE, MAX_REVIEW_DURATION_MS, PAGE_SIZE } from '../constants';
+import { FETCH_PAGE_SIZE, MAX_REVIEW_DURATION_MS, PAGE_SIZE } from '../constants';
+import { CARD_BROWSE_FIRST_PAGE, defaultCardBrowseQuery, toBrowseDeckCardsParams } from '../study/cardBrowse';
 import { ankiDayEndExclusive, ankiDayStart, ankiDayString, studyDayWireFields, toIso } from '../study/ankiDay';
 import { parseDeckConfig } from '../study/deckConfig';
 import { mapDisplayProfileRow, mergeHighestStats } from '../profile/mapProfile';
@@ -352,19 +353,63 @@ export async function fetchSeenCount(deckId) {
   return count || 0;
 }
 
-export async function fetchCardsPage(deckId, offset = 0, limit = CARD_PAGE_SIZE) {
-  const { data, error, count } = await supabase
-    .from('cards_static')
-    .select('id, question, answer, note_fields, position, has_image, has_audio, template_index, subdeck_id, note_id, note_guid, note_model_id, note_tags', { count: 'exact' })
-    .eq('deck_version_id', deckId)
-    .is('deleted_at', null)
-    .order('position', { ascending: true })
-    .range(offset, offset + limit - 1);
+export async function fetchCardsPage(
+  deckId,
+  offset = 0,
+  limit = CARD_BROWSE_FIRST_PAGE,
+  browse = defaultCardBrowseQuery(),
+) {
+  const { data, error } = await supabase.rpc(
+    'browse_deck_cards',
+    toBrowseDeckCardsParams(deckId, browse, offset, limit),
+  );
   throwIfError(error, 'Could not load cards');
+  const rows = data || [];
+  const cards = rows.map(mapStaticCard);
+  await attachBrowseCardMeta(deckId, cards);
   return {
-    cards: (data || []).map(mapStaticCard),
-    total: count || 0,
+    cards,
+    total: rows.length ? Number(rows[0].total_count) || rows.length : 0,
   };
+}
+
+async function attachBrowseCardMeta(deckId, cards) {
+  const ids = cards.map((card) => card.id).filter(Boolean);
+  if (!deckId || !ids.length) return cards;
+  try {
+    const [statesResult, timesResult] = await Promise.all([
+      supabase
+        .from('user_card_states')
+        .select('card_id, due_date, review_count, state')
+        .eq('deck_version_id', deckId)
+        .in('card_id', ids),
+      supabase
+        .from('cards_static')
+        .select('id, updated_at')
+        .eq('deck_version_id', deckId)
+        .in('id', ids),
+    ]);
+    const states = statesResult.error ? [] : (statesResult.data || []);
+    const times = timesResult.error ? [] : (timesResult.data || []);
+    const stateById = Object.fromEntries(states.map((row) => [row.card_id, row]));
+    const updatedById = Object.fromEntries(times.map((row) => [row.id, row.updated_at]));
+    for (const card of cards) {
+      const state = stateById[card.id];
+      if (state) {
+        card.state = state.state || 'NEW';
+        card.reviewCount = state.review_count || 0;
+        card.dueDate = state.due_date || null;
+      } else {
+        card.state = card.state || 'NEW';
+        card.reviewCount = card.reviewCount || 0;
+        if (card.dueDate === undefined) card.dueDate = null;
+      }
+      if (updatedById[card.id]) card.updatedAt = updatedById[card.id];
+    }
+  } catch {
+    // Browse still works without due/recent tags.
+  }
+  return cards;
 }
 
 export async function fetchAllStudyCards(deckId) {
@@ -414,6 +459,12 @@ function mapStaticCard(row) {
     noteGuid: row.note_guid || row.note_id || row.id,
     noteModelId: row.note_model_id || '0',
     tags: Array.isArray(row.note_tags) ? row.note_tags : (row.tags || []),
+    updatedAt: row.updated_at || null,
+    dueDate: Object.prototype.hasOwnProperty.call(row, 'due_date') ? row.due_date : undefined,
+    reviewCount: Object.prototype.hasOwnProperty.call(row, 'review_count')
+      ? Number(row.review_count) || 0
+      : undefined,
+    state: row.state || undefined,
   };
 }
 
@@ -582,6 +633,10 @@ export async function createDeckCard(deck, { front, back, position = null }) {
     noteGuid: noteId,
     noteModelId: '0',
     tags: [],
+    updatedAt: new Date().toISOString(),
+    dueDate: null,
+    reviewCount: 0,
+    state: 'NEW',
   };
 }
 
@@ -609,6 +664,7 @@ export async function updateDeckCard(deck, card, { front, back }) {
     question: frontHtml,
     answer: backHtml,
     noteFields: fields,
+    updatedAt: new Date().toISOString(),
   };
 }
 

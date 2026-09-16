@@ -84,6 +84,16 @@
   --stat-band-rule: #EDF1F6;
   --skeleton-bg: #E8EDF3;
   --skeleton-shine: rgba(255, 255, 255, 0.85);
+  --card-list-border: #CBD5E1;
+  --card-dash: #E2E8F0;
+  --tag-today-fg: #0EA5E9;
+  --tag-today-bg: #E0F2FE;
+  --tag-tomorrow-fg: #EAB308;
+  --tag-tomorrow-bg: #FEF9C3;
+  --tag-later-fg: #6366F1;
+  --tag-later-bg: #E0E7FF;
+  --tag-recent-fg: #65A30D;
+  --tag-recent-bg: #ECFCCB;
 }
 
 html[data-theme="dark"] body.app-shell {
@@ -170,6 +180,16 @@ html[data-theme="dark"] body.app-shell {
   --stat-band-rule: #475569;
   --skeleton-bg: #334155;
   --skeleton-shine: rgba(255, 255, 255, 0.12);
+  --card-list-border: #475569;
+  --card-dash: #475569;
+  --tag-today-fg: #38BDF8;
+  --tag-today-bg: #082F49;
+  --tag-tomorrow-fg: #FACC15;
+  --tag-tomorrow-bg: #422006;
+  --tag-later-fg: #818CF8;
+  --tag-later-bg: #1E1B4B;
+  --tag-recent-fg: #A3E635;
+  --tag-recent-bg: #1A2E05;
   color-scheme: dark;
 }
 
