@@ -24,6 +24,7 @@ describe('mapDisplayProfileRow', () => {
       joined_date: '2024-01-01T00:00:00Z',
       image_storage_path: 'users/x/a.png',
       locale: 'ja',
+      answer_feedback_position: 'bottom',
     }, {
       email: 'ada@example.com',
       firebaseId: 'fb',
@@ -36,6 +37,7 @@ describe('mapDisplayProfileRow', () => {
     assert.equal(profile.email, 'ada@example.com');
     assert.equal(profile.isPremium, false);
     assert.equal(profile.locale, 'ja');
+    assert.equal(profile.answerFeedbackPosition, 'bottom');
   });
 
   it('maps is_premium from get_user_profile', () => {

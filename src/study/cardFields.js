@@ -55,3 +55,28 @@ export function cardContainsImage(card) {
   const text = `${fields[0] || ''} ${fields[1] || ''} ${card?.question || ''} ${card?.answer || ''}`;
   return /<img\b/i.test(text);
 }
+
+export function cardSyncFields(card) {
+  if (Array.isArray(card?.noteFields) && card.noteFields.length) return card.noteFields.slice();
+  return [card?.question || '', card?.answer || ''];
+}
+
+export function extractMediaFilenames(card) {
+  const text = [
+    ...(Array.isArray(card?.noteFields) ? card.noteFields : []),
+    card?.question,
+    card?.answer,
+  ].filter(Boolean).join('\n');
+  const names = new Set();
+  for (const match of text.matchAll(/<img[^>]+src\s*=\s*["']([^"']+)["']/gi)) {
+    const src = String(match[1] || '');
+    if (/^https?:|^data:|^blob:/i.test(src)) continue;
+    const file = decodeURIComponent(src.split('/').pop() || '').trim();
+    if (file) names.add(file);
+  }
+  for (const match of text.matchAll(/\[sound:([^\]]+)\]/gi)) {
+    const file = String(match[1] || '').trim();
+    if (file) names.add(file);
+  }
+  return [...names];
+}

@@ -40,6 +40,19 @@
               <button
                 type="button"
                 role="radio"
+                :aria-checked="theme === 'system'"
+                :class="{ on: theme === 'system' }"
+                @click="setAppearance('system')"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="4" y="5" width="16" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M8 19h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                {{ $t('profile.system') }}
+              </button>
+              <button
+                type="button"
+                role="radio"
                 :aria-checked="theme === 'light'"
                 :class="{ on: theme === 'light' }"
                 @click="setAppearance('light')"
@@ -186,7 +199,7 @@ import { logout } from '../auth/session';
 import { getAvatarImageName } from '../utils';
 import { formatJoinedDate, formatStudiedTime, getLevelAndPercentage } from '../profile/experience';
 import { adoptFromProfileIfNeeded, localeForProfileSync, localeTag } from '../i18n';
-import { getTheme, setTheme } from '../theme/theme';
+import { getThemePreference, setThemePreference } from '../theme/theme';
 import { HELP_CENTER_URL } from '../constants';
 import { isDebugUnlimitedStudy, setDebugUnlimitedStudy } from '../debug/flags';
 
@@ -204,7 +217,7 @@ export default {
       logoutError: '',
       avatarFailed: false,
       settingsOpen: false,
-      theme: getTheme(),
+      theme: getThemePreference(),
       unlimitedStudyOn: isDebugUnlimitedStudy(),
       profile: {
         name: '',
@@ -264,7 +277,7 @@ export default {
     },
     setAppearance(theme) {
       this.theme = theme;
-      setTheme(theme);
+      setThemePreference(theme);
     },
     onUnlimitedStudyChange(event) {
       const enabled = event.target.checked;
@@ -456,7 +469,7 @@ h1 {
 }
 .theme-toggle {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 6px;
   background: var(--inset-bg);
   border-radius: 18px;

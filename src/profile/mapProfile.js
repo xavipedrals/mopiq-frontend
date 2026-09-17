@@ -23,6 +23,7 @@ export function mapDisplayProfileRow(row = {}, extras = {}) {
     imageStoragePath: row.image_storage_path || row.imageStoragePath || '',
     isPremium: row.is_premium === true || row.isPremium === true,
     locale: row.locale || extras.locale || '',
+    answerFeedbackPosition: row.answer_feedback_position || row.answerFeedbackPosition || '',
   };
 }
 
@@ -44,5 +45,6 @@ export function mergeHighestStats(base, other) {
     imageStoragePath: other.imageStoragePath || base.imageStoragePath,
     isPremium: Boolean(other.isPremium || base.isPremium),
     locale: base.locale || other.locale || '',
+    answerFeedbackPosition: base.answerFeedbackPosition || other.answerFeedbackPosition || '',
   };
 }

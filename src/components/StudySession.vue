@@ -34,7 +34,22 @@
             <div class="mix-seg mix-easy" :style="{ width: mixPercents.easy }"></div>
           </div>
         </div>
-        <span class="top-balance" aria-hidden="true"></span>
+        <StudyMenu
+          :show-timer="showTimer"
+          :appearance="appearancePreference"
+          :toast-position="toastPosition"
+          :can-report="canReport"
+          :disabled="leaving || loading || !current"
+          @toggle-timer="toggleTimer"
+          @set-appearance="setAppearance"
+          @set-toast="setToastPosition"
+          @move-card="openFolderPicker"
+          @move-to-deck="openDeckPicker"
+          @report="openReport"
+          @delete="openDelete"
+          @open-change="menuOpen = $event"
+        />
+        <div v-if="showTimer" class="timer-pill" aria-live="polite">{{ timerLabel }}</div>
       </div>
 
       <div v-if="saveError && !loading && !loadError" class="save-banner" role="alert">
@@ -50,7 +65,12 @@
         <button type="button" class="mopiq-btn" :disabled="leaving" @click="leave">{{ leaving ? $t('study.saving') : $t('study.backToDeck') }}</button>
       </div>
       <div v-else-if="current" class="board">
-        <div class="card-stage">
+        <div class="card-stage" :class="{ 'with-timer': showTimer }">
+          <StudyAnswerToast
+            v-if="feedbackEase && toastPosition !== 'hide'"
+            :ease="feedbackEase"
+            :position="toastPosition"
+          />
           <iframe
             class="card-frame"
             sandbox=""
@@ -159,13 +179,68 @@
         action-key="study.backToDeck"
         @dismiss="leave"
       />
+      <StudyPickerSheet
+        :open="folderPickerOpen"
+        :title="$t('study.moveToFolder')"
+        :subtitle="folderSubtitle"
+        :items="folderItems"
+        :selected-id="folderSelectedId"
+        :confirm-label="$t('study.moveCard')"
+        :busy="actionBusy"
+        :error="actionError"
+        @dismiss="folderPickerOpen = false"
+        @select="folderSelectedId = $event.id"
+        @confirm="confirmMoveToFolder"
+      />
+      <StudyPickerSheet
+        :open="deckPickerOpen"
+        :title="$t('study.moveToDeck')"
+        :empty-text="$t('study.noOtherDecks')"
+        :items="deckItems"
+        :busy="actionBusy"
+        :error="actionError"
+        @dismiss="deckPickerOpen = false"
+        @select="chooseTargetDeck"
+      />
+      <StudyPickerSheet
+        :open="targetFolderOpen"
+        :title="$t('study.moveToFolder')"
+        :items="targetFolderItems"
+        :selected-id="targetFolderSelectedId"
+        :confirm-label="$t('study.moveCard')"
+        :busy="actionBusy"
+        :error="actionError"
+        @dismiss="targetFolderOpen = false"
+        @select="targetFolderSelectedId = $event.id"
+        @confirm="confirmMoveToDeck"
+      />
+      <StudyReportSheet
+        :open="reportOpen"
+        :busy="actionBusy"
+        :error="actionError"
+        @dismiss="reportOpen = false"
+        @submit="submitReport"
+      />
+      <StudyConfirmSheet
+        :open="deleteOpen"
+        :title="$t('study.deleteTitle')"
+        :message="$t('study.deleteMessage')"
+        :confirm-label="$t('study.deleteCard')"
+        :busy="actionBusy"
+        :error="actionError"
+        @dismiss="deleteOpen = false"
+        @confirm="confirmDelete"
+      />
+      <div v-if="actionToast" class="action-toast" role="status">{{ actionToast }}</div>
     </div>
   </div>
 </template>
 
 <script>
-import { fetchAllStudyCards, fetchDeck, fetchFreeStudyQuota, fetchMediaMap, incrementFreeStudyQuota, submitReview } from '../api/mopiq';
+import { fetchAllStudyCards, fetchDeck, fetchDeckList, fetchFreeStudyQuota, fetchMediaMap, fetchUserProfile, incrementFreeStudyQuota, deleteDeckCard, moveCardToAnotherDeck, moveCardToSubdeck, submitReview, updateUserProfileAnswerFeedback } from '../api/mopiq';
+import { reportStudyCard } from '../api/reportCard';
 import { fetchKeyboardHintHistory, saveKeyboardHintHistory } from '../api/keyboardHints';
+import { cachedDeckList } from '../api/deckCache';
 import { onSessionChange } from '../auth/session';
 import { createKeyboardHintHistory, desktopKeyboardLikely, isKeyboardEvidence, isTypingTarget,
   studyShortcutAction, visibleKeyboardHint } from '../study/keyboardHints';
@@ -176,16 +251,36 @@ import { applyQuota, FREE_CARD_DAILY_LIMIT, isDailyLimitReached } from '../study
 import { applyAnswer, formatInterval, previewIntervals } from '../study/scheduler';
 import { buildStudyQueues, createStudyQueue } from '../study/queue';
 import { createReviewSyncQueue } from '../study/reviewSync';
-import { getTheme } from '../theme/theme';
+import { getTheme, getThemePreference, setThemePreference, subscribeTheme } from '../theme/theme';
 import {
   currentSlotIndex,
   emptyLast10,
   gradeCounts,
 } from '../study/sessionProgress';
+import {
+  formatStudyTimer,
+  hasLocalAnswerFeedbackPosition,
+  normalizeAnswerFeedbackPosition,
+  readAnswerFeedbackPosition,
+  readShowStudyTimer,
+  writeAnswerFeedbackPosition,
+  writeShowStudyTimer,
+} from '../study/answerFeedback';
+import {
+  folderById,
+  folderHasChildren,
+  parseDeckFolders,
+  rootFolderId,
+} from '../study/deckFolders';
 import AskAISheet from './AskAISheet.vue';
 import RobotLoader from './RobotLoader.vue';
+import StudyAnswerToast from './StudyAnswerToast.vue';
 import StudyCheckpoint from './StudyCheckpoint.vue';
+import StudyConfirmSheet from './StudyConfirmSheet.vue';
 import StudyLimitSheet from './StudyLimitSheet.vue';
+import StudyMenu from './StudyMenu.vue';
+import StudyPickerSheet from './StudyPickerSheet.vue';
+import StudyReportSheet from './StudyReportSheet.vue';
 
 const FACE_RING = 'M 10 20 C 4.486 20 0 15.514 0 10 C 0 4.486 4.486 0 10 0 C 15.514 0 20 4.486 20 10 C 20 15.514 15.514 20 10 20 Z M 10 1.25 C 5.175 1.25 1.25 5.175 1.25 10 C 1.25 14.825 5.175 18.75 10 18.75 C 14.825 18.75 18.75 14.825 18.75 10 C 18.75 5.175 14.825 1.25 10 1.25 Z';
 const FACE_EYES = 'M 13.125 8.75 C 12.436 8.75 11.875 8.189 11.875 7.5 C 11.875 6.811 12.436 6.25 13.125 6.25 C 13.814 6.25 14.375 6.811 14.375 7.5 C 14.375 8.189 13.814 8.75 13.125 8.75 Z M 6.875 8.75 C 6.186 8.75 5.625 8.189 5.625 7.5 C 5.625 6.811 6.186 6.25 6.875 6.25 C 7.564 6.25 8.125 6.811 8.125 7.5 C 8.125 8.189 7.564 8.75 6.875 8.75 Z';
@@ -215,7 +310,18 @@ const GRADE_BUTTONS = [
 
 export default {
   name: 'StudySessionPage',
-  components: { StudyKeyboardToast, AskAISheet, RobotLoader, StudyCheckpoint, StudyLimitSheet },
+  components: {
+    StudyKeyboardToast,
+    AskAISheet,
+    RobotLoader,
+    StudyCheckpoint,
+    StudyLimitSheet,
+    StudyMenu,
+    StudyAnswerToast,
+    StudyPickerSheet,
+    StudyReportSheet,
+    StudyConfirmSheet,
+  },
   data() {
     return {
       keyboardAvailable: false,
@@ -256,6 +362,31 @@ export default {
       sessionStartedAt: 0,
       reviewSync: null,
       unsubReviewSync: null,
+      unsubTheme: null,
+      timerTick: 0,
+      timerInterval: null,
+      feedbackEase: '',
+      feedbackTimer: null,
+      showTimer: false,
+      appearancePreference: 'light',
+      theme: 'light',
+      toastPosition: 'top',
+      menuOpen: false,
+      folderPickerOpen: false,
+      deckPickerOpen: false,
+      targetFolderOpen: false,
+      reportOpen: false,
+      deleteOpen: false,
+      actionBusy: false,
+      actionError: '',
+      actionToast: '',
+      actionToastTimer: null,
+      folders: [],
+      folderSelectedId: null,
+      otherDecks: [],
+      targetDeck: null,
+      targetFolders: [],
+      targetFolderSelectedId: null,
     };
   },
   computed: {
@@ -263,7 +394,8 @@ export default {
       return visibleKeyboardHint({
         ready: this.keyboardHintState.ready,
         active: this.keyboardPageActive && !this.loading && !this.leaving && !this.loadError
-          && !this.done && !!this.current && !this.limitReached && !this.askAiOpen && !this.checkpointOpen,
+          && !this.done && !!this.current && !this.limitReached && !this.askAiOpen && !this.checkpointOpen
+          && !this.menuOpen && !this.sheetOpen,
         keyboard: this.keyboardAvailable,
         typing: this.writing || this.keyboardTyping,
         showingAnswer: this.showAnswer,
@@ -279,14 +411,17 @@ export default {
       }));
     },
     studyScheme() {
-      return getTheme();
+      return this.theme;
     },
     currentSlot() {
       return currentSlotIndex(this.last10);
     },
     elapsedSeconds() {
       const running = this.sessionStartedAt ? Date.now() - this.sessionStartedAt : 0;
-      return Math.floor((this.sessionElapsedMs + running) / 1000);
+      return Math.floor((this.sessionElapsedMs + running) / 1000) + (this.timerTick * 0);
+    },
+    timerLabel() {
+      return formatStudyTimer(this.elapsedSeconds);
     },
     mixPercents() {
       const counts = gradeCounts(this.sessionAnswers);
@@ -307,7 +442,7 @@ export default {
     },
     shownHtml() {
       if (!this.current) return '';
-      const dark = getTheme() === 'dark';
+      const dark = this.theme === 'dark';
       const html = this.showAnswer
         ? backHtml(this.current, this.mediaMap, { dark })
         : frontHtml(this.current, this.mediaMap);
@@ -327,6 +462,32 @@ export default {
     },
     freeLimit() {
       return FREE_CARD_DAILY_LIMIT;
+    },
+    canReport() {
+      return Boolean(this.deck?.sharedDeckId);
+    },
+    sheetOpen() {
+      return this.folderPickerOpen || this.deckPickerOpen || this.targetFolderOpen
+        || this.reportOpen || this.deleteOpen;
+    },
+    folderItems() {
+      return this.folders;
+    },
+    folderSubtitle() {
+      const folder = folderById(this.folders, this.current?.subdeckId);
+      const name = folder?.fullPath || this.deck?.name || '';
+      return name ? this.$t('study.moveCardSubtitle', { folder: name.replace(/::/g, ' → ') }) : '';
+    },
+    deckItems() {
+      return this.otherDecks.map((deck) => ({
+        id: deck.id,
+        title: deck.name,
+        detail: this.$t('decks.cards', { count: deck.cardCount || 0 }),
+        icon: deck.topic?.imageName ? `/topics/${deck.topic.imageName}.svg` : '',
+      }));
+    },
+    targetFolderItems() {
+      return this.targetFolders;
     },
   },
   watch: {
@@ -361,6 +522,10 @@ export default {
     this.unsubReviewSync = this.reviewSync.subscribe((state) => {
       this.saveError = state.error;
     });
+    this.hydratePrefs();
+    this.unsubTheme = subscribeTheme((theme) => {
+      this.theme = theme;
+    });
     try {
       const deckId = this.$route.params.deckId;
       const studyDay = ankiDayString();
@@ -390,8 +555,11 @@ export default {
       for (const card of cards) this.queue.recordCard(card);
       this.uniqueTotal = built.uniqueCount || 0;
       this.showCheckpoints = deck.config.showCheckpoints !== false;
+      this.folders = parseDeckFolders(deck.decks, deck.name);
       this.nextCard();
       this.resumeTimer();
+      this.syncTimerTick();
+      void this.hydrateAnswerFeedbackFromProfile();
     } catch (error) {
       this.loadError = error.message || this.$t('study.startError');
     } finally {
@@ -410,12 +578,239 @@ export default {
     window.removeEventListener('keydown', this.onKey);
     window.removeEventListener('beforeunload', this.onBeforeUnload);
     this.unsubReviewSync?.();
+    this.unsubTheme?.();
+    this.clearFeedback();
+    this.clearActionToast();
+    this.stopTimerTick();
     this.pauseTimer();
     if (this.reviewSync?.pendingCount()) {
       void this.reviewSync.flush();
     }
   },
   methods: {
+    hydratePrefs() {
+      let storage;
+      try { storage = window.localStorage; } catch { /* Private browsing may disable storage. */ }
+      this.showTimer = readShowStudyTimer(storage);
+      this.toastPosition = readAnswerFeedbackPosition(storage);
+      this.appearancePreference = getThemePreference();
+      this.theme = getTheme();
+    },
+    async hydrateAnswerFeedbackFromProfile() {
+      if (hasLocalAnswerFeedbackPosition(this.prefsStorage())) return;
+      try {
+        const profile = await fetchUserProfile();
+        const remote = normalizeAnswerFeedbackPosition(profile.answerFeedbackPosition);
+        if (profile.answerFeedbackPosition) this.setToastPosition(remote, { sync: false });
+      } catch {
+        // Keep the local default.
+      }
+    },
+    prefsStorage() {
+      try { return window.localStorage; } catch { return null; }
+    },
+    toggleTimer() {
+      this.showTimer = writeShowStudyTimer(!this.showTimer, this.prefsStorage());
+      this.syncTimerTick();
+    },
+    setAppearance(preference) {
+      this.appearancePreference = preference;
+      setThemePreference(preference);
+      this.theme = getTheme();
+    },
+    setToastPosition(position, { sync = true } = {}) {
+      this.toastPosition = writeAnswerFeedbackPosition(position, this.prefsStorage());
+      if (sync) void updateUserProfileAnswerFeedback(this.toastPosition).catch(() => {});
+    },
+    syncTimerTick() {
+      this.stopTimerTick();
+      if (!this.showTimer) return;
+      this.timerTick += 1;
+      this.timerInterval = window.setInterval(() => {
+        this.timerTick += 1;
+      }, 1000);
+    },
+    stopTimerTick() {
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
+    },
+    showFeedback(ease) {
+      this.clearFeedback();
+      if (this.toastPosition === 'hide') return;
+      this.feedbackEase = ease;
+      this.feedbackTimer = window.setTimeout(() => {
+        this.feedbackEase = '';
+        this.feedbackTimer = null;
+      }, 900);
+    },
+    clearFeedback() {
+      if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
+      this.feedbackTimer = null;
+      this.feedbackEase = '';
+    },
+    showActionToast(text) {
+      this.clearActionToast();
+      this.actionToast = text;
+      this.actionToastTimer = window.setTimeout(() => {
+        this.actionToast = '';
+        this.actionToastTimer = null;
+      }, 2200);
+    },
+    clearActionToast() {
+      if (this.actionToastTimer) clearTimeout(this.actionToastTimer);
+      this.actionToastTimer = null;
+      this.actionToast = '';
+    },
+    closeActionSheets() {
+      this.folderPickerOpen = false;
+      this.deckPickerOpen = false;
+      this.targetFolderOpen = false;
+      this.reportOpen = false;
+      this.deleteOpen = false;
+      this.actionError = '';
+      this.actionBusy = false;
+    },
+    openReport() {
+      this.actionError = '';
+      this.reportOpen = true;
+    },
+    openDelete() {
+      this.actionError = '';
+      this.deleteOpen = true;
+    },
+    openFolderPicker() {
+      if (!this.current || !this.deck) return;
+      this.actionError = '';
+      this.folders = parseDeckFolders(this.deck.decks, this.deck.name);
+      this.folderSelectedId = folderById(this.folders, this.current.subdeckId)?.id
+        ?? rootFolderId(this.folders);
+      this.folderPickerOpen = true;
+    },
+    async confirmMoveToFolder() {
+      if (!this.current || !this.deck || this.actionBusy) return;
+      this.actionBusy = true;
+      this.actionError = '';
+      try {
+        await moveCardToSubdeck(this.deck, this.current, this.folderSelectedId);
+        this.current = { ...this.current, subdeckId: Number(this.folderSelectedId) || 0 };
+        this.folderPickerOpen = false;
+        this.showActionToast(this.$t('study.moved'));
+      } catch (error) {
+        this.actionError = error.message || this.$t('study.actionError');
+      } finally {
+        this.actionBusy = false;
+      }
+    },
+    async openDeckPicker() {
+      if (!this.current || !this.deck) return;
+      this.actionError = '';
+      let decks = cachedDeckList();
+      if (!decks) {
+        try {
+          decks = await fetchDeckList();
+        } catch (error) {
+          this.actionError = error.message || this.$t('study.actionError');
+          this.deckPickerOpen = true;
+          this.otherDecks = [];
+          return;
+        }
+      }
+      this.otherDecks = (decks || []).filter((deck) => (
+        deck.id !== this.deck.id && deck.canStudy && deck.canEdit !== false
+      ));
+      this.deckPickerOpen = true;
+    },
+    async chooseTargetDeck(item) {
+      const deck = this.otherDecks.find((row) => row.id === item.id);
+      if (!deck || this.actionBusy) return;
+      this.actionBusy = true;
+      this.actionError = '';
+      try {
+        const full = await fetchDeck(deck.id);
+        if (!full.canEdit) {
+          this.actionError = this.$t('study.actionError');
+          this.actionBusy = false;
+          return;
+        }
+        const folders = parseDeckFolders(full.decks, full.name);
+        this.targetDeck = full;
+        this.targetFolders = folders;
+        this.targetFolderSelectedId = rootFolderId(folders);
+        this.deckPickerOpen = false;
+        this.actionBusy = false;
+        if (folderHasChildren(folders)) {
+          this.targetFolderOpen = true;
+          return;
+        }
+        await this.performMoveToDeck(full, this.targetFolderSelectedId);
+      } catch (error) {
+        this.actionError = error.message || this.$t('study.actionError');
+        this.actionBusy = false;
+      }
+    },
+    async confirmMoveToDeck() {
+      if (!this.targetDeck) return;
+      await this.performMoveToDeck(this.targetDeck, this.targetFolderSelectedId);
+    },
+    async performMoveToDeck(targetDeck, subdeckId) {
+      if (!this.current || !this.deck || this.actionBusy) return;
+      this.actionBusy = true;
+      this.actionError = '';
+      try {
+        await moveCardToAnotherDeck(this.deck, this.current, targetDeck, subdeckId);
+        this.closeActionSheets();
+        this.showActionToast(this.$t('study.moved'));
+        this.advanceAfterRemovingCurrent();
+      } catch (error) {
+        this.actionError = error.message || this.$t('study.actionError');
+        if (!this.targetFolderOpen && !this.deckPickerOpen) {
+          this.showActionToast(this.actionError);
+        }
+      } finally {
+        this.actionBusy = false;
+      }
+    },
+    async confirmDelete() {
+      if (!this.current || !this.deck || this.actionBusy) return;
+      this.actionBusy = true;
+      this.actionError = '';
+      try {
+        await deleteDeckCard(this.deck, this.current);
+        this.deleteOpen = false;
+        this.showActionToast(this.$t('study.deleted'));
+        this.advanceAfterRemovingCurrent();
+      } catch (error) {
+        this.actionError = error.message || this.$t('study.actionError');
+      } finally {
+        this.actionBusy = false;
+      }
+    },
+    async submitReport({ reason, details }) {
+      if (!this.current || !this.deck?.sharedDeckId || this.actionBusy) return;
+      this.actionBusy = true;
+      this.actionError = '';
+      try {
+        await reportStudyCard({
+          sharedDeckId: this.deck.sharedDeckId,
+          localDeckId: this.deck.firebaseId || this.deck.id,
+          cardId: this.current.id,
+          reason,
+          details,
+        });
+        this.reportOpen = false;
+        this.showActionToast(this.$t('study.reportSent'));
+      } catch (error) {
+        this.actionError = error.message || this.$t('study.reportError');
+      } finally {
+        this.actionBusy = false;
+      }
+    },
+    advanceAfterRemovingCurrent() {
+      this.resetCardUi();
+      this.nextCard();
+    },
     resetKeyboardHintHistory(user) {
       const userId = user?.supabaseUid || null;
       if (userId === this.keyboardHintUserId) return;
@@ -530,6 +925,7 @@ export default {
       const updated = applyAnswer(previous, ease, this.deck.config);
       this.queue.afterAnswer(previous, updated);
       this.recordSessionAnswer(ease);
+      this.showFeedback(ease);
       this.reviewSync.enqueue({
         deckId: this.deck.id,
         card: updated,
@@ -579,7 +975,7 @@ export default {
     onKey(event) {
       if (isKeyboardEvidence(event)) this.keyboardAvailable = true;
       if (this.done || this.leaving || this.limitReached || this.loading || !this.current
-          || this.askAiOpen || this.writing || this.checkpointOpen) return;
+          || this.askAiOpen || this.writing || this.checkpointOpen || this.menuOpen || this.sheetOpen) return;
       const action = studyShortcutAction(event, this.showAnswer);
       if (!action) return;
       event.preventDefault();
@@ -605,14 +1001,14 @@ export default {
   padding-bottom: 20px;
 }
 .top {
+  position: relative;
   display: flex;
   align-items: center;
   height: 60px;
   padding: 0;
   overflow: visible;
 }
-.study-close,
-.top-balance {
+.study-close {
   flex: 0 0 44px;
   width: 44px;
   height: 44px;
@@ -663,6 +1059,42 @@ export default {
   justify-content: center;
   min-width: 0;
   overflow: visible;
+}
+.timer-pill {
+  position: absolute;
+  left: 50%;
+  bottom: -18px;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--inset-bg);
+  border: 1px solid var(--empty-bar);
+  color: var(--title);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  pointer-events: none;
+}
+.action-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 95;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 650;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.28);
+  pointer-events: none;
+}
+:global([data-theme='dark']) .action-toast {
+  background: #f8fafc;
+  color: #0f172a;
 }
 .last10 {
   display: flex;
@@ -761,6 +1193,9 @@ export default {
   position: relative;
   flex: 1 1 auto;
   min-height: 240px;
+}
+.card-stage.with-timer .card-frame {
+  top: 28px;
 }
 .card-frame {
   position: absolute;

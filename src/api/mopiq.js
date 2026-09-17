@@ -17,8 +17,9 @@ import {
   localeForProfileSync,
 } from '../i18n';
 import { applyDeckSettings } from '../study/deckSettings';
-import { editorTextToHtml, replaceFrontBackFields } from '../study/cardFields';
+import { cardSyncFields, editorTextToHtml, extractMediaFilenames, replaceFrontBackFields } from '../study/cardFields';
 import { todayStatsFromCounts } from '../study/deckStats';
+import { sharedDeckIdFromExtra } from '../study/deckFolders';
 
 function throwIfError(error, fallback) {
   if (error) {
@@ -149,7 +150,7 @@ export async function fetchDeckList() {
     const chunk = ids.slice(i, i + 50);
     const { data, error } = await supabase
       .from('deck_versions')
-      .select('id, name, topic, card_count, extra_config, created_at, content_mode, content_mode_2, last_used_at')
+      .select('id, name, topic, card_count, extra_config, created_at, content_mode, content_mode_2, last_used_at, creator_id')
       .in('id', chunk);
     throwIfError(error, 'Could not load deck names');
     for (const row of data || []) {
@@ -175,6 +176,9 @@ export async function fetchDeckList() {
       extraConfig: meta.extra_config || {},
       contentMode: mode,
       canStudy: isPostgresDeck(mode),
+      canEdit: isPostgresDeck(mode) && (
+        !meta.creator_id || meta.creator_id === getCurrentUser()?.supabaseUid
+      ),
       statsAvailable: Boolean(row.stats_available),
       newRemainingToday: Number(row.new_remaining_today) || 0,
       reviewDueToday: Number(row.review_due_today) || 0,
@@ -186,18 +190,21 @@ export async function fetchDeckList() {
 export async function fetchDeck(deckId) {
   const { data, error } = await supabase
     .from('deck_versions')
-    .select('id, name, topic, card_count, extra_config, created_at, content_mode, content_mode_2, last_used_at, firebase_id, creator_id')
+    .select('id, name, topic, card_count, extra_config, decks, created_at, content_mode, content_mode_2, last_used_at, firebase_id, creator_id')
     .eq('id', deckId)
     .maybeSingle();
   throwIfError(error, 'Could not load this deck');
   if (!data) throw new Error('Deck not found');
   const mode = effectiveContentMode(data);
+  const extraConfig = data.extra_config || {};
   return cacheDeck({
     id: data.id,
     name: data.name || 'Untitled deck',
     topic: getDeckTopicByPostgresId(data.topic),
     cardCount: data.card_count || 0,
-    extraConfig: data.extra_config || {},
+    extraConfig,
+    decks: data.decks || {},
+    sharedDeckId: sharedDeckIdFromExtra(extraConfig),
     createdAt: data.created_at,
     lastUsedAt: data.last_used_at,
     firebaseId: data.firebase_id || '',
@@ -417,7 +424,7 @@ export async function fetchAllStudyCards(deckId) {
     fetchAllPages(async (offset, limit) => {
       const { data, error } = await supabase
         .from('cards_static')
-        .select('id, question, answer, note_fields, position, has_image, has_audio, template_index, subdeck_id, deleted_at')
+        .select('id, question, answer, note_fields, position, has_image, has_audio, template_index, subdeck_id, deleted_at, note_id, note_guid, note_model_id, note_tags, updated_at')
         .eq('deck_version_id', deckId)
         .is('deleted_at', null)
         .order('position', { ascending: true })
@@ -820,6 +827,105 @@ async function fetchFirebaseDisplayProfile(sessionUser, firebaseId) {
     sessionUser,
     firebaseId,
   });
+}
+
+function cardMutationPayload(deck, card, extras = {}) {
+  const fields = cardSyncFields(card);
+  return {
+    deckId: deck.id,
+    cardId: card.id,
+    fields,
+    noteId: card.noteId || card.id,
+    noteGuid: card.noteGuid || card.noteId || card.id,
+    question: card.question || fields[0] || '',
+    answer: card.answer || fields[1] || '',
+    subdeckId: Number(extras.subdeckId ?? card.subdeckId) || 0,
+    tags: card.tags || [],
+    noteModelId: String(card.noteModelId || '0'),
+    templateIndex: card.templateIndex || 0,
+    position: card.position || 0,
+    hasImage: Boolean(card.hasImage),
+    hasAudio: Boolean(card.hasAudio),
+    updatedAt: new Date().toISOString(),
+    ...extras.payload,
+  };
+}
+
+export async function deleteDeckCard(deck, card) {
+  await invokeBulkSync([
+    bulkOp(1, 'card', 'delete', card.id, {
+      deckId: deck.id,
+      cardId: card.id,
+      updatedAt: new Date().toISOString(),
+    }),
+  ], 'Could not delete this card');
+}
+
+export async function moveCardToSubdeck(deck, card, subdeckId) {
+  await invokeBulkSync([
+    bulkOp(1, 'card', 'update', card.id, {
+      ...cardMutationPayload(deck, card, { subdeckId, payload: { mutationScope: 'card' } }),
+    }),
+  ], 'Could not move this card');
+}
+
+async function copyCardMedia(sourceDeck, targetDeck, sourceCard, targetCardId) {
+  const filenames = extractMediaFilenames(sourceCard);
+  if (!filenames.length) return;
+  const { data, error } = await supabase
+    .from('deck_version_media')
+    .select('file_name, media_type, storage_path')
+    .eq('deck_version_id', sourceDeck.id)
+    .is('deleted_at', null)
+    .in('file_name', filenames);
+  throwIfError(error, 'Could not copy card media');
+  const rows = data || [];
+  await Promise.all(rows.map(async (row) => {
+    if (!row.file_name) return;
+    const { error: insertError } = await supabase.rpc('insert_deck_version_media_for_caller', {
+      p_card_id: targetCardId,
+      p_deck_version_id: targetDeck.id,
+      p_media_type: row.media_type || (sourceCard.hasAudio && !sourceCard.hasImage ? 'audio' : 'image'),
+      p_file_name: row.file_name,
+      p_storage_path: row.storage_path || null,
+    });
+    throwIfError(insertError, 'Could not copy card media');
+  }));
+}
+
+export async function moveCardToAnotherDeck(sourceDeck, card, targetDeck, targetSubdeckId) {
+  const newCardId = crypto.randomUUID();
+  const newNoteId = crypto.randomUUID();
+  const payload = cardMutationPayload(sourceDeck, card, { subdeckId: targetSubdeckId });
+  await invokeBulkSync([
+    bulkOp(1, 'card', 'create', newCardId, {
+      ...payload,
+      deckId: targetDeck.id,
+      cardId: newCardId,
+      noteId: newNoteId,
+      noteGuid: newNoteId,
+      position: null,
+    }),
+    bulkOp(2, 'card', 'delete', card.id, {
+      deckId: sourceDeck.id,
+      cardId: card.id,
+      updatedAt: payload.updatedAt,
+    }),
+  ], 'Could not move this card');
+  try {
+    await copyCardMedia(sourceDeck, targetDeck, card, newCardId);
+  } catch {
+    // The card itself already moved; media can be recopied from the app.
+  }
+}
+
+export async function updateUserProfileAnswerFeedback(position) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user?.id;
+  if (!userId) return;
+  await invokeBulkSync([
+    bulkOp(1, 'userProfile', 'update', userId, { answerFeedbackPosition: position }),
+  ], 'Could not save answer toast');
 }
 
 export async function updateUserProfileLocale(locale) {

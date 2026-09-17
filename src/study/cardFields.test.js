@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { cardContainsImage, editorTextToHtml, htmlToEditorText, replaceFrontBackFields } from './cardFields.js';
+import {
+  cardContainsImage,
+  cardSyncFields,
+  editorTextToHtml,
+  extractMediaFilenames,
+  htmlToEditorText,
+  replaceFrontBackFields,
+} from './cardFields.js';
 
 describe('card field round-trip', () => {
   it('wraps plain text as paragraphs', () => {
@@ -32,5 +39,24 @@ describe('cardContainsImage', () => {
     assert.equal(cardContainsImage({ hasImage: true, question: 'Q', answer: 'A' }), true);
     assert.equal(cardContainsImage({ question: '<img src="x.png">', answer: 'A' }), true);
     assert.equal(cardContainsImage({ question: 'Q', answer: 'A' }), false);
+  });
+});
+
+describe('cardSyncFields', () => {
+  it('prefers note fields and falls back to question and answer', () => {
+    assert.deepEqual(cardSyncFields({ noteFields: ['Q', 'A', 'extra'] }), ['Q', 'A', 'extra']);
+    assert.deepEqual(cardSyncFields({ question: 'Front', answer: 'Back' }), ['Front', 'Back']);
+  });
+});
+
+describe('extractMediaFilenames', () => {
+  it('collects local image and sound filenames', () => {
+    assert.deepEqual(
+      extractMediaFilenames({
+        noteFields: ['<img src="cell.png">', '[sound:voice.mp3]'],
+        question: '<img src="https://example.com/skip.png">',
+      }),
+      ['cell.png', 'voice.mp3'],
+    );
   });
 });
