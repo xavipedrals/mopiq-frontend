@@ -27,6 +27,17 @@ export function cacheDeck(deck) {
   return deck;
 }
 
+/** Put a newly created deck at the top of My decks without waiting for a refetch. */
+export function prependCachedDeck(deck) {
+  if (!deck?.id) return deck;
+  const cached = cacheDeck(deck);
+  const id = String(deck.id);
+  listStatsById.set(id, { ...(listStatsById.get(id) || {}), ...cached });
+  const rest = (listOrder || []).filter((existing) => existing !== id);
+  listOrder = [id, ...rest];
+  return cached;
+}
+
 export function cachedDeck(deckId) {
   return deckById.get(String(deckId)) || null;
 }

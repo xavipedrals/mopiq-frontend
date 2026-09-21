@@ -7,6 +7,7 @@ import {
   cachedDeckList,
   cachedDeckStats,
   clearDeckCache,
+  prependCachedDeck,
 } from './deckCache.js';
 
 describe('deckCache', () => {
@@ -61,5 +62,12 @@ describe('deckCache', () => {
   it('looks up by string even when ids arrive as numbers', () => {
     cacheDeck({ id: 7, name: 'Seven' });
     assert.equal(cachedDeck('7').name, 'Seven');
+  });
+
+  it('puts a created deck first in the list', () => {
+    cacheDeckList([{ id: 'a', name: 'Older' }]);
+    prependCachedDeck({ id: 'b', name: 'Brand new', cardCount: 0 });
+    assert.deepEqual(cachedDeckList().map((deck) => deck.id), ['b', 'a']);
+    assert.equal(cachedDeckStats('b').cardCount, 0);
   });
 });

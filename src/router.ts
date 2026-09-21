@@ -6,7 +6,8 @@ import SharedDeck from './components/SharedDeck.vue';
 import NotFound from './components/404.vue';
 import TermsOfService from './components/TermsOfService.vue';
 import PrivacyPolicy from './components/PrivacyPolicy.vue';
-import DecksPage from './components/Decks.vue';
+import AppSplit from './components/AppSplit.vue';
+import DeckPlaceholder from './components/DeckPlaceholder.vue';
 import DeckDetailPage from './components/DeckDetail.vue';
 import StudySessionPage from './components/StudySession.vue';
 import QuizSessionPage from './components/QuizSession.vue';
@@ -25,11 +26,50 @@ const routes: RouteRecordRaw[] = [
       query: { login: '1', ...(typeof to.query.next === 'string' ? { next: to.query.next } : {}) },
     }),
   },
-  { path: '/decks', component: DecksPage, meta: { requiresAuth: true, appShell: true } },
-  { path: '/decks/:deckId', component: DeckDetailPage, meta: { requiresAuth: true, appShell: true } },
   { path: '/decks/:deckId/study', component: StudySessionPage, meta: { requiresAuth: true, appShell: true } },
   { path: '/decks/:deckId/quiz', component: QuizSessionPage, meta: { requiresAuth: true, appShell: true } },
-  { path: '/profile', component: ProfilePage, meta: { requiresAuth: true, appShell: true } },
+  {
+    path: '/decks',
+    component: AppSplit,
+    meta: { requiresAuth: true, appShell: true },
+    children: [
+      { path: '', name: 'decks', component: DeckPlaceholder },
+      { path: ':deckId', name: 'deck-detail', component: DeckDetailPage },
+    ],
+  },
+  {
+    path: '/profile',
+    component: AppSplit,
+    meta: { requiresAuth: true, appShell: true },
+    children: [
+      { path: '', name: 'profile', component: ProfilePage },
+    ],
+  },
+  {
+    path: '/library',
+    component: AppSplit,
+    meta: { requiresAuth: true, appShell: true },
+    children: [
+      { path: '', name: 'library', component: DeckPlaceholder },
+    ],
+  },
+  ...(import.meta.env.DEV ? [
+    {
+      path: '/dev/deck-detail',
+      component: DeckDetailPage,
+      meta: { appShell: true, preview: true },
+    },
+    {
+      path: '/dev/split',
+      component: AppSplit,
+      meta: { appShell: true, preview: true },
+      children: [
+        { path: '', component: DeckPlaceholder },
+        { path: 'library', component: DeckPlaceholder },
+        { path: ':deckId', component: DeckDetailPage, meta: { preview: true } },
+      ],
+    },
+  ] : []),
   { path: '/terms', component: TermsOfService },
   { path: '/privacy', component: PrivacyPolicy },
   {

@@ -36,13 +36,17 @@
         </div>
         <StudyMenu
           :show-timer="showTimer"
+          :show-keycaps="showKeycaps"
+          :can-toggle-keyboard="keyboardAvailable"
           :appearance="appearancePreference"
           :toast-position="toastPosition"
           :can-report="canReport"
           :disabled="leaving || loading || !current"
           @toggle-timer="toggleTimer"
+          @toggle-keycaps="toggleKeycaps"
           @set-appearance="setAppearance"
           @set-toast="setToastPosition"
+          @edit="openEdit"
           @move-card="openFolderPicker"
           @move-to-deck="openDeckPicker"
           @report="openReport"
@@ -113,6 +117,7 @@
                 {{ $t('study.previous') }}
               </button>
               <button type="button" class="show-answer" @click="reveal">
+                <span v-if="showsKeycaps" class="keycap">{{ $t('study.keyboardSpace') }}</span>
                 <svg class="eye" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
                   <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/>
@@ -139,6 +144,7 @@
                   :class="grade.className"
                   @click="answer(grade.ease)"
                 >
+                  <span v-if="showsKeycaps" class="keycap">{{ grade.digit }}</span>
                   <svg class="face" viewBox="0 0 20 20" aria-hidden="true">
                     <path fill-rule="evenodd" :d="grade.icon"/>
                   </svg>
@@ -231,6 +237,13 @@
         @dismiss="deleteOpen = false"
         @confirm="confirmDelete"
       />
+      <CardEditor
+        :open="editorOpen"
+        :deck="deck"
+        :card="current"
+        @dismiss="editorOpen = false"
+        @saved="onCardEdited"
+      />
       <div v-if="actionToast" class="action-toast" role="status">{{ actionToast }}</div>
     </div>
   </div>
@@ -243,7 +256,7 @@ import { fetchKeyboardHintHistory, saveKeyboardHintHistory } from '../api/keyboa
 import { cachedDeckList } from '../api/deckCache';
 import { onSessionChange } from '../auth/session';
 import { createKeyboardHintHistory, desktopKeyboardLikely, isKeyboardEvidence, isTypingTarget,
-  studyShortcutAction, visibleKeyboardHint } from '../study/keyboardHints';
+  readShowStudyKeycaps, studyShortcutAction, visibleKeyboardHint, writeShowStudyKeycaps } from '../study/keyboardHints';
 import StudyKeyboardToast from './StudyKeyboardToast.vue';
 import { ankiDayString } from '../study/ankiDay';
 import { backHtml, cardDocument, cardPlainText, frontHtml } from '../study/cardHtml';
@@ -272,7 +285,9 @@ import {
   parseDeckFolders,
   rootFolderId,
 } from '../study/deckFolders';
+import { cardEditableOnWeb } from '../study/cardFields';
 import AskAISheet from './AskAISheet.vue';
+import CardEditor from './CardEditor.vue';
 import RobotLoader from './RobotLoader.vue';
 import StudyAnswerToast from './StudyAnswerToast.vue';
 import StudyCheckpoint from './StudyCheckpoint.vue';
@@ -288,21 +303,25 @@ const FACE_EYES = 'M 13.125 8.75 C 12.436 8.75 11.875 8.189 11.875 7.5 C 11.875 
 const GRADE_BUTTONS = [
   {
     ease: 'AGAIN',
+    digit: '1',
     className: 'again',
     icon: `${FACE_RING} M 14.934 13.471 C 14.876 13.354 13.472 10.625 10 10.625 C 6.529 10.625 5.124 13.354 5.066 13.47 C 4.912 13.778 5.037 14.151 5.343 14.306 C 5.651 14.461 6.026 14.338 6.183 14.032 C 6.228 13.944 7.319 11.875 10 11.875 C 12.681 11.875 13.772 13.944 13.816 14.03 C 13.925 14.249 14.146 14.375 14.376 14.375 C 14.469 14.375 14.565 14.354 14.655 14.309 C 14.963 14.155 15.089 13.779 14.934 13.471 Z ${FACE_EYES}`,
   },
   {
     ease: 'HARD',
+    digit: '2',
     className: 'hard',
     icon: `${FACE_RING} ${FACE_EYES} M 14.375 13.125 C 14.375 12.78 14.095 12.5 13.75 12.5 L 6.25 12.5 C 5.905 12.5 5.625 12.78 5.625 13.125 C 5.625 13.47 5.905 13.75 6.25 13.75 L 13.75 13.75 C 14.095 13.75 14.375 13.47 14.375 13.125 Z`,
   },
   {
     ease: 'GOOD',
+    digit: '3',
     className: 'good',
     icon: `${FACE_RING} M 15.559 12.155 C 15.713 11.847 15.589 11.476 15.283 11.32 C 14.976 11.165 14.601 11.287 14.443 11.592 C 14.397 11.68 13.287 13.75 10 13.75 C 6.721 13.75 5.608 11.69 5.557 11.593 C 5.403 11.285 5.028 11.161 4.72 11.316 C 4.412 11.47 4.287 11.846 4.441 12.155 C 4.499 12.271 5.911 15 10 15 C 14.089 15 15.501 12.271 15.559 12.155 Z ${FACE_EYES}`,
   },
   {
     ease: 'EASY',
+    digit: '4',
     className: 'easy',
     icon: `${FACE_RING} M 15.559 12.155 C 15.713 11.847 15.589 11.476 15.283 11.32 C 14.976 11.165 13.287 11.32 10 11.32 C 6.721 11.32 5.028 11.161 4.72 11.316 C 4.412 11.47 4.287 11.846 4.441 12.155 C 4.499 12.271 5.911 16.45 10 16.45 C 14.089 16.45 15.501 12.271 15.559 12.155 Z ${FACE_EYES}`,
   },
@@ -311,6 +330,7 @@ const GRADE_BUTTONS = [
 export default {
   name: 'StudySessionPage',
   components: {
+    CardEditor,
     StudyKeyboardToast,
     AskAISheet,
     RobotLoader,
@@ -368,6 +388,7 @@ export default {
       feedbackEase: '',
       feedbackTimer: null,
       showTimer: false,
+      showKeycaps: true,
       appearancePreference: 'light',
       theme: 'light',
       toastPosition: 'top',
@@ -377,6 +398,7 @@ export default {
       targetFolderOpen: false,
       reportOpen: false,
       deleteOpen: false,
+      editorOpen: false,
       actionBusy: false,
       actionError: '',
       actionToast: '',
@@ -466,9 +488,12 @@ export default {
     canReport() {
       return Boolean(this.deck?.sharedDeckId);
     },
+    showsKeycaps() {
+      return this.showKeycaps && this.keyboardAvailable && !this.writing && !this.keyboardTyping;
+    },
     sheetOpen() {
       return this.folderPickerOpen || this.deckPickerOpen || this.targetFolderOpen
-        || this.reportOpen || this.deleteOpen;
+        || this.reportOpen || this.deleteOpen || this.editorOpen;
     },
     folderItems() {
       return this.folders;
@@ -592,6 +617,7 @@ export default {
       let storage;
       try { storage = window.localStorage; } catch { /* Private browsing may disable storage. */ }
       this.showTimer = readShowStudyTimer(storage);
+      this.showKeycaps = readShowStudyKeycaps(storage);
       this.toastPosition = readAnswerFeedbackPosition(storage);
       this.appearancePreference = getThemePreference();
       this.theme = getTheme();
@@ -612,6 +638,26 @@ export default {
     toggleTimer() {
       this.showTimer = writeShowStudyTimer(!this.showTimer, this.prefsStorage());
       this.syncTimerTick();
+    },
+    toggleKeycaps() {
+      this.showKeycaps = writeShowStudyKeycaps(!this.showKeycaps, this.prefsStorage());
+    },
+    openEdit() {
+      if (!this.current || !this.deck) return;
+      if (!this.deck.canEdit || !cardEditableOnWeb(this.current)) {
+        this.showActionToast(this.$t('study.editLocked'));
+        return;
+      }
+      this.editorOpen = true;
+    },
+    async onCardEdited({ card, keepOpen }) {
+      if (!card) return;
+      this.current = { ...this.current, ...card };
+      this.queue?.recordCard?.(this.current);
+      if (this.deck?.id) {
+        this.mediaMap = await fetchMediaMap(this.deck.id).catch(() => this.mediaMap);
+      }
+      if (!keepOpen) this.editorOpen = false;
     },
     setAppearance(preference) {
       this.appearancePreference = preference;
@@ -1289,6 +1335,7 @@ export default {
   text-align: center;
 }
 .show-answer {
+  position: relative;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
@@ -1304,6 +1351,28 @@ export default {
   padding: 14px 16px !important;
 }
 .show-answer:hover { background: var(--inset-bg) !important; }
+.keycap {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 1;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 2px 0 color-mix(in srgb, currentColor 16%, transparent);
+  color: #202b3b;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 23px;
+  pointer-events: none;
+}
+.grade .keycap {
+  top: 8px;
+  right: 8px;
+  padding: 0 7px;
+}
 .ask-ai-btn {
   display: inline-flex !important;
   align-items: center;
@@ -1352,6 +1421,7 @@ export default {
   line-height: 18px;
 }
 .grade {
+  position: relative;
   display: flex !important;
   flex-direction: column;
   align-items: center;

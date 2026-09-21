@@ -1,29 +1,61 @@
 <template>
-  <div class="shell">
-    <div class="container-xl">
-      <AppHeader />
+  <div class="detail-page">
       <p v-if="error" class="error">{{ error }}</p>
       <div v-else class="detail" :aria-busy="pending">
-        <router-link to="/decks" class="back">{{ $t('deck.back') }}</router-link>
+        <div class="topbar">
+          <router-link :to="listTo" class="back">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            {{ $t('decks.title') }}
+          </router-link>
+          <div class="tools">
+            <button
+              v-if="cardsVisible"
+              type="button"
+              class="tool"
+              :aria-label="$t('deck.searchCards')"
+              @click="focusSearch"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 16l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button
+              v-if="deck?.canEdit"
+              type="button"
+              class="tool"
+              :aria-label="$t('deck.settings')"
+              @click="settingsOpen = true"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 3.5v2.2M12 18.3v2.2M4.9 6.4l1.6 1.6M17.5 16l1.6 1.6M3.5 12h2.2M18.3 12h2.2M4.9 17.6l1.6-1.6M17.5 8l1.6-1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button
+              v-if="deck?.canEdit"
+              type="button"
+              class="tool add"
+              @click="openAddCard"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>
+              <span class="add-label">{{ $t('deck.addCards') }}</span>
+            </button>
+          </div>
+        </div>
         <div class="hero">
-          <div class="hero-text">
-            <template v-if="deck">
-              <div class="topic" :style="{ color: deck.topic.color }">{{ $topic(deck.topic) }}</div>
-              <h1>{{ deck.name }}</h1>
-            </template>
-            <template v-else>
-              <SkeletonBlock class="topic-line" w="96px" h="0.72rem" radius="5px" />
-              <SkeletonBlock class="title-line" w="min(340px, 80%)" h="2rem" radius="10px" />
-            </template>
-            <p class="sub">
-              <SkeletonBlock v-if="subPending" w="min(200px, 60%)" h="1rem" radius="6px" />
-              <template v-else>{{ $t('deck.studiedOf', { seen: seenCount, total: deck.cardCount }) }}</template>
-            </p>
-          </div>
-          <div v-if="deck" class="icon" :style="{ background: deck.topic.backgroundColor }">
-            <img :src="`/topics/${deck.topic.imageName}.svg`" alt="">
-          </div>
-          <SkeletonBlock v-else w="72px" h="72px" radius="16px" />
+          <template v-if="deck">
+            <h1>{{ deck.name }}</h1>
+          </template>
+          <SkeletonBlock v-else class="title-line" w="min(340px, 80%)" h="1.5rem" radius="8px" />
+          <p class="sub">
+            <SkeletonBlock v-if="subPending" w="min(200px, 60%)" h="1rem" radius="6px" />
+            <template v-else>{{ $t('deck.studiedOf', { seen: seenCount, total: deck.cardCount }) }}</template>
+          </p>
         </div>
 
         <DeckStats
@@ -34,43 +66,47 @@
           :stats-pending="statsPending"
           :grade-pending="gradePending"
           :time-pending="timePending"
-        />
+        >
+          <template #study>
+            <div v-if="!deck" class="study-wrap">
+              <SkeletonBlock w="100%" h="64px" radius="20px" />
+            </div>
+            <div v-else-if="deck.canStudy" class="study-wrap">
+              <button
+                type="button"
+                class="mopiq-btn study-btn"
+                :disabled="startingStudy"
+                @click="openStudySheet"
+              >
+                {{ $t('deck.study') }}
+              </button>
+            </div>
+            <div v-else class="app-only">
+              <h2>{{ $t('deck.appOnlyTitle') }}</h2>
+              <p>{{ $t('deck.appOnlyBody') }}</p>
+              <a :href="storeUrl" target="_blank" rel="noopener">
+                <button type="button" class="mopiq-btn">{{ $t('deck.downloadApp') }}</button>
+              </a>
+            </div>
+          </template>
+        </DeckStats>
 
-        <div v-if="!deck" class="actions">
-          <SkeletonBlock w="150px" h="49px" radius="999px" />
-          <SkeletonBlock w="128px" h="49px" radius="999px" />
-        </div>
-        <div v-else-if="deck.canStudy || deck.canEdit" class="actions">
-          <button v-if="deck.canStudy" type="button" class="mopiq-btn" :disabled="startingStudy" @click="startStudy">
-            {{ $t('deck.study') }}
-          </button>
-          <button v-if="deck.canStudy" type="button" class="mopiq-btn secondary" @click="quizOpen = true">
-            {{ $t('deck.quiz') }}
-          </button>
-          <button v-if="deck.canEdit" type="button" class="mopiq-btn secondary" @click="settingsOpen = true">
-            {{ $t('deck.settings') }}
-          </button>
-          <button v-if="deck.canEdit" type="button" class="mopiq-btn secondary" @click="openAddCard">
-            {{ $t('deck.addCard') }}
-          </button>
-        </div>
-        <div v-if="deck && !deck.canStudy" class="app-only">
-          <h2>{{ $t('deck.appOnlyTitle') }}</h2>
-          <p>{{ $t('deck.appOnlyBody') }}</p>
-          <a :href="storeUrl" target="_blank" rel="noopener">
-            <button type="button" class="mopiq-btn">{{ $t('deck.downloadApp') }}</button>
-          </a>
-        </div>
-
-        <p v-if="deckPending" class="cta">
-          <SkeletonBlock w="min(480px, 92%)" h="1rem" radius="6px" />
-        </p>
-        <p v-else class="cta" v-html="ctaHtml"></p>
-
-        <section v-if="cardsVisible" class="cards">
-          <h2>{{ $t('deck.cards') }}</h2>
+        <section v-if="cardsVisible" ref="cardsSection" class="cards">
+          <div class="cards-head">
+            <h2>{{ $t('deck.allCards', { count: deck ? deck.cardCount : '—' }) }}</h2>
+            <button
+              type="button"
+              class="view-all"
+              :class="{ active: hasActiveFilters }"
+              :aria-pressed="hasActiveFilters"
+              @click="filtersOpen = true"
+            >
+              {{ $t('deck.filterSort') }}
+            </button>
+          </div>
           <div class="browse-bar">
             <input
+              ref="searchInput"
               v-model="searchText"
               type="search"
               class="browse-search"
@@ -79,15 +115,6 @@
               autocapitalize="none"
               spellcheck="false"
             >
-            <button
-              type="button"
-              class="mopiq-btn secondary filter-btn"
-              :class="{ active: hasActiveFilters }"
-              :aria-pressed="hasActiveFilters"
-              @click="filtersOpen = true"
-            >
-              {{ $t('deck.filterSort') }}
-            </button>
           </div>
           <div v-if="!cardsReady" class="card-rows">
             <div v-for="n in 4" :key="n" class="card-row skeleton-row">
@@ -154,15 +181,21 @@
           <button
             v-if="cards.length < cardTotal"
             type="button"
-            class="mopiq-btn secondary"
+            class="show-more"
             :disabled="cardsLoading"
             @click="loadMoreCards"
           >
-            {{ $t('deck.loadMore') }}
+            {{ $t('deck.showMore') }}
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </button>
         </section>
+        <p v-if="deckPending" class="cta">
+          <SkeletonBlock w="min(480px, 92%)" h="1rem" radius="6px" />
+        </p>
+        <p v-else class="cta" v-html="ctaHtml"></p>
       </div>
-    </div>
     <StudyLimitSheet
       :open="limitOpen"
       :limit="freeLimit"
@@ -189,6 +222,14 @@
       @dismiss="closeEditor"
       @saved="onCardSaved"
     />
+    <StudyModeSheet
+      :open="studySheetOpen"
+      :title="deck?.name || $t('deck.study')"
+      :busy="startingStudy"
+      @dismiss="studySheetOpen = false"
+      @study="onStudyChosen"
+      @quiz="onQuizChosen"
+    />
     <QuizSetup
       :open="quizOpen"
       :deck="deck"
@@ -199,13 +240,13 @@
 </template>
 
 <script>
-import AppHeader from './AppHeader.vue';
 import DeckStats from './DeckStats.vue';
 import StudyLimitSheet from './StudyLimitSheet.vue';
 import DeckSettings from './DeckSettings.vue';
 import CardBrowseFilters from './CardBrowseFilters.vue';
 import CardEditor from './CardEditor.vue';
 import QuizSetup from './QuizSetup.vue';
+import StudyModeSheet from './StudyModeSheet.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
 import { APP_STORE_URL } from '../constants';
 import { ankiDayString } from '../study/ankiDay';
@@ -214,15 +255,14 @@ import {
   fetchAnswerHistogram,
   fetchCardsPage,
   fetchDeck,
+  fetchDeckProgressCounts,
   fetchDeckTodayStats,
   fetchFreeStudyQuota,
-  fetchSeenCount,
-  fetchStudiedTodayCount,
   fetchStudyTimeSummary,
 } from '../api/mopiq';
 import { cacheDeck, cachedDeck, cachedDeckStats } from '../api/deckCache';
 import { escapeHtml } from '../i18n';
-import { cardContainsImage } from '../study/cardFields';
+import { cardEditableOnWeb } from '../study/cardFields';
 import {
   browseDueTag,
   isRecentBrowseCard,
@@ -237,14 +277,17 @@ import {
 
 export default {
   name: 'DeckDetailPage',
+  inject: {
+    refreshAppSplit: { default: null },
+  },
   components: {
-    AppHeader,
     DeckStats,
     StudyLimitSheet,
     DeckSettings,
     CardBrowseFilters,
     CardEditor,
     QuizSetup,
+    StudyModeSheet,
     SkeletonBlock,
   },
   data() {
@@ -265,6 +308,7 @@ export default {
       cards: [],
       cardTotal: 0,
       cardsRequestId: 0,
+      loadGen: 0,
       searchText: '',
       searchTimer: 0,
       browseQuery: defaultCardBrowseQuery(),
@@ -277,6 +321,7 @@ export default {
       editorOpen: false,
       editingCard: null,
       quizOpen: false,
+      studySheetOpen: false,
     };
   },
   watch: {
@@ -288,6 +333,10 @@ export default {
         this.browseQuery = normalizeCardBrowseQuery({ ...this.browseQuery, query });
         this.resetAndLoadCards();
       }, 300);
+    },
+    '$route.params.deckId'(deckId) {
+      if (!deckId || this.$route.meta.preview) return;
+      this.reloadAll(deckId);
     },
   },
   beforeUnmount() {
@@ -308,6 +357,9 @@ export default {
         || this.seenPending
         || !this.cardsReady;
     },
+    listTo() {
+      return this.$route.path.startsWith('/dev/split') ? '/dev/split' : '/decks';
+    },
     cardsVisible() {
       return this.deck ? this.deck.canStudy : this.deckPending;
     },
@@ -322,7 +374,7 @@ export default {
     browseEmptyKey() {
       return this.hasActiveFilters || this.browseQuery.query
         ? 'deck.noCardMatches'
-        : 'deck.noCards';
+        : 'deck.noCardsYet';
     },
     cardRows() {
       return this.cards.map((card) => {
@@ -343,74 +395,196 @@ export default {
     },
   },
   created() {
-    const deckId = this.$route.params.deckId;
-    // Paint whatever the deck list already taught us, then fill each card in as
-    // its own request lands.
-    this.deck = cachedDeck(deckId);
-    this.listStats = cachedDeckStats(deckId);
-    this.loadDeck(deckId);
-    this.loadListStats(deckId);
-    this.loadTime(deckId);
-    this.loadGrade(deckId);
-    this.loadSeen(deckId);
+    if (this.$route.meta.preview) {
+      this.applyLayoutPreview();
+      return;
+    }
+    this.reloadAll(this.$route.params.deckId);
   },
   methods: {
+    reloadAll(deckId) {
+      ++this.loadGen;
+      this.cardsRequestId += 1;
+      clearTimeout(this.searchTimer);
+      this.error = '';
+      this.deckPending = true;
+      this.statsPending = true;
+      this.timePending = true;
+      this.gradePending = true;
+      this.seenPending = true;
+      this.cardsReady = false;
+      this.cardsLoading = false;
+      this.cards = [];
+      this.cardTotal = 0;
+      this.searchText = '';
+      this.browseQuery = defaultCardBrowseQuery();
+      this.editorOpen = false;
+      this.editingCard = null;
+      this.settingsOpen = false;
+      this.filtersOpen = false;
+      this.quizOpen = false;
+      this.studySheetOpen = false;
+      this.limitOpen = false;
+      this.seenCount = 0;
+      this.studiedToday = 0;
+      this.deck = cachedDeck(deckId);
+      this.listStats = cachedDeckStats(deckId);
+      this.loadDeck(deckId);
+      this.loadListStats(deckId);
+      this.loadTime(deckId);
+      this.loadGrade(deckId);
+      this.loadSeen(deckId);
+    },
+    applyLayoutPreview() {
+      const now = Date.now();
+      this.deck = {
+        id: 'preview',
+        name: 'UK Prime Ministers',
+        cardCount: 53,
+        canStudy: true,
+        canEdit: true,
+        topic: { color: '#0A7AFF', backgroundColor: '#E0F2FE', imageName: 'history' },
+      };
+      this.listStats = {
+        statsAvailable: true,
+        cardsForToday: 52,
+        newRemainingToday: 13,
+        reviewDueToday: 39,
+      };
+      this.seenCount = 40;
+      this.studiedToday = 1;
+      this.histogram = {
+        counts: { AGAIN: 10, HARD: 1, GOOD: 1, EASY: 0 },
+        total: 12,
+        grade: 49,
+      };
+      this.time = {
+        todayMilliseconds: 3000,
+        totalMilliseconds: 1285000,
+        activeDays: 4,
+        firstStudiedAt: '2026-08-26T10:00:00Z',
+      };
+      const samples = [
+        ['Who was the first Prime Minister of the United Kingdom?', 'Robert Walpole (1721–1742)'],
+        ['Which PM led Britain through most of World War II?', 'Winston Churchill'],
+        ['Who was the first female Prime Minister?', 'Margaret Thatcher (1979)'],
+        ['Who oversaw the creation of the NHS?', 'Clement Attlee'],
+        ['Who succeeded Tony Blair in 2007?', 'Gordon Brown'],
+        ['Which PM served the longest in the 20th century?', 'Margaret Thatcher'],
+        ['Who was Prime Minister during the Suez Crisis?', 'Anthony Eden'],
+        ['Who led the coalition government from 2010?', 'David Cameron'],
+        ['Who became Prime Minister in 2022 after Liz Truss?', 'Rishi Sunak'],
+        ['Who was the first Labour Prime Minister?', 'Ramsay MacDonald'],
+      ];
+      this.cards = samples.map(([question, answer], index) => ({
+        id: String(index + 1),
+        question,
+        answer,
+        noteFields: [question, answer],
+        dueDate: new Date(now + index * 86400000).toISOString(),
+        reviewCount: index + 1,
+        state: 'REVIEW',
+        updatedAt: now - index * 3600000,
+        hasImage: index === 1,
+        hasAudio: index === 2,
+      }));
+      this.cardTotal = 53;
+      this.deckPending = false;
+      this.statsPending = false;
+      this.timePending = false;
+      this.gradePending = false;
+      this.seenPending = false;
+      this.cardsReady = true;
+    },
     async loadDeck(deckId) {
+      const gen = this.loadGen;
       try {
-        this.deck = await fetchDeck(deckId);
+        const deck = await fetchDeck(deckId);
+        if (gen !== this.loadGen) return;
+        this.deck = deck;
       } catch (error) {
+        if (gen !== this.loadGen) return;
         this.error = error.message || this.$t('deck.loadError');
         return;
       } finally {
-        this.deckPending = false;
+        if (gen === this.loadGen) this.deckPending = false;
       }
       if (this.deck.canStudy) {
         await this.loadMoreCards();
       }
-      this.cardsReady = true;
+      if (gen === this.loadGen) this.cardsReady = true;
     },
     async loadListStats(deckId) {
+      const gen = this.loadGen;
       try {
         const deck = (this.deck?.id === deckId && this.deck.config)
           ? this.deck
           : await fetchDeck(deckId);
+        if (gen !== this.loadGen) return;
         if (!this.deck) this.deck = deck;
         this.listStats = await fetchDeckTodayStats(deck);
+        if (gen !== this.loadGen) return;
       } catch {
         // The dashboard falls back to em dashes when stats are unavailable.
       } finally {
-        this.statsPending = false;
+        if (gen === this.loadGen) this.statsPending = false;
       }
     },
     async loadTime(deckId) {
+      const gen = this.loadGen;
       try {
-        this.time = await fetchStudyTimeSummary(deckId);
+        const time = await fetchStudyTimeSummary(deckId);
+        if (gen !== this.loadGen) return;
+        this.time = time;
       } catch {
         // Keep the zeroed defaults.
       } finally {
-        this.timePending = false;
+        if (gen === this.loadGen) this.timePending = false;
       }
     },
     async loadGrade(deckId) {
+      const gen = this.loadGen;
       try {
-        this.histogram = await fetchAnswerHistogram(deckId);
+        const histogram = await fetchAnswerHistogram(deckId);
+        if (gen !== this.loadGen) return;
+        this.histogram = histogram;
       } catch {
         // Keep the zeroed defaults.
       } finally {
-        this.gradePending = false;
+        if (gen === this.loadGen) this.gradePending = false;
       }
     },
     async loadSeen(deckId) {
-      const [seen, studiedToday] = await Promise.all([
-        fetchSeenCount(deckId).catch(() => 0),
-        fetchStudiedTodayCount(deckId).catch(() => 0),
-      ]);
-      this.seenCount = seen;
-      this.studiedToday = studiedToday;
+      const gen = this.loadGen;
+      const counts = await fetchDeckProgressCounts(deckId).catch(() => ({ seen: 0, studiedToday: 0 }));
+      if (gen !== this.loadGen) return;
+      this.seenCount = counts.seen;
+      this.studiedToday = counts.studiedToday;
       this.seenPending = false;
     },
     preview(text) {
       return String(text || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    },
+    openStudySheet() {
+      if (!this.deck?.canStudy || this.startingStudy) return;
+      this.studySheetOpen = true;
+    },
+    onStudyChosen() {
+      this.studySheetOpen = false;
+      this.startStudy();
+    },
+    onQuizChosen() {
+      this.studySheetOpen = false;
+      this.quizOpen = true;
+    },
+    focusSearch() {
+      const section = this.$refs.cardsSection;
+      if (section?.scrollIntoView) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      this.$nextTick(() => {
+        this.$refs.searchInput?.focus();
+      });
     },
     async startStudy() {
       if (!this.deck?.canStudy || this.startingStudy) return;
@@ -466,7 +640,7 @@ export default {
       }
     },
     canEditCard(card) {
-      return Boolean(this.deck?.canEdit && card && !cardContainsImage(card));
+      return Boolean(this.deck?.canEdit && card && cardEditableOnWeb(card));
     },
     openAddCard() {
       this.editingCard = null;
@@ -505,90 +679,192 @@ export default {
       this.settingsOpen = false;
       this.statsPending = true;
       this.loadListStats(this.deck.id);
+      this.refreshAppSplit?.();
     },
-    onCardSaved({ card, created }) {
-      if (created) {
-        this.deck = cacheDeck({ ...this.deck, cardCount: (this.deck.cardCount || 0) + 1 });
+    onCardSaved({ card, extra, created, keepOpen, imported }) {
+      if (imported?.length) {
+        const add = imported.length;
+        this.deck = cacheDeck({ ...this.deck, cardCount: (this.deck.cardCount || 0) + add });
         if (isDefaultCardBrowseQuery(this.browseQuery)) {
-          this.cards = [card, ...this.cards];
-          this.cardTotal += 1;
+          this.cards = imported.concat(this.cards);
+          this.cardTotal += add;
+        } else {
+          this.resetAndLoadCards();
+        }
+        this.statsPending = true;
+        this.loadListStats(this.deck.id);
+        this.refreshAppSplit?.();
+        return;
+      }
+      if (created) {
+        const add = extra ? 2 : 1;
+        this.deck = cacheDeck({ ...this.deck, cardCount: (this.deck.cardCount || 0) + add });
+        if (isDefaultCardBrowseQuery(this.browseQuery)) {
+          const prepend = extra ? [extra, card] : [card];
+          this.cards = prepend.concat(this.cards);
+          this.cardTotal += add;
         } else {
           this.resetAndLoadCards();
         }
       } else {
         this.cards = this.cards.map((row) => (row.id === card.id ? { ...row, ...card } : row));
       }
-      this.closeEditor();
+      if (!keepOpen) this.closeEditor();
       this.statsPending = true;
       this.loadListStats(this.deck.id);
+      this.refreshAppSplit?.();
     },
   },
 };
 </script>
 
 <style scoped>
-.detail { text-align: left; padding-bottom: 48px; }
-.back { color: var(--blue-button); text-decoration: none; display: inline-block; margin-bottom: 16px; }
-.hero { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
-.hero-text { flex: 1 1 auto; min-width: 0; }
-h1 { font-size: 2rem; font-weight: 700; color: var(--title); }
-.topic { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
-.topic-line { margin-bottom: 9px; }
+.detail-page {
+  text-align: left;
+  min-height: 100%;
+  padding: 12px 28px 48px;
+  background-color: var(--page-bg);
+  background-image: none;
+}
+.detail { text-align: left; }
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.back {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-right: auto;
+  color: var(--blue-button);
+  text-decoration: none;
+  font-weight: 600;
+}
+.back svg { width: 18px; height: 18px; display: block; }
+.tools { display: flex; align-items: center; gap: 8px; }
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--card-bg);
+  color: var(--blue-button);
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--card-list-border);
+}
+.tool svg { width: 18px; height: 18px; display: block; }
+.tool.add { color: var(--title); }
+.add-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hero { margin: 18px 0 0; }
+h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--title);
+  margin: 0 0 8px;
+}
 .title-line { margin-bottom: 10px; }
-.sub { color: var(--text-secondary); }
-.sub-line { margin-top: 8px; }
-.icon { width: 72px; height: 72px; border-radius: 16px; padding: 16px; }
-.icon img { width: 100%; }
-.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-.mopiq-btn {
-  font-size: 1.05rem !important;
+.sub { margin: 0; font-size: 1rem; color: var(--text-secondary); }
+.study-wrap { padding-top: 0; }
+.study-btn {
+  width: 100%;
+  height: 64px;
+  border-radius: 20px !important;
+  font-size: 1.125rem !important;
   letter-spacing: 0 !important;
   font-weight: 600 !important;
-  padding: 12px 28px !important;
+  padding: 0 !important;
   background: var(--blue-button) !important;
   color: var(--button-text) !important;
   border: none !important;
 }
-.mopiq-btn.secondary {
-  background: var(--secondary-btn-bg) !important;
-  color: var(--secondary-btn-text) !important;
-  margin-top: 0;
-}
 .app-only {
   background: var(--card-bg);
-  box-shadow: var(--card-shadow);
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 16px;
+  border: 1px solid var(--stat-card-border);
+  border-radius: 24px;
+  padding: 24px 18px;
 }
 .app-only h2 { font-size: 1.25rem; margin-bottom: 8px; color: var(--title); }
 .app-only p { color: var(--text); margin-bottom: 16px; }
-.cta { color: var(--text); margin: 8px 0 28px; }
+.cta { color: var(--text-secondary); margin: 28px 0 0; font-size: 0.9rem; }
 .cta a { color: var(--blue-button); }
-.cards h2 { font-size: 1.3rem; margin-bottom: 12px; color: var(--title); }
-.browse-bar {
+.cards { margin-top: 18px; padding-top: 0; padding-bottom: 8px; }
+.cards-head {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.cards h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--title);
+}
+.view-all {
+  border: 0;
+  background: transparent;
+  color: var(--blue-button);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+}
+.view-all.active { font-weight: 700; }
+.browse-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  margin: -12px -28px 12px;
+  padding: 12px 28px 12px;
+  background-color: var(--page-bg);
+  background-image: none;
+  box-shadow: 0 12px 18px -14px rgba(15, 23, 42, 0.28);
 }
 .browse-search {
-  flex: 1 1 220px;
+  width: 100%;
   min-width: 0;
-  border: 1px solid var(--empty-bar);
-  background: var(--card-bg);
+  border: 0;
+  background: var(--inset-bg);
   color: var(--title);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 10px 14px;
   font: inherit;
 }
-.filter-btn { margin-top: 0; }
-.filter-btn.active {
-  outline: 2px solid var(--blue-button);
+.show-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--blue-button);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
 }
-.cards .mopiq-btn { margin-top: 12px; }
-.browse-bar .mopiq-btn { margin-top: 0; }
-.card-rows { display: grid; gap: 12px; }
+.show-more svg { width: 12px; height: 12px; }
+.show-more:disabled { opacity: 0.55; }
+.card-rows { display: grid; gap: 18px; }
 .card-row {
   display: block;
   width: 100%;
@@ -600,6 +876,7 @@ h1 { font-size: 2rem; font-weight: 700; color: var(--title); }
   box-shadow: none;
   color: inherit;
   font: inherit;
+  overflow: hidden;
 }
 .card-row.editable { cursor: pointer; }
 .card-row:disabled { cursor: default; opacity: 1; }
@@ -666,4 +943,18 @@ h1 { font-size: 2rem; font-weight: 700; color: var(--title); }
 .media-icon { width: 20px; height: 20px; display: block; }
 .error { color: var(--error); }
 .empty { color: var(--text-secondary); }
+@media (max-width: 899px) {
+  .back { display: inline-flex; }
+  .detail-page { padding: 8px 16px 40px; }
+  .browse-bar {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+@media (max-width: 599px) {
+  .add-label { display: none; }
+  .tool.add { padding: 0; }
+}
 </style>

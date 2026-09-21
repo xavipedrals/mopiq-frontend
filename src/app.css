@@ -86,6 +86,10 @@
   --skeleton-shine: rgba(255, 255, 255, 0.85);
   --card-list-border: #CBD5E1;
   --card-dash: #E2E8F0;
+  --list-bg: #FFFFFF;
+  --list-selected: #F1F5F9;
+  --split-rule: #E2E8F0;
+  --split-selected-ring: #CBD5E1;
   --tag-today-fg: #0EA5E9;
   --tag-today-bg: #E0F2FE;
   --tag-tomorrow-fg: #EAB308;
@@ -94,6 +98,11 @@
   --tag-later-bg: #E0E7FF;
   --tag-recent-fg: #65A30D;
   --tag-recent-bg: #ECFCCB;
+}
+
+html.card-editor-open,
+html.card-editor-open body {
+  overflow: hidden;
 }
 
 html[data-theme="dark"] body.app-shell {
@@ -182,6 +191,10 @@ html[data-theme="dark"] body.app-shell {
   --skeleton-shine: rgba(255, 255, 255, 0.12);
   --card-list-border: #475569;
   --card-dash: #475569;
+  --list-bg: #1E293C;
+  --list-selected: #334155;
+  --split-rule: #324054;
+  --split-selected-ring: #64748B;
   --tag-today-fg: #38BDF8;
   --tag-today-bg: #082F49;
   --tag-tomorrow-fg: #FACC15;
@@ -202,14 +215,31 @@ body {
   font-family: Inter, system-ui, -apple-system, "Helvetica Neue", sans-serif;
 }
 
+html:has(body.app-shell) {
+  background-color: var(--page-bg);
+  background-image: none;
+}
+
 body.app-shell {
   display: block !important;
   align-items: stretch !important;
+  /* iOS blue-gray-background: solid canvas, no marketing dots */
   background-color: var(--page-bg) !important;
-  background-image: radial-gradient(circle, var(--page-dot) 1.05px, transparent 1.05px) !important;
-  background-size: 22px 22px !important;
-  background-attachment: fixed !important;
+  background-image: none !important;
   color: var(--title);
+}
+
+body.app-shell:has(.split-root) {
+  overflow: hidden;
+  height: 100%;
+  background-color: var(--list-bg) !important;
+  background-image: none !important;
+}
+
+html:has(.split-root),
+body:has(.split-root),
+#app:has(.split-root) {
+  height: 100%;
 }
 
 html[data-theme="dark"]:has(body.app-shell) {

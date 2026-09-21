@@ -1,4 +1,5 @@
 import { stripHtml } from './cardHtml.js';
+import { storedHtmlToEditor } from './sanitizeCardHtml.js';
 
 function escapeHtml(value) {
   return String(value || '')
@@ -32,6 +33,14 @@ export function cardEditorFields(card) {
   return {
     front: htmlToEditorText(fields[0] || card?.question || ''),
     back: htmlToEditorText(fields[1] || card?.answer || ''),
+  };
+}
+
+export function cardEditorHtmlFields(card) {
+  const fields = card?.noteFields || [];
+  return {
+    front: storedHtmlToEditor(fields[0] || card?.question || ''),
+    back: storedHtmlToEditor(fields[1] || card?.answer || ''),
   };
 }
 
@@ -79,4 +88,21 @@ export function extractMediaFilenames(card) {
     if (file) names.add(file);
   }
   return [...names];
+}
+
+function cardMarkupText(card) {
+  const fields = card?.noteFields || [];
+  return `${fields[0] || ''} ${fields[1] || ''} ${card?.question || ''} ${card?.answer || ''}`;
+}
+
+export function cardWebEditLock(card) {
+  if (!card) return '';
+  const text = cardMarkupText(card);
+  if (card.hasAudio || /\[sound:/i.test(text)) return 'audio';
+  if (/image-occlusion:|anki\.imageOcclusion|<canvas\b/i.test(text)) return 'occlusion';
+  return '';
+}
+
+export function cardEditableOnWeb(card) {
+  return !cardWebEditLock(card);
 }

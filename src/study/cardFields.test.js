@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   cardContainsImage,
+  cardEditorHtmlFields,
   cardSyncFields,
+  cardWebEditLock,
   editorTextToHtml,
   extractMediaFilenames,
   htmlToEditorText,
@@ -57,6 +59,24 @@ describe('extractMediaFilenames', () => {
         question: '<img src="https://example.com/skip.png">',
       }),
       ['cell.png', 'voice.mp3'],
+    );
+  });
+});
+
+describe('cardWebEditLock', () => {
+  it('locks audio and occlusion cards', () => {
+    assert.equal(cardWebEditLock({ hasAudio: true, question: 'Q', answer: 'A' }), 'audio');
+    assert.equal(cardWebEditLock({ question: '[sound:a.mp3]', answer: 'A' }), 'audio');
+    assert.equal(cardWebEditLock({ question: '{{c1::image-occlusion:rect:1}}', answer: '' }), 'occlusion');
+    assert.equal(cardWebEditLock({ question: '<p>Q</p>', answer: '<p>A</p>', hasImage: true }), '');
+  });
+});
+
+describe('cardEditorHtmlFields', () => {
+  it('turns stored cloze markup into editor spans', () => {
+    assert.equal(
+      cardEditorHtmlFields({ noteFields: ['The {{c1::x}}', 'A'] }).front,
+      'The <span class="anki-cloze">x</span>',
     );
   });
 });

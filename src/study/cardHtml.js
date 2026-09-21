@@ -1,3 +1,5 @@
+import { containsClozeMarkup, WEB_CLOZE_NOTE_MODEL_ID } from './sanitizeCardHtml.js';
+
 export const CARD_THEME = {
   light: {
     background: 'transparent',
@@ -87,6 +89,50 @@ export function fieldHtml(card, index, mediaMap) {
   return rewriteMedia(raw, mediaMap);
 }
 
+export function renderClozeHtml(html, { reveal = false } = {}) {
+  const raw = String(html || '');
+  if (!/\{\{c\d+::/i.test(raw)) return raw;
+  return raw.replace(/\{\{c\d+::([\s\S]*?)\}\}/g, (_, inner) => {
+    const split = inner.lastIndexOf('::');
+    const text = split === -1 ? inner : inner.slice(0, split);
+    const hint = split === -1 ? '' : inner.slice(split + 2);
+    if (reveal) return `<span class="cloze">${text}</span>`;
+    const label = String(hint || '').trim() || '...';
+    return `<span class="cloze">[${escapeHtml(stripHtml(label) || '...')}]</span>`;
+  });
+}
+
+export function cardHasCloze(card) {
+  const fields = card?.noteFields || [];
+  if (String(card?.noteModelId || '') === WEB_CLOZE_NOTE_MODEL_ID) return true;
+  return containsClozeMarkup(fields[0] || '') || containsClozeMarkup(card?.question || '');
+}
+
+function cardHr(dark) {
+  const hr = CARD_THEME[dark ? 'dark' : 'light'].hr;
+  return `<hr style="border:none;border-top:1px solid ${hr};margin:18px 0;">`;
+}
+
+export function frontHtml(card, mediaMap) {
+  return renderClozeHtml(fieldHtml(card, 0, mediaMap), { reveal: false });
+}
+
+export function backHtml(card, mediaMap, { dark = false } = {}) {
+  if (cardHasCloze(card)) {
+    const revealed = renderClozeHtml(fieldHtml(card, 0, mediaMap), { reveal: true });
+    const extra = fieldHtml(card, 1, mediaMap);
+    if (!extra) return revealed;
+    return `${revealed}${cardHr(dark)}${extra}`;
+  }
+  const back = fieldHtml(card, 1, mediaMap);
+  const front = fieldHtml(card, 0, mediaMap);
+  if (!back) return front;
+  if (front && back.indexOf(front) === -1) {
+    return `${front}${cardHr(dark)}${back}`;
+  }
+  return back;
+}
+
 function cardCss(theme) {
   const t = CARD_THEME[theme];
   const darkOverrides = theme === 'dark'
@@ -172,19 +218,4 @@ ${bodyHtml || `<p>${escapeHtml('')}</p>`}
 </div>
 </body>
 </html>`;
-}
-
-export function frontHtml(card, mediaMap) {
-  return fieldHtml(card, 0, mediaMap);
-}
-
-export function backHtml(card, mediaMap, { dark = false } = {}) {
-  const back = fieldHtml(card, 1, mediaMap);
-  const front = fieldHtml(card, 0, mediaMap);
-  if (!back) return front;
-  if (front && back.indexOf(front) === -1) {
-    const hr = CARD_THEME[dark ? 'dark' : 'light'].hr;
-    return `${front}<hr style="border:none;border-top:1px solid ${hr};margin:18px 0;">${back}`;
-  }
-  return back;
 }

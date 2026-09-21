@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { CARD_THEME, backHtml, cardDocument } from './cardHtml.js';
+import { CARD_THEME, backHtml, cardDocument, frontHtml, renderClozeHtml } from './cardHtml.js';
 
 describe('cardDocument', () => {
   it('uses the light study text color by default', () => {
@@ -29,5 +29,19 @@ describe('backHtml', () => {
       { dark: true },
     );
     assert.equal(html.includes(CARD_THEME.dark.hr), true);
+  });
+});
+
+describe('cloze study rendering', () => {
+  it('blanks cloze on the front and reveals it on the back', () => {
+    const card = {
+      noteFields: ['The {{c1::powerhouse}} of the cell', 'Extra'],
+      noteModelId: '777000002',
+    };
+    assert.equal(renderClozeHtml('The {{c1::powerhouse}}', { reveal: false }), 'The <span class="cloze">[...]</span>');
+    assert.equal(renderClozeHtml('The {{c1::powerhouse}}', { reveal: true }), 'The <span class="cloze">powerhouse</span>');
+    assert.match(frontHtml(card, {}), /\[&hellip;\]|\[\.\.\.\]/);
+    assert.match(backHtml(card, {}), /powerhouse/);
+    assert.match(backHtml(card, {}), /Extra/);
   });
 });

@@ -3,23 +3,48 @@ import { getDownloadURL, ref as storageRef } from 'firebase/storage';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, storage } from '../firebaseInit';
 import { getAccessToken, getCurrentUser } from '../auth/session';
-import { FETCH_PAGE_SIZE, MAX_REVIEW_DURATION_MS, PAGE_SIZE } from '../constants';
+import { MAX_REVIEW_DURATION_MS, PAGE_SIZE } from '../constants';
 import { CARD_BROWSE_FIRST_PAGE, defaultCardBrowseQuery, toBrowseDeckCardsParams } from '../study/cardBrowse';
 import { ankiDayEndExclusive, ankiDayStart, ankiDayString, studyDayWireFields, toIso } from '../study/ankiDay';
 import { parseDeckConfig } from '../study/deckConfig';
 import { mapDisplayProfileRow, mergeHighestStats } from '../profile/mapProfile';
 import { getAvatarImageName, getDeckTopicByPostgresId } from '../utils';
 import { edgeFunctionUrl } from './functionsUrl';
-import { cacheDeck, cacheDeckList } from './deckCache';
+import { cacheDeck, cacheDeckList, prependCachedDeck } from './deckCache';
+import { emptyDeckCreatePayload } from './emptyDeck';
 import {
   adoptFromProfileIfNeeded,
   getLanguagePreference,
   localeForProfileSync,
 } from '../i18n';
 import { applyDeckSettings } from '../study/deckSettings';
-import { cardSyncFields, editorTextToHtml, extractMediaFilenames, replaceFrontBackFields } from '../study/cardFields';
-import { todayStatsFromCounts } from '../study/deckStats';
-import { sharedDeckIdFromExtra } from '../study/deckFolders';
+import { cardSyncFields, extractMediaFilenames, replaceFrontBackFields } from '../study/cardFields';
+import {
+  CardHtmlTooLargeError,
+  editorHtmlToStored,
+  fieldsHaveImage,
+  noteModelIdForWebFields,
+  sanitizeCardHtml,
+} from '../study/sanitizeCardHtml';
+import { parseDeckFolders, rootFolderId } from '../study/deckFolders';
+import {
+  assertSpreadsheetLimits,
+  spreadsheetCardFields,
+} from '../study/spreadsheetImport';
+import {
+  MEDIA_URL_PAGE_SIZE,
+  STUDY_BUNDLE_PAGE_SIZE,
+  effectiveContentMode,
+  emptyHistogram,
+  isPostgresDeck,
+  mapBrowseCard,
+  mapDeckListRow,
+  mapHistogramRow,
+  mapProgressCountsRow,
+  mapStudyBundleRow,
+  mapUserDeckRow,
+  nextStudyBundleCursor,
+} from './webReads.js';
 
 function throwIfError(error, fallback) {
   if (error) {
@@ -65,74 +90,17 @@ async function invokeBulkSync(operations, fallback) {
   return data.results;
 }
 
-async function upsertOwnedCard(deck, {
-  cardId,
-  noteId,
-  noteGuid,
-  fields,
-  frontHtml,
-  backHtml,
-  subdeckId = 0,
-  position = null,
-  hasImage = false,
-  hasAudio = false,
-  tags = [],
-  noteModelId = '0',
-  templateIndex = 0,
-}) {
-  const { error } = await supabase.rpc('upsert_card_static_for_caller', {
-    p_deck_version_id: deck.id,
-    p_card_id: cardId,
-    p_fields: fields,
-    p_subdeck_id: subdeckId,
-    question: frontHtml,
-    answer: backHtml,
-    has_image: hasImage,
-    has_audio: hasAudio,
-    updated_at: new Date().toISOString(),
-    p_tags: tags,
-    p_position: position,
-    note_model_id: String(noteModelId || '0'),
-    template_index: templateIndex,
-    p_note_id: noteId,
-    p_note_guid: noteGuid,
-  });
-  throwIfError(error, 'Could not save this card');
-}
-
-export function effectiveContentMode(row) {
-  const mode2 = (row.content_mode_2 || '').trim();
-  if (mode2) return mode2;
-  const mode = (row.content_mode || '').trim();
-  if (!mode || mode === 'file') return 'legacy_firebase_file';
-  return mode;
-}
-
-export function isPostgresDeck(mode) {
-  return mode === 'postgres' || mode === 'postgres_content' || mode === 'postgresContent';
-}
-
-async function fetchAllPages(loadPage) {
-  const all = [];
-  let offset = 0;
-  let page = await loadPage(offset, FETCH_PAGE_SIZE);
-  while (page.length > 0) {
-    all.push(...page);
-    if (page.length < FETCH_PAGE_SIZE) break;
-    offset += page.length;
-    page = await loadPage(offset, FETCH_PAGE_SIZE);
-  }
-  return all;
-}
+export { effectiveContentMode, isPostgresDeck };
 
 export async function fetchDeckList() {
   const dayStart = toIso(ankiDayStart());
   const dayEnd = toIso(ankiDayEndExclusive());
-  const statsRows = [];
+  const supabaseUid = getCurrentUser()?.supabaseUid;
+  const rows = [];
   let offset = 0;
   let page;
   do {
-    const { data, error } = await supabase.rpc('get_user_deck_list_stats', {
+    const { data, error } = await supabase.rpc('get_user_deck_list_with_meta', {
       p_limit: PAGE_SIZE,
       p_study_day_start: dayStart,
       p_study_day_end_exclusive: dayEnd,
@@ -140,82 +108,21 @@ export async function fetchDeckList() {
     });
     throwIfError(error, 'Could not load your decks');
     page = data || [];
-    statsRows.push(...page);
+    rows.push(...page);
     offset += page.length;
   } while (page.length >= PAGE_SIZE);
 
-  const ids = statsRows.map((row) => row.deck_id).filter(Boolean);
-  const metaById = {};
-  for (let i = 0; i < ids.length; i += 50) {
-    const chunk = ids.slice(i, i + 50);
-    const { data, error } = await supabase
-      .from('deck_versions')
-      .select('id, name, topic, card_count, extra_config, created_at, content_mode, content_mode_2, last_used_at, creator_id')
-      .in('id', chunk);
-    throwIfError(error, 'Could not load deck names');
-    for (const row of data || []) {
-      metaById[row.id] = row;
-    }
-  }
-
-  return cacheDeckList(statsRows.map((row) => {
-    const meta = metaById[row.deck_id] || {};
-    const mode = effectiveContentMode({
-      content_mode: row.content_mode || meta.content_mode,
-      content_mode_2: meta.content_mode_2,
-    });
-    const topic = getDeckTopicByPostgresId(meta.topic);
-    return {
-      id: row.deck_id,
-      firebaseId: row.firebase_id,
-      name: meta.name || 'Untitled deck',
-      topic,
-      cardCount: meta.card_count ?? row.card_count ?? 0,
-      lastUsedAt: row.last_used_at || meta.last_used_at,
-      createdAt: meta.created_at,
-      extraConfig: meta.extra_config || {},
-      contentMode: mode,
-      canStudy: isPostgresDeck(mode),
-      canEdit: isPostgresDeck(mode) && (
-        !meta.creator_id || meta.creator_id === getCurrentUser()?.supabaseUid
-      ),
-      statsAvailable: Boolean(row.stats_available),
-      newRemainingToday: Number(row.new_remaining_today) || 0,
-      reviewDueToday: Number(row.review_due_today) || 0,
-      cardsForToday: Number(row.cards_for_today) || 0,
-    };
-  }));
+  return cacheDeckList(rows.map((row) => mapDeckListRow(row, supabaseUid)));
 }
 
 export async function fetchDeck(deckId) {
-  const { data, error } = await supabase
-    .from('deck_versions')
-    .select('id, name, topic, card_count, extra_config, decks, created_at, content_mode, content_mode_2, last_used_at, firebase_id, creator_id')
-    .eq('id', deckId)
-    .maybeSingle();
-  throwIfError(error, 'Could not load this deck');
-  if (!data) throw new Error('Deck not found');
-  const mode = effectiveContentMode(data);
-  const extraConfig = data.extra_config || {};
-  return cacheDeck({
-    id: data.id,
-    name: data.name || 'Untitled deck',
-    topic: getDeckTopicByPostgresId(data.topic),
-    cardCount: data.card_count || 0,
-    extraConfig,
-    decks: data.decks || {},
-    sharedDeckId: sharedDeckIdFromExtra(extraConfig),
-    createdAt: data.created_at,
-    lastUsedAt: data.last_used_at,
-    firebaseId: data.firebase_id || '',
-    creatorId: data.creator_id || '',
-    contentMode: mode,
-    canStudy: isPostgresDeck(mode),
-    canEdit: isPostgresDeck(mode) && (
-      !data.creator_id || data.creator_id === getCurrentUser()?.supabaseUid
-    ),
-    config: parseDeckConfig(data.extra_config),
+  const { data, error } = await supabase.rpc('get_user_deck', {
+    p_deck_id: deckId,
   });
+  throwIfError(error, 'Could not load this deck');
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('Deck not found');
+  return cacheDeck(mapUserDeckRow(row, getCurrentUser()?.supabaseUid));
 }
 
 export async function fetchStudyTimeSummary(deckId) {
@@ -236,39 +143,13 @@ export async function fetchStudyTimeSummary(deckId) {
 }
 
 export async function fetchAnswerHistogram(deckId) {
-  const counts = { AGAIN: 0, HARD: 0, GOOD: 0, EASY: 0 };
-  let from = 0;
-  let page;
-  do {
-    const { data, error } = await supabase
-      .from('review_logs')
-      .select('ease')
-      .eq('deck_id', deckId)
-      .range(from, from + FETCH_PAGE_SIZE - 1);
-    throwIfError(error, 'Could not load answer stats');
-    page = data || [];
-    for (const row of page) {
-      const ease = String(row.ease || 'GOOD').toUpperCase();
-      if (counts[ease] != null) counts[ease] += 1;
-    }
-    from += page.length;
-  } while (page.length >= FETCH_PAGE_SIZE && from <= 20000);
-  const total = counts.AGAIN + counts.HARD + counts.GOOD + counts.EASY;
-  const grade = total === 0
-    ? 0
-    : Math.round(((counts.EASY * 1 + counts.GOOD * 0.66 + counts.HARD * 0.33) / total) * 100);
-  return { counts, total, grade };
-}
-
-async function countCardStates(deckId, fallback, applyFilters) {
-  let query = supabase
-    .from('user_card_states')
-    .select('card_id', { count: 'exact', head: true })
-    .eq('deck_version_id', deckId);
-  if (applyFilters) query = applyFilters(query);
-  const { count, error } = await query;
-  throwIfError(error, fallback);
-  return count || 0;
+  if (!deckId) return emptyHistogram();
+  const { data, error } = await supabase.rpc('get_deck_answer_histogram', {
+    p_deck_id: deckId,
+  });
+  throwIfError(error, 'Could not load answer stats');
+  const row = Array.isArray(data) ? data[0] : data;
+  return mapHistogramRow(row);
 }
 
 function mapTodayStatsRow(deckId, row) {
@@ -281,83 +162,44 @@ function mapTodayStatsRow(deckId, row) {
   };
 }
 
-function rpcMissing(error) {
-  const code = String(error?.code || '');
-  const message = String(error?.message || '');
-  return code === 'PGRST202' || code === '42883' || /get_user_deck_today_stats/i.test(message);
-}
-
-/**
- * Same remaining-new / live-due math as get_user_deck_list_stats, via a
- * per-deck RPC that is not cohort-gated. Falls back to client counts only
- * when that RPC has not been deployed yet.
- */
 export async function fetchDeckTodayStats(deck) {
   const deckId = deck?.id;
-  if (!deckId) return { id: deckId, ...todayStatsFromCounts() };
+  if (!deckId) {
+    return {
+      id: deckId,
+      statsAvailable: false,
+      newRemainingToday: 0,
+      reviewDueToday: 0,
+      cardsForToday: 0,
+    };
+  }
   const { data, error } = await supabase.rpc('get_user_deck_today_stats', {
     p_deck_id: deckId,
     p_study_day_start: toIso(ankiDayStart()),
     p_study_day_end_exclusive: toIso(ankiDayEndExclusive()),
   });
-  if (!error) {
-    const row = Array.isArray(data) ? data[0] : data;
-    return mapTodayStatsRow(deckId, row);
-  }
-  if (!rpcMissing(error)) throwIfError(error, 'Could not load today’s stats');
-  return fetchDeckTodayStatsFromCardStates(deck);
+  throwIfError(error, 'Could not load today’s stats');
+  const row = Array.isArray(data) ? data[0] : data;
+  return mapTodayStatsRow(deckId, row);
 }
 
-async function fetchDeckTodayStatsFromCardStates(deck) {
-  const deckId = deck.id;
-  const config = deck.config || parseDeckConfig(deck.extraConfig);
-  const dayStart = toIso(ankiDayStart());
-  const dayEnd = toIso(ankiDayEndExclusive());
-  const fallback = 'Could not load today’s stats';
-  const [progressCount, newStudiedToday, rawDueCount] = await Promise.all([
-    countCardStates(deckId, fallback),
-    countCardStates(deckId, fallback, (query) => query
-      .not('first_reviewed_at', 'is', null)
-      .gte('first_reviewed_at', dayStart)
-      .lt('first_reviewed_at', dayEnd)),
-    countCardStates(deckId, fallback, (query) => query
-      .in('state', ['LEARNING', 'RELEARNING', 'REVIEW'])
-      .eq('suspended', false)
-      .lt('due_date', dayEnd)),
-  ]);
-  return {
-    id: deckId,
-    ...todayStatsFromCounts({
-      cardCount: deck.cardCount || 0,
-      progressCount,
-      newStudiedToday,
-      rawDueCount,
-      newCardsPerDay: config.newCardsPerDay,
-      maxReviewsPerDay: config.maxReviewsPerDay,
-    }),
-  };
+export async function fetchDeckProgressCounts(deckId) {
+  const { data, error } = await supabase.rpc('get_deck_progress_counts', {
+    p_deck_id: deckId,
+    p_study_day_start: toIso(ankiDayStart()),
+    p_study_day_end_exclusive: toIso(ankiDayEndExclusive()),
+  });
+  throwIfError(error, 'Could not load study progress');
+  const row = Array.isArray(data) ? data[0] : data;
+  return mapProgressCountsRow(row);
 }
 
-/** Cards touched during the current Anki day, for the dashboard ring. */
 export async function fetchStudiedTodayCount(deckId) {
-  const { count, error } = await supabase
-    .from('user_card_states')
-    .select('card_id', { count: 'exact', head: true })
-    .eq('deck_version_id', deckId)
-    .gte('last_reviewed', toIso(ankiDayStart()))
-    .lt('last_reviewed', toIso(ankiDayEndExclusive()));
-  throwIfError(error, 'Could not load today’s progress');
-  return count || 0;
+  return (await fetchDeckProgressCounts(deckId)).studiedToday;
 }
 
 export async function fetchSeenCount(deckId) {
-  const { count, error } = await supabase
-    .from('user_card_states')
-    .select('card_id', { count: 'exact', head: true })
-    .eq('deck_version_id', deckId)
-    .gt('review_count', 0);
-  throwIfError(error, 'Could not load study progress');
-  return count || 0;
+  return (await fetchDeckProgressCounts(deckId)).seen;
 }
 
 export async function fetchCardsPage(
@@ -372,159 +214,49 @@ export async function fetchCardsPage(
   );
   throwIfError(error, 'Could not load cards');
   const rows = data || [];
-  const cards = rows.map(mapStaticCard);
-  await attachBrowseCardMeta(deckId, cards);
   return {
-    cards,
+    cards: rows.map(mapBrowseCard),
     total: rows.length ? Number(rows[0].total_count) || rows.length : 0,
   };
 }
 
-async function attachBrowseCardMeta(deckId, cards) {
-  const ids = cards.map((card) => card.id).filter(Boolean);
-  if (!deckId || !ids.length) return cards;
-  try {
-    const [statesResult, timesResult] = await Promise.all([
-      supabase
-        .from('user_card_states')
-        .select('card_id, due_date, review_count, state')
-        .eq('deck_version_id', deckId)
-        .in('card_id', ids),
-      supabase
-        .from('cards_static')
-        .select('id, updated_at')
-        .eq('deck_version_id', deckId)
-        .in('id', ids),
-    ]);
-    const states = statesResult.error ? [] : (statesResult.data || []);
-    const times = timesResult.error ? [] : (timesResult.data || []);
-    const stateById = Object.fromEntries(states.map((row) => [row.card_id, row]));
-    const updatedById = Object.fromEntries(times.map((row) => [row.id, row.updated_at]));
-    for (const card of cards) {
-      const state = stateById[card.id];
-      if (state) {
-        card.state = state.state || 'NEW';
-        card.reviewCount = state.review_count || 0;
-        card.dueDate = state.due_date || null;
-      } else {
-        card.state = card.state || 'NEW';
-        card.reviewCount = card.reviewCount || 0;
-        if (card.dueDate === undefined) card.dueDate = null;
-      }
-      if (updatedById[card.id]) card.updatedAt = updatedById[card.id];
-    }
-  } catch {
-    // Browse still works without due/recent tags.
-  }
-  return cards;
-}
-
 export async function fetchAllStudyCards(deckId) {
-  const [staticCards, states] = await Promise.all([
-    fetchAllPages(async (offset, limit) => {
-      const { data, error } = await supabase
-        .from('cards_static')
-        .select('id, question, answer, note_fields, position, has_image, has_audio, template_index, subdeck_id, deleted_at, note_id, note_guid, note_model_id, note_tags, updated_at')
-        .eq('deck_version_id', deckId)
-        .is('deleted_at', null)
-        .order('position', { ascending: true })
-        .range(offset, offset + limit - 1);
-      throwIfError(error, 'Could not load cards');
-      return data || [];
-    }),
-    fetchAllPages(async (offset, limit) => {
-      const { data, error } = await supabase
-        .from('user_card_states')
-        .select('card_id, ease_factor, interval_secs, review_count, lapse_count, interval_secs_before_lapse, due_date, last_reviewed, last_answer_given, state, suspended, first_reviewed_at, updated_at')
-        .eq('deck_version_id', deckId)
-        .range(offset, offset + limit - 1);
-      throwIfError(error, 'Could not load study progress');
-      return data || [];
-    }),
-  ]);
-
-  const stateById = {};
-  for (const row of states) stateById[row.card_id] = row;
-
-  return staticCards
-    .filter((row) => !row.deleted_at)
-    .map((row) => mergeCardAndState(mapStaticCard(row), stateById[row.id]));
-}
-
-function mapStaticCard(row) {
-  return {
-    id: row.id,
-    question: row.question || '',
-    answer: row.answer || '',
-    noteFields: Array.isArray(row.note_fields) ? row.note_fields : [],
-    position: row.position || 0,
-    hasImage: Boolean(row.has_image),
-    hasAudio: Boolean(row.has_audio),
-    templateIndex: row.template_index || 0,
-    subdeckId: row.subdeck_id || 0,
-    noteId: row.note_id || row.id,
-    noteGuid: row.note_guid || row.note_id || row.id,
-    noteModelId: row.note_model_id || '0',
-    tags: Array.isArray(row.note_tags) ? row.note_tags : (row.tags || []),
-    updatedAt: row.updated_at || null,
-    dueDate: Object.prototype.hasOwnProperty.call(row, 'due_date') ? row.due_date : undefined,
-    reviewCount: Object.prototype.hasOwnProperty.call(row, 'review_count')
-      ? Number(row.review_count) || 0
-      : undefined,
-    state: row.state || undefined,
-  };
-}
-
-function mergeCardAndState(card, state) {
-  if (!state) {
-    return {
-      ...card,
-      state: 'NEW',
-      easeFactor: 2500,
-      intervalSecs: 0,
-      reviewCount: 0,
-      lapseCount: 0,
-      intervalSecsBeforeLapse: null,
-      dueDate: null,
-      lastReviewedAt: null,
-      firstReviewedAt: null,
-      lastAnswerGiven: null,
-      suspended: false,
+  const all = [];
+  let cursor = null;
+  for (;;) {
+    const params = {
+      p_deck_id: deckId,
+      p_limit: STUDY_BUNDLE_PAGE_SIZE,
     };
+    if (cursor) {
+      params.p_cursor_position = cursor.position;
+      params.p_cursor_id = cursor.id;
+    }
+    const { data, error } = await supabase.rpc('get_deck_study_bundle', params);
+    throwIfError(error, 'Could not load cards');
+    const page = data || [];
+    all.push(...page.map(mapStudyBundleRow));
+    if (page.length < STUDY_BUNDLE_PAGE_SIZE) break;
+    cursor = nextStudyBundleCursor(page);
+    if (!cursor) break;
   }
-  return {
-    ...card,
-    state: state.state || 'NEW',
-    easeFactor: state.ease_factor || 2500,
-    intervalSecs: state.interval_secs || 0,
-    reviewCount: state.review_count || 0,
-    lapseCount: state.lapse_count || 0,
-    intervalSecsBeforeLapse: state.interval_secs_before_lapse,
-    dueDate: state.due_date,
-    lastReviewedAt: state.last_reviewed,
-    firstReviewedAt: state.first_reviewed_at,
-    lastAnswerGiven: state.last_answer_given,
-    suspended: Boolean(state.suspended),
-  };
+  return all;
 }
 
 export async function fetchMediaMap(deckId) {
-  const { data, error } = await supabase
-    .from('deck_version_media')
-    .select('file_name, storage_path')
-    .eq('deck_version_id', deckId)
-    .is('deleted_at', null);
-  throwIfError(error, 'Could not load media');
   const map = {};
-  await Promise.all((data || []).map(async (row) => {
-    if (!row.storage_path || !row.file_name) return;
-    const { data: signed, error: signedError } = await supabase.storage
-      .from('deck-media')
-      .createSignedUrl(row.storage_path, 3600);
-    if (!signedError && signed?.signedUrl) {
-      map[row.file_name] = signed.signedUrl;
+  let cursor = null;
+  for (;;) {
+    const body = { deckVersionId: deckId, limit: MEDIA_URL_PAGE_SIZE };
+    if (cursor) body.cursor = cursor;
+    const parsed = await invokeEdgeFunction('get_deck_media_urls', body, 'Could not load media');
+    const files = parsed?.files || [];
+    for (const file of files) {
+      if (file?.fileName && file?.url) map[file.fileName] = file.url;
     }
-  }));
+    if (!parsed?.nextCursor) break;
+    cursor = parsed.nextCursor;
+  }
   return map;
 }
 
@@ -611,34 +343,162 @@ export async function saveDeckSettings(deck, settings) {
   return extra;
 }
 
-export async function createDeckCard(deck, { front, back, position = null }) {
+export async function createDeck({ name, topic }) {
+  const payload = emptyDeckCreatePayload({ name, topic });
+  const results = await invokeBulkSync(
+    [bulkOp(1, 'deck', 'create', payload.id, payload)],
+    'Could not create this deck',
+  );
+  const deckId = results[0]?.data?.deckId;
+  if (!deckId) throw new Error('Could not create this deck');
+  let deck;
+  try {
+    deck = await fetchDeck(String(deckId));
+  } catch {
+    deck = cacheDeck({
+      id: String(deckId),
+      firebaseId: payload.id,
+      name: payload.name,
+      topic: getDeckTopicByPostgresId(payload.topic),
+      cardCount: 0,
+      extraConfig: {},
+      decks: payload.decks,
+      sharedDeckId: '',
+      createdAt: payload.createdAt,
+      lastUsedAt: payload.createdAt,
+      creatorId: getCurrentUser()?.supabaseUid || '',
+      contentMode: 'postgres',
+      canStudy: true,
+      canEdit: true,
+      config: parseDeckConfig({}),
+    });
+  }
+  return prependCachedDeck({
+    ...deck,
+    cardCount: deck.cardCount || 0,
+    statsAvailable: true,
+    newRemainingToday: 0,
+    reviewDueToday: 0,
+    cardsForToday: 0,
+  });
+}
+
+const SPREADSHEET_CARD_BATCH = 80;
+
+export async function importSpreadsheetCards(deck, cards, {
+  subdeckId,
+  startPosition = 0,
+} = {}) {
+  const folderId = subdeckId ?? rootFolderId(parseDeckFolders(deck.decks, deck.name)) ?? 0;
+  const created = [];
+  for (let offset = 0; offset < cards.length; offset += SPREADSHEET_CARD_BATCH) {
+    const batch = cards.slice(offset, offset + SPREADSHEET_CARD_BATCH);
+    const operations = batch.map((card, index) => {
+      const cardId = crypto.randomUUID();
+      const noteId = crypto.randomUUID();
+      const { fields, noteModelId } = spreadsheetCardFields(card);
+      const position = startPosition + offset + index;
+      created.push({
+        id: cardId,
+        question: fields[0],
+        answer: fields[1],
+        noteFields: fields,
+        position,
+        hasImage: false,
+        hasAudio: false,
+        templateIndex: 0,
+        subdeckId: folderId,
+        noteId,
+        noteGuid: noteId,
+        noteModelId,
+        tags: card.tags || ['from-spreadsheet'],
+        updatedAt: new Date().toISOString(),
+        dueDate: null,
+        reviewCount: 0,
+        state: 'NEW',
+      });
+      return bulkOp(index + 1, 'card', 'create', cardId, {
+        deckId: deck.id,
+        cardId,
+        noteId,
+        noteGuid: noteId,
+        fields,
+        question: fields[0],
+        answer: fields[1],
+        subdeckId: folderId,
+        tags: card.tags || ['from-spreadsheet'],
+        noteModelId,
+        templateIndex: 0,
+        position,
+        hasImage: false,
+        hasAudio: false,
+        updatedAt: new Date().toISOString(),
+      });
+    });
+    await invokeBulkSync(operations, 'Could not import these cards');
+  }
+  return created;
+}
+
+export async function createDeckFromSpreadsheet({ name, topic, text, cards }) {
+  assertSpreadsheetLimits(text, cards);
+  const deck = await createDeck({ name, topic });
+  try {
+    await importSpreadsheetCards(deck, cards);
+  } catch (error) {
+    error.deckId = deck.id;
+    throw error;
+  }
+  let saved;
+  try {
+    saved = await fetchDeck(deck.id);
+  } catch {
+    saved = { ...deck, cardCount: cards.length };
+  }
+  return prependCachedDeck({
+    ...saved,
+    cardCount: saved.cardCount || cards.length,
+    statsAvailable: true,
+    newRemainingToday: saved.cardCount || cards.length,
+    reviewDueToday: 0,
+    cardsForToday: saved.cardCount || cards.length,
+  });
+}
+
+export async function createDeckCard(deck, {
+  front,
+  back,
+  frontHtml,
+  backHtml,
+  position = null,
+  subdeckId = 0,
+  files = [],
+} = {}) {
   const cardId = crypto.randomUUID();
   const noteId = crypto.randomUUID();
-  const frontHtml = editorTextToHtml(front);
-  const backHtml = editorTextToHtml(back);
-  const fields = [frontHtml, backHtml];
-  await upsertOwnedCard(deck, {
+  const fields = sanitizeEditorFields(frontHtml ?? front, backHtml ?? back);
+  const saved = await saveOwnedCard(deck, {
     cardId,
     noteId,
     noteGuid: noteId,
     fields,
-    frontHtml,
-    backHtml,
+    subdeckId,
     position,
   });
+  await uploadPendingCardFiles(deck, cardId, files);
   return {
     id: cardId,
-    question: frontHtml,
-    answer: backHtml,
-    noteFields: fields,
+    question: saved.fields[0],
+    answer: saved.fields[1],
+    noteFields: saved.fields,
     position: position || 0,
-    hasImage: false,
+    hasImage: saved.hasImage,
     hasAudio: false,
     templateIndex: 0,
-    subdeckId: 0,
+    subdeckId: subdeckId || 0,
     noteId,
     noteGuid: noteId,
-    noteModelId: '0',
+    noteModelId: saved.noteModelId,
     tags: [],
     updatedAt: new Date().toISOString(),
     dueDate: null,
@@ -647,32 +507,93 @@ export async function createDeckCard(deck, { front, back, position = null }) {
   };
 }
 
-export async function updateDeckCard(deck, card, { front, back }) {
-  const frontHtml = editorTextToHtml(front);
-  const backHtml = editorTextToHtml(back);
-  const fields = replaceFrontBackFields(card, frontHtml, backHtml);
-  await upsertOwnedCard(deck, {
+export async function updateDeckCard(deck, card, { front, back, frontHtml, backHtml, subdeckId, files = [] } = {}) {
+  const [nextFront, nextBack] = sanitizeEditorFields(frontHtml ?? front, backHtml ?? back);
+  const fields = replaceFrontBackFields(card, nextFront, nextBack);
+  const saved = await saveOwnedCard(deck, {
     cardId: card.id,
     noteId: card.noteId || card.id,
     noteGuid: card.noteGuid || card.noteId || card.id,
     fields,
-    frontHtml,
-    backHtml,
-    subdeckId: card.subdeckId || 0,
+    subdeckId: subdeckId ?? card.subdeckId ?? 0,
     position: card.position || 0,
-    hasImage: Boolean(card.hasImage),
     hasAudio: Boolean(card.hasAudio),
     tags: card.tags || [],
-    noteModelId: card.noteModelId || '0',
     templateIndex: card.templateIndex || 0,
   });
+  await uploadPendingCardFiles(deck, card.id, files);
   return {
     ...card,
-    question: frontHtml,
-    answer: backHtml,
-    noteFields: fields,
+    question: saved.fields[0],
+    answer: saved.fields[1],
+    noteFields: saved.fields,
+    hasImage: saved.hasImage,
+    noteModelId: saved.noteModelId,
+    subdeckId: subdeckId ?? card.subdeckId ?? 0,
     updatedAt: new Date().toISOString(),
   };
+}
+
+function sanitizeEditorFields(front, back) {
+  try {
+    return [
+      sanitizeCardHtml(editorHtmlToStored(front)),
+      sanitizeCardHtml(editorHtmlToStored(back)),
+    ];
+  } catch (error) {
+    if (error instanceof CardHtmlTooLargeError) throw error;
+    throw error;
+  }
+}
+
+async function saveOwnedCard(deck, payload) {
+  const fields = payload.fields;
+  const saved = await invokeEdgeFunction('save_owned_card', {
+    deckVersionId: deck.id,
+    cardId: payload.cardId,
+    noteId: payload.noteId,
+    noteGuid: payload.noteGuid,
+    fields,
+    subdeckId: payload.subdeckId || 0,
+    position: payload.position,
+    hasAudio: Boolean(payload.hasAudio),
+    tags: payload.tags || [],
+    templateIndex: payload.templateIndex || 0,
+    updatedAt: new Date().toISOString(),
+  }, 'Could not save this card');
+  return {
+    fields: Array.isArray(saved?.fields) ? saved.fields : fields,
+    hasImage: Boolean(saved?.hasImage ?? fieldsHaveImage(fields)),
+    noteModelId: saved?.noteModelId || noteModelIdForWebFields(fields),
+  };
+}
+
+async function uploadPendingCardFiles(deck, cardId, files) {
+  for (const file of files || []) {
+    if (!file?.blob) continue;
+    await uploadDeckMediaFile(deck, cardId, file);
+  }
+}
+
+async function blobToBase64(blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+export async function uploadDeckMediaFile(deck, cardId, { blob, contentType, fileName }) {
+  const data = await blobToBase64(blob);
+  return invokeEdgeFunction('upload_deck_media', {
+    deckVersionId: deck.id,
+    cardId,
+    data,
+    contentType,
+    fileName,
+  }, 'Could not upload this image');
 }
 
 async function invokeEdgeFunction(name, body, fallback) {
@@ -872,25 +793,14 @@ export async function moveCardToSubdeck(deck, card, subdeckId) {
 async function copyCardMedia(sourceDeck, targetDeck, sourceCard, targetCardId) {
   const filenames = extractMediaFilenames(sourceCard);
   if (!filenames.length) return;
-  const { data, error } = await supabase
-    .from('deck_version_media')
-    .select('file_name, media_type, storage_path')
-    .eq('deck_version_id', sourceDeck.id)
-    .is('deleted_at', null)
-    .in('file_name', filenames);
+  const { error } = await supabase.rpc('copy_owned_card_media', {
+    p_source_deck_id: sourceDeck.id,
+    p_target_deck_id: targetDeck.id,
+    p_source_card_id: sourceCard.id,
+    p_target_card_id: targetCardId,
+    p_file_names: filenames,
+  });
   throwIfError(error, 'Could not copy card media');
-  const rows = data || [];
-  await Promise.all(rows.map(async (row) => {
-    if (!row.file_name) return;
-    const { error: insertError } = await supabase.rpc('insert_deck_version_media_for_caller', {
-      p_card_id: targetCardId,
-      p_deck_version_id: targetDeck.id,
-      p_media_type: row.media_type || (sourceCard.hasAudio && !sourceCard.hasImage ? 'audio' : 'image'),
-      p_file_name: row.file_name,
-      p_storage_path: row.storage_path || null,
-    });
-    throwIfError(insertError, 'Could not copy card media');
-  }));
 }
 
 export async function moveCardToAnotherDeck(sourceDeck, card, targetDeck, targetSubdeckId) {

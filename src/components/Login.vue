@@ -206,7 +206,7 @@ export default {
     },
     goToApp() {
       const next = this.next || this.$route.query.next;
-      const safe = typeof next === 'string' && (next.startsWith('/decks') || next === '/profile')
+      const safe = typeof next === 'string' && (next.startsWith('/decks') || next === '/profile' || next === '/library')
         ? next
         : '/decks';
       this.$router.replace(safe);

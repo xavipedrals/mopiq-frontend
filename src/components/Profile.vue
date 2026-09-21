@@ -1,8 +1,11 @@
 <template>
-  <div class="shell">
-    <div class="container-xl">
-      <AppHeader />
-      <div class="page">
+  <div class="page">
+        <router-link :to="listTo" class="pane-back">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ $t('decks.title') }}
+        </router-link>
         <div v-if="loading" aria-busy="true">
           <div class="hero">
             <div class="avatar-block">
@@ -186,12 +189,9 @@
           </div>
         </template>
       </div>
-    </div>
-  </div>
 </template>
 
 <script>
-import AppHeader from './AppHeader.vue';
 import LanguagePicker from './LanguagePicker.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
 import { fetchUserProfile, updateUserProfileLocale } from '../api/mopiq';
@@ -207,7 +207,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * 60;
 
 export default {
   name: 'ProfilePage',
-  components: { AppHeader, LanguagePicker, SkeletonBlock },
+  components: { LanguagePicker, SkeletonBlock },
   data() {
     return {
       loading: true,
@@ -233,6 +233,9 @@ export default {
     };
   },
   computed: {
+    listTo() {
+      return this.$route.path.startsWith('/dev/split') ? '/dev/split' : '/decks';
+    },
     progress() {
       return getLevelAndPercentage(this.profile.experience);
     },
@@ -307,7 +310,17 @@ export default {
 </script>
 
 <style scoped>
-.page { padding-bottom: 56px; }
+.page { padding: 12px 28px 56px; max-width: 760px; margin: 0 auto; }
+.pane-back {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin: 0 0 8px;
+  color: var(--blue-button);
+  text-decoration: none;
+  font-weight: 600;
+}
+.pane-back svg { width: 18px; height: 18px; display: block; }
 .hero {
   display: flex;
   flex-direction: column;
@@ -529,6 +542,10 @@ h1 {
 }
 .legal a:hover { color: var(--blue-button); }
 .error { color: var(--error); margin-top: 12px; text-align: center; }
+@media (max-width: 899px) {
+  .pane-back { display: inline-flex; }
+  .page { padding: 8px 16px 48px; }
+}
 @media (max-width: 520px) {
   .stats { gap: 12px; }
   .value { font-size: 1.6rem; }

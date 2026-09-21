@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createKeyboardHintHistory, desktopKeyboardLikely, isKeyboardEvidence, isTypingTarget,
-  keyboardHintMetadataPatch, readKeyboardHintMetadata, studyShortcutAction, visibleKeyboardHint } from './keyboardHints.js';
+  keyboardHintMetadataPatch, readKeyboardHintMetadata, readShowStudyKeycaps, studyShortcutAction,
+  visibleKeyboardHint, writeShowStudyKeycaps } from './keyboardHints.js';
 
 const storage = () => {
   const values = new Map();
@@ -9,6 +10,20 @@ const storage = () => {
 };
 const eligible = { ready: true, active: true, keyboard: true, typing: false, showingAnswer: false,
   flags: { shortcutUsed: false, answerSeen: false } };
+
+describe('study keyboard shortcut badges', () => {
+  it('defaults to showing keycaps, matching iPad', () => {
+    assert.equal(readShowStudyKeycaps(storage()), true);
+    assert.equal(writeShowStudyKeycaps(false, storage()), false);
+  });
+  it('round-trips the local preference', () => {
+    const prefs = storage();
+    assert.equal(writeShowStudyKeycaps(false, prefs), false);
+    assert.equal(readShowStudyKeycaps(prefs), false);
+    assert.equal(writeShowStudyKeycaps(true, prefs), true);
+    assert.equal(readShowStudyKeycaps(prefs), true);
+  });
+});
 
 describe('keyboard hint eligibility and shortcuts', () => {
   it('requires a keyboard, loaded history and active study outside editors', () => {

@@ -1,0 +1,94 @@
+<template>
+  <svg
+    class="tabler-icon"
+    :class="{ filled }"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path v-for="(d, i) in paths" :key="i" :d="d" />
+  </svg>
+</template>
+
+<script>
+// Tabler Icons (MIT). SF Symbols cannot be shipped on the web.
+const ICONS = {
+  ellipsis: [
+    'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0',
+    'M8 12h.01',
+    'M12 12h.01',
+    'M16 12h.01',
+  ],
+  circle: ['M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0'],
+  check: [
+    'M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.403 1.403l.083 .094l2 2l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z',
+  ],
+  edit: [
+    'M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1',
+    'M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415',
+    'M16 5l3 3',
+  ],
+  folderShare: [
+    'M13 19h-8a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v4',
+    'M16 22l5 -5',
+    'M21 21.5v-4.5h-4.5',
+  ],
+  inbox: [
+    'M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12',
+    'M4 13h3l3 3h4l3 -3h3',
+  ],
+  contrast: [
+    'M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336m-9 1.732a8 8 0 0 0 4.001 14.928l-.001 -16a8 8 0 0 0 -4 1.072',
+  ],
+  thumbUp: [
+    'M7 11v8a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1h3a4 4 0 0 0 4 -4v-1a2 2 0 0 1 4 0v5h3a2 2 0 0 1 2 2l-1 5a2 3 0 0 1 -2 2h-7a3 3 0 0 1 -3 -3',
+  ],
+  alert: [
+    'M12 9v4',
+    'M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0',
+    'M12 16h.01',
+  ],
+  trash: [
+    'M4 7h16',
+    'M10 11v6',
+    'M14 11v6',
+    'M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12',
+    'M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3',
+  ],
+  chevronRight: ['M9 6l6 6l-6 6'],
+  chevronLeft: ['M15 6l-6 6l6 6'],
+};
+
+export default {
+  name: 'StudyMenuIcon',
+  props: {
+    name: { type: String, required: true },
+  },
+  computed: {
+    filled() {
+      return this.name === 'check' || this.name === 'contrast';
+    },
+    paths() {
+      return ICONS[this.name] || ICONS.circle;
+    },
+  },
+};
+</script>
+
+<style scoped>
+.tabler-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tabler-icon.filled {
+  fill: currentColor;
+  stroke: none;
+}
+</style>

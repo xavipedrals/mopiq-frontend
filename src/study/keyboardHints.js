@@ -1,5 +1,28 @@
-// These are UI preferences, not authorization data. Only true values are synced,
-// under separate metadata keys, so another device cannot reset a learned hint.
+// Local UI preference for shortcut badges on study buttons. Hint-seen flags
+// below are not authorization data: only true values are synced, under
+// separate metadata keys, so another device cannot reset a learned hint.
+export const SHOW_KEYCAPS_STORAGE_KEY = 'mopiqShowStudyKeyboardShortcuts';
+
+export function readShowStudyKeycaps(storage) {
+  try {
+    const raw = storage?.getItem?.(SHOW_KEYCAPS_STORAGE_KEY);
+    if (raw == null) return true;
+    return raw === 'true' || raw === '1';
+  } catch {
+    return true;
+  }
+}
+
+export function writeShowStudyKeycaps(show, storage) {
+  const next = Boolean(show);
+  try {
+    storage?.setItem?.(SHOW_KEYCAPS_STORAGE_KEY, next ? 'true' : 'false');
+  } catch {
+    // Private browsing may disable storage.
+  }
+  return next;
+}
+
 export const KEYBOARD_HINT_METADATA = {
   shortcutUsed: 'web_study_keyboard_shortcut_used',
   questionSeen: 'web_study_question_keyboard_hint_seen',
