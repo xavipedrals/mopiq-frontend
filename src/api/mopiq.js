@@ -1,8 +1,9 @@
+import { assertReviewSyncResults } from '../study/reviewSync';
 import { supabase, supabaseAnonKey, supabaseUrl } from '../supabaseInit';
 import { getDownloadURL, ref as storageRef } from 'firebase/storage';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, storage } from '../firebaseInit';
-import { getAccessToken, getCurrentUser } from '../auth/session';
+import { deleteFirebaseUser, getAccessToken, getCurrentUser, logout } from '../auth/session';
 import { MAX_REVIEW_DURATION_MS, PAGE_SIZE } from '../constants';
 import { CARD_BROWSE_FIRST_PAGE, defaultCardBrowseQuery, toBrowseDeckCardsParams } from '../study/cardBrowse';
 import { ankiDayEndExclusive, ankiDayStart, ankiDayString, studyDayWireFields, toIso } from '../study/ankiDay';
@@ -10,15 +11,24 @@ import { parseDeckConfig } from '../study/deckConfig';
 import { mapDisplayProfileRow, mergeHighestStats } from '../profile/mapProfile';
 import { getAvatarImageName, getDeckTopicByPostgresId } from '../utils';
 import { edgeFunctionUrl } from './functionsUrl';
-import { cacheDeck, cacheDeckList, prependCachedDeck } from './deckCache';
+import { cacheDeck, cacheDeckList, clearDeckCache, prependCachedDeck, removeCachedDeck } from './deckCache';
 import { emptyDeckCreatePayload } from './emptyDeck';
 import {
   adoptFromProfileIfNeeded,
   getLanguagePreference,
+  getLocale,
   localeForProfileSync,
 } from '../i18n';
+import { TTS_MAX_CHARS } from '../study/ttsLanguages';
 import { applyDeckSettings } from '../study/deckSettings';
-import { cardSyncFields, extractMediaFilenames, replaceFrontBackFields } from '../study/cardFields';
+import {
+  cardSyncFields,
+  copiedCardFields,
+  extractMediaFilenames,
+  fieldsHaveAudio,
+  replaceFrontBackFields,
+  reversedCardFields,
+} from '../study/cardFields';
 import {
   CardHtmlTooLargeError,
   editorHtmlToStored,
@@ -31,6 +41,17 @@ import {
   assertSpreadsheetLimits,
   spreadsheetCardFields,
 } from '../study/spreadsheetImport';
+import {
+  edgeForSource,
+  fileMatchesSource,
+  fileTooLarge,
+  MAGIC_IMPORT_BUCKET,
+  magicImportObjectPath,
+  mapImportJob,
+  validateNotes,
+  validatePrompt,
+  validateYouTubeUrl,
+} from '../study/magicImport';
 import {
   MEDIA_URL_PAGE_SIZE,
   STUDY_BUNDLE_PAGE_SIZE,
@@ -149,6 +170,7 @@ export async function fetchAnswerHistogram(deckId) {
   });
   throwIfError(error, 'Could not load answer stats');
   const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('Grade unavailable');
   return mapHistogramRow(row);
 }
 
@@ -313,15 +335,48 @@ export async function submitReview({ deckId, card, previous, answer, durationMs,
   });
   throwIfError(error, 'Could not save this review');
   const results = data?.results || [];
-  const failed = results.find((row) => row.status !== 'ok');
-  if (failed) {
-    throw new Error(failed.error || 'Could not save this review');
-  }
+  assertReviewSyncResults(results);
   return results;
 }
 
 function deckRecordId(deck) {
   return deck.firebaseId || deck.id;
+}
+
+export async function saveDeckFolders(deck, decks) {
+  const recordId = deckRecordId(deck);
+  await invokeBulkSync(
+    [bulkOp(1, 'deck', 'update', recordId, {
+      id: recordId,
+      firebaseId: recordId,
+      decks,
+    })],
+    'Could not save folders',
+  );
+  return cacheDeck({ ...deck, decks });
+}
+
+export async function fetchSubdeckCardCounts(deckId) {
+  const counts = {};
+  const pageSize = 1000;
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from('cards_static')
+      .select('subdeck_id')
+      .eq('deck_version_id', deckId)
+      .is('deleted_at', null)
+      .range(from, from + pageSize - 1);
+    throwIfError(error, 'Could not load folders');
+    const rows = data || [];
+    for (const row of rows) {
+      const id = Number(row.subdeck_id) || 0;
+      counts[id] = (counts[id] || 0) + 1;
+    }
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  return counts;
 }
 
 export async function saveDeckSettings(deck, settings) {
@@ -440,6 +495,154 @@ export async function importSpreadsheetCards(deck, cards, {
   return created;
 }
 
+export class MagicImportError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = 'MagicImportError';
+    this.code = details.code || '';
+    this.deckId = details.deckId || '';
+    this.jobId = details.jobId || '';
+  }
+}
+
+async function postMagicImport(name, body) {
+  const token = await getAccessToken();
+  if (!token) throw new MagicImportError('Sign in to import cards');
+  const response = await fetch(edgeFunctionUrl(name), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      apikey: supabaseAnonKey,
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await response.text();
+  let parsed = null;
+  try {
+    parsed = text ? JSON.parse(text) : null;
+  } catch {
+    parsed = null;
+  }
+  if (!response.ok) {
+    throw new MagicImportError(parsed?.error || text || 'Could not start this import', {
+      code: parsed?.code,
+      deckId: parsed?.deckId,
+      jobId: parsed?.jobId,
+    });
+  }
+  return parsed || {};
+}
+
+async function uploadMagicSource(userId, file) {
+  const jobId = crypto.randomUUID();
+  const storagePath = magicImportObjectPath(userId, jobId, file.name);
+  const { error } = await supabase.storage.from(MAGIC_IMPORT_BUCKET).upload(storagePath, file, {
+    upsert: false,
+    contentType: file.type || undefined,
+  });
+  if (error) throw new MagicImportError(error.message || 'Could not upload this file', { code: 'upload_failed' });
+  return { jobId, storagePath };
+}
+
+async function deckFromImport(started, { name, topic, existingDeckId }) {
+  if (existingDeckId) return null;
+  try {
+    const deck = await fetchDeck(started.deckId);
+    return prependCachedDeck(deck);
+  } catch {
+    return prependCachedDeck({
+      id: started.deckId,
+      name: name || 'New deck',
+      topic: getDeckTopicByPostgresId(topic || 'other'),
+      cardCount: Number(started.insertedCards) || 0,
+      statsAvailable: true,
+      newRemainingToday: 0,
+      reviewDueToday: 0,
+      cardsForToday: 0,
+      contentMode: 'postgres',
+      canStudy: true,
+      canEdit: true,
+    });
+  }
+}
+
+export async function fetchMagicImportJob(jobId) {
+  const { data, error } = await supabase.rpc('get_magic_import_job', { p_job_id: jobId });
+  throwIfError(error, 'Could not check this import');
+  const row = Array.isArray(data) ? data[0] : data;
+  return mapImportJob(row);
+}
+
+export async function startMagicImport({
+  source,
+  deckId = '',
+  name = '',
+  topic = 'other',
+  text = '',
+  file = null,
+} = {}) {
+  const edge = edgeForSource(source);
+  if (!edge) throw new MagicImportError('This import is not available', { code: 'source_kind' });
+  const preferredLanguage = getLocale() || 'en';
+  const body = {
+    name: String(name || '').trim(),
+    topic,
+    preferredLanguage,
+  };
+  if (deckId) body.deckVersionId = deckId;
+
+  if (source === 'aiPrompt') {
+    const code = validatePrompt(text);
+    if (code) throw new MagicImportError('Could not start this import', { code });
+    body.prompt = String(text).trim();
+  } else if (source === 'paste') {
+    const code = validateNotes(text);
+    if (code) throw new MagicImportError('Could not start this import', { code });
+    body.sourceKind = 'paste';
+    body.text = String(text).trim();
+  } else if (source === 'youtube') {
+    const code = validateYouTubeUrl(text);
+    if (code) throw new MagicImportError('Could not start this import', { code });
+    body.sourceKind = 'youtube';
+    body.url = String(text).trim();
+  } else {
+    if (!file) throw new MagicImportError('Choose a file first', { code: 'file_required' });
+    if (!fileMatchesSource(source, file.name)) {
+      throw new MagicImportError('That file type is not supported for this import', { code: 'file_type' });
+    }
+    if (fileTooLarge(source, file.size)) {
+      throw new MagicImportError('That file is too large', { code: 'file_too_large' });
+    }
+    const userId = getCurrentUser()?.supabaseUid;
+    if (!userId) throw new MagicImportError('Sign in to import cards');
+    const uploaded = await uploadMagicSource(userId, file);
+    body.jobId = uploaded.jobId;
+    body.storagePath = uploaded.storagePath;
+    if (source !== 'anki') body.sourceKind = source;
+  }
+
+  let started;
+  try {
+    started = await postMagicImport(edge, body);
+  } catch (error) {
+    if (error instanceof MagicImportError && error.deckId && !deckId) {
+      await deckFromImport({ deckId: error.deckId }, { name, topic, existingDeckId: '' });
+    }
+    throw error;
+  }
+  const deck = await deckFromImport(started, { name, topic, existingDeckId: deckId });
+  return {
+    deckId: started.deckId,
+    jobId: started.jobId || '',
+    firebaseId: started.firebaseId || '',
+    status: started.status || 'queued',
+    insertedCards: Number(started.insertedCards) || 0,
+    warnings: started.warnings || [],
+    deck,
+  };
+}
+
 export async function createDeckFromSpreadsheet({ name, topic, text, cards }) {
   assertSpreadsheetLimits(text, cards);
   const deck = await createDeck({ name, topic });
@@ -493,7 +696,7 @@ export async function createDeckCard(deck, {
     noteFields: saved.fields,
     position: position || 0,
     hasImage: saved.hasImage,
-    hasAudio: false,
+    hasAudio: fieldsHaveAudio(saved.fields),
     templateIndex: 0,
     subdeckId: subdeckId || 0,
     noteId,
@@ -517,7 +720,7 @@ export async function updateDeckCard(deck, card, { front, back, frontHtml, backH
     fields,
     subdeckId: subdeckId ?? card.subdeckId ?? 0,
     position: card.position || 0,
-    hasAudio: Boolean(card.hasAudio),
+    hasAudio: fieldsHaveAudio(fields),
     tags: card.tags || [],
     templateIndex: card.templateIndex || 0,
   });
@@ -528,6 +731,7 @@ export async function updateDeckCard(deck, card, { front, back, frontHtml, backH
     answer: saved.fields[1],
     noteFields: saved.fields,
     hasImage: saved.hasImage,
+    hasAudio: fieldsHaveAudio(saved.fields),
     noteModelId: saved.noteModelId,
     subdeckId: subdeckId ?? card.subdeckId ?? 0,
     updatedAt: new Date().toISOString(),
@@ -556,7 +760,7 @@ async function saveOwnedCard(deck, payload) {
     fields,
     subdeckId: payload.subdeckId || 0,
     position: payload.position,
-    hasAudio: Boolean(payload.hasAudio),
+    hasAudio: Boolean(payload.hasAudio) || fieldsHaveAudio(fields),
     tags: payload.tags || [],
     templateIndex: payload.templateIndex || 0,
     updatedAt: new Date().toISOString(),
@@ -593,7 +797,7 @@ export async function uploadDeckMediaFile(deck, cardId, { blob, contentType, fil
     data,
     contentType,
     fileName,
-  }, 'Could not upload this image');
+  }, 'Could not upload this file');
 }
 
 async function invokeEdgeFunction(name, body, fallback) {
@@ -772,22 +976,178 @@ function cardMutationPayload(deck, card, extras = {}) {
   };
 }
 
-export async function deleteDeckCard(deck, card) {
+export async function deleteOwnedDeck(deck) {
+  const id = String(deck?.id || '');
+  if (!id) throw new Error('Could not delete this deck');
   await invokeBulkSync([
-    bulkOp(1, 'card', 'delete', card.id, {
-      deckId: deck.id,
-      cardId: card.id,
-      updatedAt: new Date().toISOString(),
+    bulkOp(1, 'deck', 'delete', id, {}),
+  ], 'Could not delete this deck');
+  removeCachedDeck(id);
+}
+
+export async function resetDeckProgress(deck) {
+  const id = String(deck?.id || '');
+  if (!id) throw new Error('Could not reset progress');
+  await invokeBulkSync([
+    bulkOp(1, 'progressReset', 'create', id, {
+      deckId: id,
+      resetAt: new Date().toISOString(),
     }),
-  ], 'Could not delete this card');
+  ], 'Could not reset progress');
+}
+
+export async function deleteCurrentAccount() {
+  const token = await getAccessToken();
+  if (!token) throw new Error('Could not delete this account');
+  try {
+    await deleteFirebaseUser();
+  } catch (error) {
+    if (error?.code === 'auth/requires-recent-login') {
+      const retry = new Error('Sign in again, then delete your account.');
+      retry.code = 'requires-recent-login';
+      throw retry;
+    }
+    throw error;
+  }
+  const response = await fetch(edgeFunctionUrl('delete_current_user'), {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: supabaseAnonKey,
+    },
+  });
+  const text = await response.text();
+  let parsed = null;
+  try {
+    parsed = text ? JSON.parse(text) : null;
+  } catch {
+    parsed = null;
+  }
+  if (!response.ok) {
+    throw new Error(parsed?.error || text || 'Could not delete this account');
+  }
+  try {
+    await logout();
+  } catch {
+    // Firebase/Supabase sessions may already be gone.
+  }
+  clearDeckCache();
+}
+
+export async function requestTextToSpeech(text, language) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) throw new Error('Enter text for AI to read.');
+  if (trimmed.length > TTS_MAX_CHARS) throw new Error('Text must be under 300 characters.');
+  const token = await getAccessToken();
+  if (!token) throw new Error('Could not generate audio');
+  const response = await fetch(edgeFunctionUrl('text_to_speech'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      apikey: supabaseAnonKey,
+    },
+    body: JSON.stringify({ text: trimmed, language }),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    let parsed = null;
+    try {
+      parsed = body ? JSON.parse(body) : null;
+    } catch {
+      parsed = null;
+    }
+    throw new Error(parsed?.error || body || 'Could not generate audio');
+  }
+  return response.blob();
+}
+
+function listedDuplicate(card, ids, saved) {
+  return {
+    id: ids.cardId,
+    question: saved.fields[0] || '',
+    answer: saved.fields[1] || '',
+    noteFields: saved.fields,
+    position: card.position || 0,
+    hasImage: saved.hasImage,
+    hasAudio: fieldsHaveAudio(saved.fields),
+    templateIndex: card.templateIndex || 0,
+    subdeckId: card.subdeckId || 0,
+    noteId: ids.noteId,
+    noteGuid: ids.noteId,
+    noteModelId: saved.noteModelId,
+    tags: card.tags || [],
+    updatedAt: new Date().toISOString(),
+    dueDate: null,
+    reviewCount: 0,
+    state: 'NEW',
+  };
+}
+
+async function duplicateDeckCard(deck, card, fields) {
+  const cardId = crypto.randomUUID();
+  const noteId = crypto.randomUUID();
+  const saved = await saveOwnedCard(deck, {
+    cardId,
+    noteId,
+    noteGuid: noteId,
+    fields,
+    subdeckId: card.subdeckId || 0,
+    position: null,
+    hasAudio: fieldsHaveAudio(fields),
+    tags: card.tags || [],
+    templateIndex: card.templateIndex || 0,
+  });
+  try {
+    await copyCardMedia(deck, deck, card, cardId);
+  } catch {
+    // The copy already exists; media can be recopied from the app.
+  }
+  return listedDuplicate(card, { cardId, noteId }, saved);
+}
+
+export async function copyDeckCard(deck, card) {
+  return duplicateDeckCard(deck, card, copiedCardFields(card));
+}
+
+export async function reverseDeckCard(deck, card) {
+  const fields = reversedCardFields(card);
+  if (!fields) throw new Error('Could not reverse this card');
+  return duplicateDeckCard(deck, card, fields);
+}
+
+async function invokeBulkSyncChunked(operations, fallback) {
+  const size = 40;
+  for (let offset = 0; offset < operations.length; offset += size) {
+    const chunk = operations.slice(offset, offset + size).map((operation, index) => ({
+      ...operation,
+      id: index + 1,
+    }));
+    await invokeBulkSync(chunk, fallback);
+  }
+}
+
+export async function deleteDeckCard(deck, card) {
+  await deleteDeckCards(deck, [card]);
+}
+
+export async function deleteDeckCards(deck, cards) {
+  const updatedAt = new Date().toISOString();
+  await invokeBulkSyncChunked(cards.map((card, index) => bulkOp(index + 1, 'card', 'delete', card.id, {
+    deckId: deck.id,
+    cardId: card.id,
+    updatedAt,
+  })), 'Could not delete these cards');
 }
 
 export async function moveCardToSubdeck(deck, card, subdeckId) {
-  await invokeBulkSync([
-    bulkOp(1, 'card', 'update', card.id, {
-      ...cardMutationPayload(deck, card, { subdeckId, payload: { mutationScope: 'card' } }),
-    }),
-  ], 'Could not move this card');
+  await moveCardsToSubdeck(deck, [card], subdeckId);
+}
+
+export async function moveCardsToSubdeck(deck, cards, subdeckId) {
+  await invokeBulkSyncChunked(cards.map((card, index) => bulkOp(index + 1, 'card', 'update', card.id, {
+    ...cardMutationPayload(deck, card, { subdeckId, payload: { mutationScope: 'card' } }),
+  })), 'Could not move these cards');
 }
 
 async function copyCardMedia(sourceDeck, targetDeck, sourceCard, targetCardId) {

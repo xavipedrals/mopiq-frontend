@@ -17,14 +17,34 @@
 
         <div class="sheet-body">
           <h3>{{ $t('deck.filters') }}</h3>
-          <label class="switch-row">
+          <div class="switch-row">
             <span>{{ $t('deck.containsImage') }}</span>
-            <input v-model="hasImage" type="checkbox" @change="emitChange">
-          </label>
-          <label class="switch-row">
+            <button
+              type="button"
+              class="ios-switch"
+              :class="{ on: hasImage }"
+              role="switch"
+              :aria-checked="hasImage"
+              :aria-label="$t('deck.containsImage')"
+              @click="toggle('hasImage')"
+            >
+              <i></i>
+            </button>
+          </div>
+          <div class="switch-row">
             <span>{{ $t('deck.containsAudio') }}</span>
-            <input v-model="hasAudio" type="checkbox" @change="emitChange">
-          </label>
+            <button
+              type="button"
+              class="ios-switch"
+              :class="{ on: hasAudio }"
+              role="switch"
+              :aria-checked="hasAudio"
+              :aria-label="$t('deck.containsAudio')"
+              @click="toggle('hasAudio')"
+            >
+              <i></i>
+            </button>
+          </div>
           <label class="field">
             <span>{{ $t('deck.cardStatus') }}</span>
             <select v-model="status" @change="emitChange">
@@ -111,6 +131,10 @@ export default {
         sort: this.sort,
         ascending: this.sort !== 'byPosition' && this.order === 'oldest',
       });
+    },
+    toggle(key) {
+      this[key] = !this[key];
+      this.emitChange();
     },
     emitChange() {
       this.$emit('update', this.currentQuery());
@@ -207,6 +231,30 @@ h3 {
 }
 .field { flex-direction: column; align-items: stretch; }
 .field span, .switch-row span { font-weight: 600; }
+.ios-switch {
+  width: 51px;
+  height: 31px;
+  border: 0;
+  border-radius: 16px;
+  background: #e5e7eb;
+  position: relative;
+  padding: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.ios-switch.on { background: #34c759; }
+.ios-switch i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+.ios-switch.on i { transform: translateX(20px); }
 .field select {
   margin-top: 6px;
   border: 1px solid var(--empty-bar);
@@ -233,4 +281,5 @@ h3 {
   background: var(--secondary-btn-bg) !important;
   color: var(--secondary-btn-text) !important;
 }
+html[data-theme="dark"] .ios-switch { background: #475569; }
 </style>

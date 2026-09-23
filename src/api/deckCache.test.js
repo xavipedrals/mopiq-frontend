@@ -8,6 +8,7 @@ import {
   cachedDeckStats,
   clearDeckCache,
   prependCachedDeck,
+  removeCachedDeck,
 } from './deckCache.js';
 
 describe('deckCache', () => {
@@ -69,5 +70,13 @@ describe('deckCache', () => {
     prependCachedDeck({ id: 'b', name: 'Brand new', cardCount: 0 });
     assert.deepEqual(cachedDeckList().map((deck) => deck.id), ['b', 'a']);
     assert.equal(cachedDeckStats('b').cardCount, 0);
+  });
+
+  it('drops a deleted deck from the list and lookups', () => {
+    cacheDeckList([{ id: 'a', name: 'Keep' }, { id: 'b', name: 'Gone' }]);
+    removeCachedDeck('b');
+    assert.deepEqual(cachedDeckList().map((deck) => deck.id), ['a']);
+    assert.equal(cachedDeck('b'), null);
+    assert.equal(cachedDeckStats('b'), null);
   });
 });

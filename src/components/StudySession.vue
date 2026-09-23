@@ -254,7 +254,7 @@ import { fetchAllStudyCards, fetchDeck, fetchDeckList, fetchFreeStudyQuota, fetc
 import { reportStudyCard } from '../api/reportCard';
 import { fetchKeyboardHintHistory, saveKeyboardHintHistory } from '../api/keyboardHints';
 import { cachedDeckList } from '../api/deckCache';
-import { onSessionChange } from '../auth/session';
+import { onSessionChange, getCurrentUser } from '../auth/session';
 import { createKeyboardHintHistory, desktopKeyboardLikely, isKeyboardEvidence, isTypingTarget,
   readShowStudyKeycaps, studyShortcutAction, visibleKeyboardHint, writeShowStudyKeycaps } from '../study/keyboardHints';
 import StudyKeyboardToast from './StudyKeyboardToast.vue';
@@ -263,7 +263,7 @@ import { backHtml, cardDocument, cardPlainText, frontHtml } from '../study/cardH
 import { applyQuota, FREE_CARD_DAILY_LIMIT, isDailyLimitReached } from '../study/freeStudyQuota';
 import { applyAnswer, formatInterval, previewIntervals } from '../study/scheduler';
 import { buildStudyQueues, createStudyQueue } from '../study/queue';
-import { createReviewSyncQueue } from '../study/reviewSync';
+import { deckReviewSync } from '../study/reviewSync';
 import { getTheme, getThemePreference, setThemePreference, subscribeTheme } from '../theme/theme';
 import {
   currentSlotIndex,
@@ -543,7 +543,12 @@ export default {
     window.addEventListener('online', this.retryKeyboardHintSave);
     window.addEventListener('keydown', this.onKey);
     window.addEventListener('beforeunload', this.onBeforeUnload);
-    this.reviewSync = createReviewSyncQueue({ submit: submitReview });
+    this.reviewSync = deckReviewSync({
+      userId: getCurrentUser()?.supabaseUid,
+      deckId: this.$route.params.deckId,
+      submit: submitReview,
+      currentUserId: () => getCurrentUser()?.supabaseUid,
+    });
     this.unsubReviewSync = this.reviewSync.subscribe((state) => {
       this.saveError = state.error;
     });

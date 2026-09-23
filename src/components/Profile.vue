@@ -95,6 +95,17 @@
               >
             </label>
           </section>
+          <section class="appearance">
+            <button
+              type="button"
+              class="danger-link"
+              :disabled="deletingAccount"
+              @click="deleteConfirmOpen = true"
+            >
+              {{ $t('profile.deleteAccount') }}
+            </button>
+            <p v-if="deleteError" class="error">{{ deleteError }}</p>
+          </section>
         </div>
         <template v-else>
           <div class="hero">
@@ -188,13 +199,24 @@
             </div>
           </div>
         </template>
-      </div>
+    <StudyConfirmSheet
+      :open="deleteConfirmOpen"
+      :title="$t('profile.deleteAccountTitle')"
+      :message="$t('profile.deleteAccountBody')"
+      :confirm-label="$t('profile.deleteAccount')"
+      :busy="deletingAccount"
+      :error="deleteError"
+      @dismiss="closeDeleteConfirm"
+      @confirm="onDeleteAccount"
+    />
+  </div>
 </template>
 
 <script>
 import LanguagePicker from './LanguagePicker.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
-import { fetchUserProfile, updateUserProfileLocale } from '../api/mopiq';
+import StudyConfirmSheet from './StudyConfirmSheet.vue';
+import { deleteCurrentAccount, fetchUserProfile, updateUserProfileLocale } from '../api/mopiq';
 import { logout } from '../auth/session';
 import { getAvatarImageName } from '../utils';
 import { formatJoinedDate, formatStudiedTime, getLevelAndPercentage } from '../profile/experience';
@@ -207,14 +229,17 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * 60;
 
 export default {
   name: 'ProfilePage',
-  components: { LanguagePicker, SkeletonBlock },
+  components: { LanguagePicker, SkeletonBlock, StudyConfirmSheet },
   data() {
     return {
       loading: true,
       loggingOut: false,
+      deletingAccount: false,
+      deleteConfirmOpen: false,
       helpUrl: HELP_CENTER_URL,
       error: '',
       logoutError: '',
+      deleteError: '',
       avatarFailed: false,
       settingsOpen: false,
       theme: getThemePreference(),
@@ -303,6 +328,25 @@ export default {
       } catch (error) {
         this.logoutError = error.message || this.$t('profile.logoutError');
         this.loggingOut = false;
+      }
+    },
+    closeDeleteConfirm() {
+      if (this.deletingAccount) return;
+      this.deleteConfirmOpen = false;
+      this.deleteError = '';
+    },
+    async onDeleteAccount() {
+      if (this.deletingAccount) return;
+      this.deletingAccount = true;
+      this.deleteError = '';
+      try {
+        await deleteCurrentAccount();
+        this.$router.push('/');
+      } catch (error) {
+        this.deleteError = error.code === 'requires-recent-login'
+          ? this.$t('profile.deleteAccountRelogin')
+          : (error.message || this.$t('profile.deleteAccountError'));
+        this.deletingAccount = false;
       }
     },
   },
@@ -511,6 +555,20 @@ h1 {
   background: var(--card-bg);
   color: var(--title);
   box-shadow: var(--card-shadow);
+}
+.danger-link {
+  border: 0;
+  background: transparent;
+  color: #dc2626;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 650;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.danger-link:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 .account {
   max-width: 480px;

@@ -38,6 +38,17 @@ export function getAllDeckTopics() {
   return deckTopics;
 }
 
+// Matches iPad DeckTopicsPicker, plus school/computing/games which exist in the topic enum.
+const PICKER_TOPIC_ORDER = [
+  'other', 'medicine', 'languages', 'anatomy', 'biology', 'law', 'maths',
+  'chemistry', 'physics', 'geography', 'history', 'music', 'school', 'computing', 'games',
+];
+
+export function getPickerDeckTopics() {
+  const byName = Object.fromEntries(deckTopics.map((topic) => [topic.imageName, topic]));
+  return PICKER_TOPIC_ORDER.map((id) => byName[id]).filter(Boolean);
+}
+
 export function sidebarTablerIconUrl(imageName) {
   const topic = getDeckTopicByPostgresId(imageName);
   return `/topics/tabler/${topic.sidebarIcon}.svg`;

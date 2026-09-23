@@ -176,3 +176,11 @@ describe('mopiq.js table access', () => {
     assert.equal(source.includes('insert_deck_version_media_for_caller'), false);
   });
 });
+
+it('uses the same integer grade as iOS, including truncation and zero', () => {
+  assert.equal(mapHistogramRow({ hard_count: 1, easy_count: 20, total: 21, grade: 97 }).grade, 96);
+  assert.equal(mapHistogramRow({ good_count: 1, total: 1 }).grade, 66);
+  assert.equal(mapHistogramRow({ hard_count: 1, good_count: 1, easy_count: 1, total: 3 }).grade, 66);
+  assert.equal(mapHistogramRow({ again_count: 21, total: 21 }).grade, 0);
+  assert.equal(mapHistogramRow({}).grade, 0);
+});

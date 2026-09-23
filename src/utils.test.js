@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { getAllDeckTopics, getDeckTopicByPostgresId, sidebarTablerIconUrl } from './utils.js';
+import { getAllDeckTopics, getDeckTopicByPostgresId, getPickerDeckTopics, sidebarTablerIconUrl } from './utils.js';
 
 describe('sidebarTablerIconUrl', () => {
   it('maps each topic to the iPad sidebar Tabler icon', () => {
@@ -31,5 +31,18 @@ describe('sidebarTablerIconUrl', () => {
   it('falls back to the other/books icon', () => {
     assert.equal(sidebarTablerIconUrl(undefined), '/topics/tabler/books.svg');
     assert.equal(sidebarTablerIconUrl('unknown-topic'), '/topics/tabler/books.svg');
+  });
+});
+
+describe('getPickerDeckTopics', () => {
+  it('returns every topic in the iPad picker order', () => {
+    assert.deepEqual(
+      getPickerDeckTopics().map((topic) => topic.imageName),
+      [
+        'other', 'medicine', 'languages', 'anatomy', 'biology', 'law', 'maths',
+        'chemistry', 'physics', 'geography', 'history', 'music', 'school', 'computing', 'games',
+      ],
+    );
+    assert.equal(getPickerDeckTopics().length, getAllDeckTopics().length);
   });
 });

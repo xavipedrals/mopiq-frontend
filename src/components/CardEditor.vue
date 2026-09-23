@@ -1,10 +1,10 @@
 <template>
-  <Teleport to="body">
+  <Teleport v-if="open" :to="teleportTo">
     <div
-      v-if="open"
       class="creator-root"
+      :class="{ embedded }"
       role="dialog"
-      aria-modal="true"
+      :aria-modal="embedded ? 'false' : 'true'"
       :aria-labelledby="'card-editor-title'"
       @keydown.esc="onCancel"
     >
@@ -34,7 +34,7 @@
               v-if="!lockReason"
               type="button"
               class="nav-text save"
-              :disabled="saving"
+              :disabled="saving || contentPending"
               @click="save"
             >
               {{ saving ? $t('common.loading') : $t('common.save') }}
@@ -98,21 +98,34 @@
             <div class="side-label">{{ $t('editor.front') }}</div>
             <div
               class="editor-frame"
-              :class="{ active: activeSide === 'front', empty: frontEmpty }"
+              :class="{ active: !contentPending && activeSide === 'front', empty: !contentPending && frontEmpty }"
               :data-placeholder="$t('editor.placeholder')"
+              :aria-busy="contentPending ? 'true' : 'false'"
               @focusin="activeSide = 'front'"
             >
-              <editor-content v-if="frontEditor" :editor="frontEditor" />
+              <div v-if="contentPending" class="field-skeleton">
+                <span class="visually-hidden">{{ $t('common.loading') }}</span>
+                <SkeletonBlock w="78%" h="1.05rem" radius="7px" />
+                <SkeletonBlock w="92%" h="1.05rem" radius="7px" />
+                <SkeletonBlock w="54%" h="1.05rem" radius="7px" />
+              </div>
+              <editor-content v-if="frontEditor" v-show="!contentPending" :editor="frontEditor" />
             </div>
 
             <div class="side-label back">{{ $t('editor.back') }}</div>
             <div
               class="editor-frame"
-              :class="{ active: activeSide === 'back', empty: backEmpty }"
+              :class="{ active: !contentPending && activeSide === 'back', empty: !contentPending && backEmpty }"
               :data-placeholder="$t('editor.placeholder')"
+              :aria-busy="contentPending ? 'true' : 'false'"
               @focusin="activeSide = 'back'"
             >
-              <editor-content v-if="backEditor" :editor="backEditor" />
+              <div v-if="contentPending" class="field-skeleton">
+                <SkeletonBlock w="70%" h="1.05rem" radius="7px" />
+                <SkeletonBlock w="86%" h="1.05rem" radius="7px" />
+                <SkeletonBlock w="40%" h="1.05rem" radius="7px" />
+              </div>
+              <editor-content v-if="backEditor" v-show="!contentPending" :editor="backEditor" />
             </div>
 
             <button type="button" class="add-many" :disabled="saving" @click="openImport">
@@ -126,12 +139,15 @@
           <p v-if="error" class="error">{{ error }}</p>
         </div>
 
-        <div v-if="!lockReason" class="toolbar-dock">
+        <div v-if="!lockReason" class="toolbar-dock" :class="{ pending: contentPending }">
           <div class="toolbar" role="toolbar" :aria-label="$t('editor.formatting')">
             <div class="tb-scroll">
               <div class="tb-group">
                 <button type="button" class="tb" :title="$t('editor.image')" @click="pickImage">
                   <svg viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="13" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8.6" cy="10.4" r="1.35" fill="currentColor"/><path d="M7 16.5l4-3.4 2.6 2.2 2.2-1.8 4.2 3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button type="button" class="tb" :title="$t('editor.ttsButton')" @click="openTts">
+                  <svg viewBox="0 0 24 24"><path d="M5 10v4h3.2L13 18.2V5.8L8.2 10H5zM16.2 8.6a4.2 4.2 0 0 1 0 6.8M18.6 6.2a7.6 7.6 0 0 1 0 11.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
                 <div class="tb-wrap">
                   <button type="button" class="tb" :title="$t('editor.heading')" :aria-expanded="headingOpen" @click="headingOpen = !headingOpen">
@@ -233,7 +249,22 @@
         </div>
       </div>
 
-      <div v-if="toast" class="toast" role="status">{{ toast }}</div>
+      <div
+        v-if="toast"
+        :key="toastKey"
+        class="hud"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="hud-card">
+          <span class="hud-badge" aria-hidden="true">
+            <svg viewBox="0 0 28 28">
+              <path class="hud-check" d="M6.4 14.6l5.1 5.1 10.1-10.8" />
+            </svg>
+          </span>
+          <p class="hud-text">{{ toast }}</p>
+        </div>
+      </div>
     </div>
 
     <div v-if="open && reverseInfoOpen" class="overlay" @keydown.esc.stop="reverseInfoOpen = false">
@@ -267,11 +298,44 @@
       <button type="button" class="overlay-backdrop" :aria-label="$t('common.close')" @click="closeImport"></button>
       <section class="sheet import-sheet" role="dialog" aria-modal="true" :aria-labelledby="'import-title'">
         <header class="sheet-nav">
-          <button type="button" class="nav-text" :disabled="importing" @click="closeImport">{{ $t('common.cancel') }}</button>
+          <button type="button" class="nav-text" :disabled="importing" @click="importBack">
+            {{ importPage === 'menu' ? $t('common.cancel') : $t('common.back') }}
+          </button>
           <h3 id="import-title">{{ $t('editor.addMultiple') }}</h3>
           <span class="sheet-spacer"></span>
         </header>
-        <form class="import-body" @submit.prevent="importCards">
+        <div v-if="importPage === 'menu'" class="import-body source-menu">
+          <button
+            v-for="option in importSources"
+            :key="option.id"
+            type="button"
+            class="source-row"
+            @click="chooseImport(option)"
+          >
+            <span class="source-icon" :style="{ background: option.bg, color: option.fg }">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  :d="option.icon"
+                  :fill="option.filled ? 'currentColor' : 'none'"
+                  :stroke="option.filled ? 'none' : 'currentColor'"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span>{{ $t(option.titleKey) }}</span>
+          </button>
+        </div>
+        <div v-else-if="importPage === 'job'" class="import-body">
+          <MagicImportPanel
+            :source="importSource"
+            :deck-id="deck ? deck.id : ''"
+            @busy="importing = $event"
+            @done="onMagicImported"
+          />
+        </div>
+        <form v-else class="import-body" @submit.prevent="importCards">
           <p>{{ $t('decks.addSpreadsheetBody') }}</p>
           <input
             ref="importFile"
@@ -302,17 +366,69 @@
         </form>
       </section>
     </div>
+
+    <div v-if="open && ttsOpen" class="overlay" @keydown.esc.stop="closeTts">
+      <button type="button" class="overlay-backdrop" :aria-label="$t('common.close')" @click="closeTts"></button>
+      <section class="sheet tts-sheet" role="dialog" aria-modal="true" :aria-labelledby="'tts-title'">
+        <header class="sheet-nav">
+          <button type="button" class="close-circle" :aria-label="$t('common.close')" :disabled="ttsBusy" @click="closeTts">×</button>
+          <h3 id="tts-title">{{ $t('editor.ttsTitle') }}</h3>
+          <span class="sheet-spacer"></span>
+        </header>
+        <form class="tts-body" @submit.prevent="generateTts">
+          <label class="tts-field">
+            <span>{{ $t('editor.ttsLanguage') }}</span>
+            <select v-model="ttsLanguage" :disabled="ttsBusy">
+              <option v-for="language in ttsLanguages" :key="language.code" :value="language.code">
+                {{ language.emoji }} {{ language.nativeName }}
+              </option>
+            </select>
+          </label>
+          <label class="tts-field">
+            <span>{{ $t('editor.ttsTitle') }}</span>
+            <textarea
+              v-model="ttsText"
+              rows="5"
+              maxlength="299"
+              :disabled="ttsBusy"
+              :placeholder="$t('editor.placeholder')"
+            ></textarea>
+            <small>{{ ttsText.length }}/299</small>
+          </label>
+          <audio v-if="ttsPreviewUrl" class="tts-player" controls :src="ttsPreviewUrl"></audio>
+          <p v-if="ttsError" class="error">{{ ttsError }}</p>
+          <div class="tts-actions">
+            <button type="submit" class="mopiq-btn" :disabled="ttsBusy">
+              {{ ttsBusy ? $t('common.loading') : $t('editor.ttsGenerate') }}
+            </button>
+            <button
+              v-if="ttsBlob"
+              type="button"
+              class="mopiq-btn secondary"
+              :disabled="ttsBusy"
+              @click="insertTts"
+            >
+              {{ $t('editor.ttsInsert') }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
   </Teleport>
 </template>
 
 <script>
 import { Editor, EditorContent } from '@tiptap/vue-3';
+import SkeletonBlock from './SkeletonBlock.vue';
 import {
   createDeckCard,
   fetchMediaMap,
   importSpreadsheetCards,
+  requestTextToSpeech,
   updateDeckCard,
 } from '../api/mopiq';
+import MagicImportPanel from './MagicImportPanel.vue';
+import { magicImportRoute, sourcesForExistingDeck } from '../study/magicImport';
 import { cardEditorHtmlFields, cardWebEditLock } from '../study/cardFields';
 import { cardEditorExtensions } from '../study/cardEditorSchema';
 import {
@@ -322,6 +438,8 @@ import {
   rewriteSrcForStorage,
 } from '../study/cardMedia';
 import { parseDeckFolders, rootFolderId } from '../study/deckFolders';
+import { stripHtml } from '../study/cardHtml';
+import { defaultTtsLanguage, TTS_LANGUAGES, TTS_MAX_CHARS } from '../study/ttsLanguages';
 import {
   assertSpreadsheetLimits,
   autoDetectSpreadsheet,
@@ -339,14 +457,15 @@ import {
 
 export default {
   name: 'CardEditor',
-  components: { EditorContent },
+  components: { EditorContent, MagicImportPanel, SkeletonBlock },
   props: {
     open: { type: Boolean, default: false },
+    embedded: { type: Boolean, default: false },
     deck: { type: Object, default: null },
     card: { type: Object, default: null },
     nextPosition: { type: Number, default: 0 },
   },
-  emits: ['dismiss', 'saved'],
+  emits: ['dismiss', 'saved', 'magic-imported'],
   data() {
     return {
       frontEditor: null,
@@ -356,12 +475,15 @@ export default {
       saving: false,
       error: '',
       toast: '',
+      toastKey: 0,
       toastTimer: 0,
       reverseCards: false,
       extraOpen: false,
       headingOpen: false,
       reverseInfoOpen: false,
       importOpen: false,
+      importPage: 'menu',
+      importSource: 'paste',
       importing: false,
       importError: '',
       pasteText: '',
@@ -372,9 +494,34 @@ export default {
       textColor: '#1E293D',
       highlightColor: '#fde047',
       hydrateId: 0,
+      hydrating: false,
+      ttsOpen: false,
+      ttsBusy: false,
+      ttsText: '',
+      ttsLanguage: 'en',
+      ttsLanguages: TTS_LANGUAGES,
+      ttsBlob: null,
+      ttsPreviewUrl: '',
+      ttsFileName: '',
+      ttsError: '',
     };
   },
   computed: {
+    importSources() {
+      const colors = [
+        { bg: '#BBF7D0', fg: '#16a34a' },
+        { bg: '#a7f3d0', fg: '#059669' },
+        { bg: '#99f6e4', fg: '#0d9488' },
+        { bg: '#a5f3fc', fg: '#0891b2' },
+        { bg: '#bae6fd', fg: '#0284c7' },
+        { bg: '#bfdbfe', fg: '#2563eb' },
+        { bg: '#c7d2fe', fg: '#4f46e5' },
+      ];
+      return sourcesForExistingDeck().map((source, index) => ({
+        ...source,
+        ...colors[index % colors.length],
+      }));
+    },
     title() {
       return this.card ? this.$t('editor.editTitle') : this.$t('editor.addTitle');
     },
@@ -400,15 +547,24 @@ export default {
       void this.toolbarTick;
       return this.activeSide === 'back' ? this.backEditor : this.frontEditor;
     },
+    teleportTo() {
+      return this.embedded ? '#browse-inspector' : 'body';
+    },
+    contentPending() {
+      return Boolean(this.card) && (this.hydrating || !this.frontEditor);
+    },
   },
   watch: {
     open: {
       immediate: true,
       handler(isOpen) {
-        document.documentElement.classList.toggle('card-editor-open', isOpen);
+        this.syncBodyLock(isOpen);
         if (isOpen) this.hydrate();
         else this.teardown();
       },
+    },
+    embedded() {
+      this.syncBodyLock(this.open);
     },
     card() {
       if (this.open) this.hydrate();
@@ -432,6 +588,9 @@ export default {
   methods: {
     closeMenus(event) {
       if (!event.target.closest?.('.tb-wrap')) this.headingOpen = false;
+    },
+    syncBodyLock(isOpen) {
+      document.documentElement.classList.toggle('card-editor-open', Boolean(isOpen) && !this.embedded);
     },
     isActive(name) {
       void this.toolbarTick;
@@ -485,6 +644,66 @@ export default {
     pickImage() {
       this.$refs.imageInput?.click();
     },
+    openTts() {
+      const raw = stripHtml(this.activeEditor?.getHTML?.() || '');
+      this.ttsText = raw.slice(0, TTS_MAX_CHARS);
+      this.ttsLanguage = defaultTtsLanguage(this.$i18n.locale);
+      this.ttsError = '';
+      this.clearTtsPreview();
+      this.ttsOpen = true;
+    },
+    closeTts(force = false) {
+      if (this.ttsBusy && !force) return;
+      this.ttsOpen = false;
+      this.ttsBusy = false;
+      this.ttsError = '';
+      this.clearTtsPreview();
+    },
+    clearTtsPreview() {
+      if (this.ttsPreviewUrl) URL.revokeObjectURL(this.ttsPreviewUrl);
+      this.ttsPreviewUrl = '';
+      this.ttsBlob = null;
+      this.ttsFileName = '';
+    },
+    async generateTts() {
+      const text = this.ttsText.trim();
+      if (!text) {
+        this.ttsError = this.$t('editor.ttsEmpty');
+        return;
+      }
+      if (text.length > TTS_MAX_CHARS) {
+        this.ttsError = this.$t('editor.ttsTooLong');
+        return;
+      }
+      this.ttsBusy = true;
+      this.ttsError = '';
+      try {
+        const blob = await requestTextToSpeech(text, this.ttsLanguage);
+        this.clearTtsPreview();
+        this.ttsBlob = blob;
+        this.ttsFileName = `${crypto.randomUUID()}.mp3`;
+        this.ttsPreviewUrl = URL.createObjectURL(blob);
+      } catch (error) {
+        this.ttsError = error.message || this.$t('editor.ttsError');
+      } finally {
+        this.ttsBusy = false;
+      }
+    },
+    insertTts() {
+      if (!this.ttsBlob || !this.ttsFileName) return;
+      this.pendingImages.push({
+        blob: this.ttsBlob,
+        contentType: 'audio/mpeg',
+        fileName: this.ttsFileName,
+        blobUrl: this.ttsPreviewUrl,
+      });
+      this.ttsPreviewUrl = '';
+      this.ttsBlob = null;
+      this.activeEditor?.chain().focus().insertContent(`[sound:${this.ttsFileName}]`).run();
+      this.ttsFileName = '';
+      this.ttsOpen = false;
+      this.ttsError = '';
+    },
     async onPickImage(event) {
       const file = event.target.files?.[0];
       event.target.value = '';
@@ -518,6 +737,7 @@ export default {
     async hydrate() {
       const requestId = this.hydrateId + 1;
       this.hydrateId = requestId;
+      this.hydrating = Boolean(this.card);
       this.error = '';
       this.toast = '';
       this.reverseCards = false;
@@ -525,20 +745,25 @@ export default {
       this.headingOpen = false;
       this.reverseInfoOpen = false;
       this.importOpen = false;
+      this.closeTts(true);
       this.activeSide = 'front';
       this.revokePending();
       this.selectedSubdeckId = this.card?.subdeckId || rootFolderId(this.folders) || 0;
       this.mediaMap = {};
-      if (this.deck?.id) {
-        try { this.mediaMap = await fetchMediaMap(this.deck.id); } catch { this.mediaMap = {}; }
+      try {
+        if (this.deck?.id) {
+          try { this.mediaMap = await fetchMediaMap(this.deck.id); } catch { this.mediaMap = {}; }
+        }
+        if (requestId !== this.hydrateId || !this.open) return;
+        const fields = this.card
+          ? cardEditorHtmlFields(this.card)
+          : { front: '', back: '' };
+        const front = rewriteSrcForEditor(fields.front, this.mediaMap);
+        const back = rewriteSrcForEditor(fields.back, this.mediaMap);
+        this.ensureEditors(front, back);
+      } finally {
+        if (requestId === this.hydrateId) this.hydrating = false;
       }
-      if (requestId !== this.hydrateId || !this.open) return;
-      const fields = this.card
-        ? cardEditorHtmlFields(this.card)
-        : { front: '', back: '' };
-      const front = rewriteSrcForEditor(fields.front, this.mediaMap);
-      const back = rewriteSrcForEditor(fields.back, this.mediaMap);
-      this.ensureEditors(front, back);
     },
     ensureEditors(front, back) {
       if (this.frontEditor) {
@@ -559,12 +784,22 @@ export default {
       return { front, back };
     },
     showToast(text) {
+      this.toastKey += 1;
       this.toast = text;
       window.clearTimeout(this.toastTimer);
-      this.toastTimer = window.setTimeout(() => { this.toast = ''; }, 1600);
+      this.toastTimer = window.setTimeout(() => { this.toast = ''; }, 2000);
+    },
+    toastAdded(count = 1) {
+      this.showToast(count === 1
+        ? this.$t('editor.added')
+        : this.$t('editor.addedMany', { count }));
     },
     onCancel() {
-      if (this.saving || this.importing) return;
+      if (this.saving || this.importing || this.ttsBusy) return;
+      if (this.ttsOpen) {
+        this.closeTts();
+        return;
+      }
       this.$emit('dismiss');
     },
     async save() {
@@ -630,7 +865,7 @@ export default {
           this.frontEditor?.commands.setContent('<p></p>', false);
           this.backEditor?.commands.setContent('<p></p>', false);
           this.reverseCards = false;
-          this.showToast(this.$t('editor.added'));
+          this.toastAdded(extra ? 2 : 1);
           this.$nextTick(() => this.frontEditor?.commands.focus('end'));
         }
       } catch (error) {
@@ -644,11 +879,31 @@ export default {
       this.importError = '';
       this.pasteText = '';
       this.detectedCards = [];
+      this.importPage = 'menu';
       this.importOpen = true;
     },
     closeImport() {
       if (this.importing) return;
       this.importOpen = false;
+      this.importPage = 'menu';
+    },
+    importBack() {
+      if (this.importing) return;
+      if (this.importPage === 'menu') this.closeImport();
+      else this.importPage = 'menu';
+    },
+    chooseImport(option) {
+      const route = magicImportRoute(option.id, { existingDeck: true });
+      if (route === 'rejected') return;
+      this.importSource = option.id;
+      this.importPage = route === 'spreadsheet' ? 'spreadsheet' : 'job';
+      this.importError = '';
+    },
+    onMagicImported() {
+      this.importing = false;
+      this.importOpen = false;
+      this.importPage = 'menu';
+      this.$emit('magic-imported');
     },
     async onImportFile(event) {
       const file = event.target?.files?.[0];
@@ -694,9 +949,7 @@ export default {
         });
         this.importOpen = false;
         this.$emit('saved', { imported, created: true, keepOpen: true });
-        this.showToast(imported.length === 1
-          ? this.$t('editor.added')
-          : this.$t('editor.addedMany', { count: imported.length }));
+        this.toastAdded(imported.length);
       } catch (error) {
         const code = error.code;
         if (code === 'no_spreadsheet_cards') this.importError = this.$t('decks.spreadsheetNoCards');
@@ -714,6 +967,8 @@ export default {
       this.pendingImages = [];
     },
     teardown() {
+      this.hydrateId += 1;
+      this.hydrating = false;
       window.clearTimeout(this.toastTimer);
       this.revokePending();
       this.frontEditor?.destroy();
@@ -724,6 +979,7 @@ export default {
       this.headingOpen = false;
       this.reverseInfoOpen = false;
       this.importOpen = false;
+      this.closeTts(true);
       this.toast = '';
     },
   },
@@ -739,6 +995,13 @@ export default {
   flex-direction: column;
   background: var(--card-bg);
   color: var(--title);
+}
+.creator-root.embedded {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  height: 100%;
+  min-height: 0;
 }
 .creator-shell {
   flex: 1 1 auto;
@@ -884,6 +1147,11 @@ export default {
   overflow: auto;
   padding: 0 20px 108px;
   text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+.creator-scroll > * {
+  flex-shrink: 0;
 }
 .side-label {
   font-size: 14px;
@@ -903,14 +1171,12 @@ export default {
 }
 .editor-frame {
   position: relative;
-  display: flex;
-  flex-direction: column;
   border: 1px solid #E2E8F0;
   background: #f1f5f9;
   color: var(--title);
   border-radius: 24px;
   min-height: 200px;
-  height: auto;
+  height: max-content;
   overflow: visible;
   padding: 16px;
   font-weight: 400;
@@ -930,16 +1196,31 @@ export default {
   left: 16px;
   font-size: 15pt;
 }
-.editor-frame > :deep(*) {
+.field-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   min-height: 168px;
-  height: auto;
-  overflow: visible;
+  padding-top: 6px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.toolbar-dock.pending {
+  pointer-events: none;
+  opacity: 0.45;
 }
 .editor-frame :deep(.card-prose) {
   outline: none;
   min-height: 168px;
-  height: auto;
-  overflow: visible;
   font-size: 15pt;
   line-height: 1.5;
 }
@@ -950,10 +1231,11 @@ export default {
   margin: 0;
   line-height: 1.2;
 }
-.editor-frame :deep(.card-prose img) {
+.editor-frame :deep(img) {
   display: block;
   max-width: min(100%, 420px);
   max-height: 280px;
+  width: auto;
   height: auto;
   object-fit: contain;
 }
@@ -982,7 +1264,6 @@ export default {
   cursor: pointer;
 }
 .add-many svg { width: 19px; height: 19px; transform: rotate(90deg); }
-.creator-scroll { display: flex; flex-direction: column; }
 .add-many { align-self: center; }
 
 .toolbar-dock {
@@ -1073,17 +1354,74 @@ export default {
 .tb-menu button:hover { background: var(--inset-bg); }
 .file { display: none; }
 
-.toast {
+.hud {
   position: fixed;
   left: 50%;
-  top: 38%;
+  top: 42%;
+  z-index: 100;
   transform: translate(-50%, -50%);
-  background: rgba(30, 41, 59, 0.86);
+  pointer-events: none;
+}
+.hud-card {
+  min-width: 156px;
+  max-width: min(280px, 80vw);
+  padding: 24px 26px 20px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.32),
+    0 0 0 1px rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
   color: #fff;
-  padding: 12px 22px;
-  border-radius: 14px;
-  font-weight: 600;
-  z-index: 90;
+  text-align: center;
+}
+.hud-badge {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: #34c759;
+  box-shadow: 0 8px 22px rgba(52, 199, 89, 0.38);
+}
+.hud-badge svg {
+  width: 28px;
+  height: 28px;
+  overflow: visible;
+}
+.hud-check {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hud-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hud-card {
+    animation: hud-in 0.48s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hud-badge {
+    animation: hud-badge 0.52s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+@keyframes hud-in {
+  from { transform: scale(0.86) translateY(8px); }
+  to { transform: scale(1) translateY(0); }
+}
+@keyframes hud-badge {
+  from { transform: scale(0.72); }
+  68% { transform: scale(1.08); }
+  to { transform: scale(1); }
 }
 
 .overlay {
@@ -1173,6 +1511,32 @@ export default {
   flex-direction: column;
   gap: 10px;
 }
+.source-menu { max-height: min(70vh, 640px); overflow: auto; }
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--title);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.source-row:hover { background: var(--inset-bg); }
+.source-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.source-icon svg { width: 18px; height: 18px; }
 .import-body textarea, .dropzone {
   border: 1px solid var(--empty-bar);
   border-radius: 14px;
@@ -1199,6 +1563,42 @@ export default {
   padding: 10px 20px !important;
   border-radius: 12px;
   cursor: pointer;
+}
+.mopiq-btn.secondary {
+  background: var(--secondary-btn-bg) !important;
+  color: var(--secondary-btn-text) !important;
+}
+.tts-body {
+  display: grid;
+  gap: 14px;
+  padding: 12px 22px 28px;
+}
+.tts-field {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--text-secondary);
+}
+.tts-field textarea, .tts-field select {
+  width: 100%;
+  border: 1px solid var(--empty-bar);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--title);
+  font: inherit;
+  font-weight: 500;
+  padding: 10px 12px;
+}
+.tts-field small {
+  font-weight: 500;
+  text-align: right;
+}
+.tts-player { width: 100%; }
+.tts-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .error { color: var(--error); }
 

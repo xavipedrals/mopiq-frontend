@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { durationParts, gaugeProgress, histogramShares, shortDate, todayStatsFromCounts } from './deckStats.js';
+import { deckGradeFromCounts, durationParts, gaugeProgress, histogramShares, shortDate, todayStatsFromCounts } from './deckStats.js';
 
 describe('todayStatsFromCounts', () => {
   it('caps new cards by the daily allowance and reviews by the live due queue', () => {
@@ -69,8 +69,18 @@ describe('gaugeProgress', () => {
   });
 });
 
+describe('deckGradeFromCounts', () => {
+  it('matches the iOS integer grade, including truncation and zero', () => {
+    assert.equal(deckGradeFromCounts({ HARD: 1, EASY: 20 }, 21), 96);
+    assert.equal(deckGradeFromCounts({ GOOD: 1 }), 66);
+    assert.equal(deckGradeFromCounts({ HARD: 1, GOOD: 1, EASY: 1 }), 66);
+    assert.equal(deckGradeFromCounts({ AGAIN: 21 }), 0);
+    assert.equal(deckGradeFromCounts({}), 0);
+  });
+});
+
 describe('histogramShares', () => {
-  it('gives each grade its own share of the answer log', () => {
+  it('gives each grade its own share of the latest answers', () => {
     const shares = histogramShares({ AGAIN: 10, HARD: 10, GOOD: 20, EASY: 60 });
     assert.equal(shares.again, 0.1);
     assert.equal(shares.hard, 0.1);

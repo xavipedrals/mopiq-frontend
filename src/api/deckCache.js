@@ -57,3 +57,11 @@ export function clearDeckCache() {
   listStatsById.clear();
   listOrder = null;
 }
+
+export function removeCachedDeck(deckId) {
+  if (deckId == null || deckId === '') return;
+  const id = String(deckId);
+  deckById.delete(id);
+  listStatsById.delete(id);
+  if (listOrder) listOrder = listOrder.filter((existing) => existing !== id);
+}

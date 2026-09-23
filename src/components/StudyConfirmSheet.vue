@@ -17,7 +17,7 @@
           <button type="button" class="mopiq-btn secondary" :disabled="busy" @click="onCancel">
             {{ $t('common.cancel') }}
           </button>
-          <button type="button" class="mopiq-btn danger" :disabled="busy" @click="$emit('confirm')">
+          <button type="button" class="mopiq-btn" :class="{ danger }" :disabled="busy" @click="$emit('confirm')">
             {{ busy ? $t('common.loading') : confirmLabel }}
           </button>
         </div>
@@ -34,6 +34,7 @@ export default {
     title: { type: String, default: '' },
     message: { type: String, default: '' },
     confirmLabel: { type: String, default: '' },
+    danger: { type: Boolean, default: true },
     busy: { type: Boolean, default: false },
     error: { type: String, default: '' },
   },
@@ -51,7 +52,7 @@ export default {
 .sheet-root {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 90;
   display: flex;
   align-items: center;
   justify-content: center;

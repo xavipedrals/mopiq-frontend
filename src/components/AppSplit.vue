@@ -1,5 +1,5 @@
 <template>
-  <div class="split-root" :class="{ 'is-list': isListRoute, 'is-detail': !isListRoute }">
+  <div class="split-root" :class="{ 'is-list': isListRoute, 'is-detail': !isListRoute, 'has-inspector': inspectorOpen }">
     <aside class="sidebar" :aria-label="$t('decks.title')">
       <div class="sidebar-top">
         <router-link
@@ -18,7 +18,20 @@
             <div class="profile-level">{{ $t('profile.level', { level: profileLevel }) }}</div>
           </div>
         </router-link>
-        <label class="search">
+        <a
+          class="download-row"
+          :href="storeUrl"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="7" y="2.5" width="10" height="19" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 7.5v6.2M9.6 11.4L12 13.8l2.4-2.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 18.2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <span>{{ $t('common.downloadApp') }}</span>
+        </a>
+        <label class="search ios-search">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="6.2" fill="none" stroke="currentColor" stroke-width="2"/>
             <path d="M16 16l4.2 4.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -31,6 +44,17 @@
             autocapitalize="none"
             spellcheck="false"
           >
+          <button
+            v-if="searchText"
+            type="button"
+            class="search-clear"
+            :aria-label="$t('common.clear')"
+            @click="searchText = ''"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+            </svg>
+          </button>
         </label>
       </div>
       <div class="sidebar-list">
@@ -80,10 +104,17 @@
     <main class="detail-pane">
       <router-view />
     </main>
+    <aside
+      id="browse-inspector"
+      class="inspector-pane"
+      :class="{ open: inspectorOpen }"
+      :aria-hidden="inspectorOpen ? 'false' : 'true'"
+    ></aside>
     <CreateDeckSheet
       :open="addOpen"
       @dismiss="addOpen = false"
       @created="onDeckCreated"
+      @queued="onDeckQueued"
     />
   </div>
 </template>
@@ -95,6 +126,7 @@ import { fetchDeckList, fetchUserProfile } from '../api/mopiq';
 import { cachedDeckList } from '../api/deckCache';
 import { getAvatarImageName, sidebarTablerIconUrl } from '../utils';
 import { getLevelAndPercentage } from '../profile/experience';
+import { APP_STORE_URL } from '../constants';
 
 export default {
   name: 'AppSplit',
@@ -102,6 +134,7 @@ export default {
   provide() {
     return {
       refreshAppSplit: () => this.refreshDecks(),
+      setInspectorOpen: (open) => { this.inspectorOpen = Boolean(open); },
     };
   },
   data() {
@@ -113,6 +146,8 @@ export default {
       addOpen: false,
       avatarFailed: false,
       profile: null,
+      storeUrl: APP_STORE_URL,
+      inspectorOpen: false,
     };
   },
   computed: {
@@ -148,6 +183,14 @@ export default {
     avatarSrc() {
       if (this.avatarFailed) return getAvatarImageName(this.profile?.avatarNumber || 0);
       return this.profile?.avatarUrl || getAvatarImageName(this.profile?.avatarNumber || 0);
+    },
+  },
+  watch: {
+    selectedDeckId() {
+      this.inspectorOpen = false;
+    },
+    isListRoute(isList) {
+      if (isList) this.inspectorOpen = false;
     },
   },
   async created() {
@@ -232,6 +275,9 @@ export default {
     onAvatarError() {
       this.avatarFailed = true;
     },
+    onDeckQueued() {
+      this.syncFromCache();
+    },
     async onDeckCreated(deck) {
       this.addOpen = false;
       this.syncFromCache();
@@ -304,35 +350,30 @@ export default {
   color: var(--text-secondary);
   line-height: 1.25;
 }
+.download-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 8px 2px;
+  padding: 10px 18px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: var(--blue-button);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.download-row:hover { background: var(--list-selected); }
+.download-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
 .deck-row.selected {
   background: var(--list-selected);
 }
 .search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   margin: 8px 18px 4px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: var(--inset-bg);
-  color: var(--text-secondary);
 }
-.search svg {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 auto;
-}
-.search input {
-  flex: 1 1 auto;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: var(--title);
-  font: inherit;
-  font-size: 1rem;
-  outline: none;
-}
-.search input::placeholder { color: var(--text-secondary); }
 .sidebar-list {
   flex: 1 1 auto;
   min-height: 0;
@@ -447,6 +488,36 @@ html[data-theme="dark"] .topic-icon.bordered {
   background-color: var(--page-bg);
   background-image: none;
 }
+.inspector-pane {
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--card-bg);
+  border-left: 1px solid var(--split-rule);
+}
+.inspector-pane.open {
+  display: flex;
+  flex-direction: column;
+}
+.inspector-pane.open > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+.split-root.has-inspector {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(260px, 1fr) minmax(480px, 1fr);
+}
+.split-root.has-inspector .sidebar {
+  flex: none;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}
+.split-root.has-inspector .detail-pane {
+  flex: none;
+}
 @media (max-width: 899px) {
   .sidebar {
     flex: 1 1 auto;
@@ -457,5 +528,11 @@ html[data-theme="dark"] .topic-icon.bordered {
   }
   .split-root.is-list .detail-pane { display: none; }
   .split-root.is-detail .sidebar { display: none; }
+  .split-root.has-inspector {
+    display: flex;
+    grid-template-columns: none;
+  }
+  .inspector-pane,
+  .inspector-pane.open { display: none; }
 }
 </style>

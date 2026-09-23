@@ -39,7 +39,18 @@ export function gaugeProgress({ cardsForToday = 0, cardsStudiedToday = 0 } = {})
   return progress <= 0 ? 0.01 : Math.min(1, progress);
 }
 
-/** Each grade's own share of the answer log, for the segmented distribution bar. */
+/** iOS CardAnswersCount.currentGrade: latest-answer weights, integer truncation. */
+export function deckGradeFromCounts(counts = {}, total) {
+  const hard = Math.max(0, Number(counts.HARD) || 0);
+  const good = Math.max(0, Number(counts.GOOD) || 0);
+  const easy = Math.max(0, Number(counts.EASY) || 0);
+  const again = Math.max(0, Number(counts.AGAIN) || 0);
+  const n = total == null ? again + hard + good + easy : Math.max(0, Number(total) || 0);
+  if (n <= 0) return 0;
+  return Math.floor((100 * easy + 66 * good + 33 * hard) / n);
+}
+
+/** Each grade's own share of the latest answers, for the segmented distribution bar. */
 export function histogramShares(counts = {}) {
   const again = Math.max(0, Number(counts.AGAIN) || 0);
   const hard = Math.max(0, Number(counts.HARD) || 0);

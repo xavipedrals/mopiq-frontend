@@ -19,6 +19,10 @@
   --secondary-btn-text: #0A7AFF;
   --secondary-btn-hover: #DBEAFE;
   --inset-bg: #F1F5F9;
+  --search-bg: #FFFFFF;
+  --search-border: #CBD5E1;
+  --search-placeholder: #94A3B8;
+  --search-shadow: rgba(2, 6, 23, 0.1);
   --error: #DC2626;
   --green: #22C55E;
   --green-shadow: #16A34A;
@@ -98,6 +102,9 @@
   --tag-later-bg: #E0E7FF;
   --tag-recent-fg: #65A30D;
   --tag-recent-bg: #ECFCCB;
+  /* iOS selected-tag-background / selected-tag-text */
+  --topic-selected-bg: #E6F6FF;
+  --topic-selected-text: #2185EB;
 }
 
 html.card-editor-open,
@@ -126,6 +133,10 @@ html[data-theme="dark"] body.app-shell {
   --secondary-btn-text: #67E8F9;
   --secondary-btn-hover: #475569;
   --inset-bg: #0F172A;
+  --search-bg: #475569;
+  --search-border: #64748B;
+  --search-placeholder: #CBD5E1;
+  --search-shadow: rgba(248, 250, 252, 0.3);
   --error: #F87171;
   --green: #22C55E;
   --green-shadow: #16A34A;
@@ -203,6 +214,8 @@ html[data-theme="dark"] body.app-shell {
   --tag-later-bg: #1E1B4B;
   --tag-recent-fg: #A3E635;
   --tag-recent-bg: #1A2E05;
+  --topic-selected-bg: #0C4A6E;
+  --topic-selected-text: #F0F9FF;
   color-scheme: dark;
 }
 
@@ -245,6 +258,62 @@ body:has(.split-root),
 html[data-theme="dark"]:has(body.app-shell) {
   background-color: #1E293C;
 }
+
+.ios-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  margin: 0;
+  padding: 0 12px 0 15px;
+  border-radius: 999px;
+  background: var(--search-bg);
+  border: 1px solid var(--search-border);
+  box-shadow: 0 2px 2px var(--search-shadow);
+  color: var(--search-placeholder);
+}
+.ios-search svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+.ios-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--title);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+.ios-search input::placeholder { color: var(--search-placeholder); }
+.ios-search input::-webkit-search-decoration,
+.ios-search input::-webkit-search-results-button,
+.ios-search input::-webkit-search-results-decoration,
+.ios-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+.ios-search .search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--search-placeholder);
+  color: var(--search-bg);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.ios-search .search-clear svg { width: 10px; height: 10px; display: block; }
 
 body.app-shell .mopiq-btn {
   background: var(--blue-button);

@@ -70,6 +70,23 @@ export function cardSyncFields(card) {
   return [card?.question || '', card?.answer || ''];
 }
 
+export function copiedCardFields(card) {
+  const fields = cardSyncFields(card);
+  if (!fields.length) fields.push('');
+  fields[0] = `copy ${fields[0] || ''}`;
+  return fields;
+}
+
+export function reversedCardFields(card) {
+  const fields = cardSyncFields(card);
+  if (fields.length < 2) return null;
+  const next = fields.slice();
+  const front = next[0];
+  next[0] = next[1];
+  next[1] = front;
+  return next;
+}
+
 export function extractMediaFilenames(card) {
   const text = [
     ...(Array.isArray(card?.noteFields) ? card.noteFields : []),
@@ -98,9 +115,16 @@ function cardMarkupText(card) {
 export function cardWebEditLock(card) {
   if (!card) return '';
   const text = cardMarkupText(card);
-  if (card.hasAudio || /\[sound:/i.test(text)) return 'audio';
   if (/image-occlusion:|anki\.imageOcclusion|<canvas\b/i.test(text)) return 'occlusion';
   return '';
+}
+
+export function fieldsHaveAudio(cardOrFields) {
+  if (Array.isArray(cardOrFields)) {
+    return cardOrFields.some((field) => /\[sound:/i.test(String(field || '')));
+  }
+  if (cardOrFields?.hasAudio) return true;
+  return /\[sound:/i.test(cardMarkupText(cardOrFields));
 }
 
 export function cardEditableOnWeb(card) {

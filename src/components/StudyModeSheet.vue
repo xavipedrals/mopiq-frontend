@@ -19,20 +19,24 @@
           </button>
         </header>
         <div class="options">
-          <button type="button" class="option study" :disabled="busy" @click="$emit('study')">
+          <button type="button" class="option-wrap" :disabled="busy" @click="$emit('study')">
             <span class="banner">{{ $t('deck.studyBanner') }}</span>
-            <span class="copy">
-              <strong>{{ $t('deck.studySmarter') }}</strong>
-              <small>{{ $t('deck.studySmarterBody') }}</small>
+            <span class="option study">
+              <span class="copy">
+                <strong>{{ $t('deck.studySmarter') }}</strong>
+                <small>{{ $t('deck.studySmarterBody') }}</small>
+              </span>
+              <img src="/study/study-spaced-rep.png" alt="">
             </span>
-            <img src="/study/study-spaced-rep.png" alt="">
           </button>
-          <button type="button" class="option quiz" :disabled="busy" @click="$emit('quiz')">
-            <span class="copy">
-              <strong>{{ $t('deck.takeQuiz') }}</strong>
-              <small>{{ $t('deck.takeQuizBody') }}</small>
+          <button type="button" class="option-wrap" :disabled="busy" @click="$emit('quiz')">
+            <span class="option quiz">
+              <span class="copy">
+                <strong>{{ $t('deck.takeQuiz') }}</strong>
+                <small>{{ $t('deck.takeQuizBody') }}</small>
+              </span>
+              <img src="/study/start-quiz.png" alt="">
             </span>
-            <img src="/study/start-quiz.png" alt="">
           </button>
         </div>
       </section>
@@ -117,8 +121,20 @@ export default {
   gap: 18px;
   padding: 28px 24px 24px;
 }
-.option {
+.option-wrap {
   position: relative;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.option-wrap:disabled { opacity: 0.7; cursor: default; }
+.option {
   display: flex;
   align-items: stretch;
   width: 100%;
@@ -126,12 +142,7 @@ export default {
   overflow: hidden;
   border: 2px solid transparent;
   border-radius: 30px;
-  padding: 0;
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
 }
-.option:disabled { opacity: 0.7; cursor: default; }
 .option.study {
   background: #EBF8FF;
   border-color: #A7D8F0;
@@ -174,7 +185,7 @@ export default {
 }
 .banner {
   position: absolute;
-  top: -1px;
+  top: 0;
   left: 40px;
   z-index: 1;
   padding: 8px 10px;
@@ -185,6 +196,7 @@ export default {
   font-weight: 800;
   letter-spacing: 0.02em;
   transform: translateY(-50%);
+  pointer-events: none;
 }
 html[data-theme="dark"] .option.study {
   background: #082F49;

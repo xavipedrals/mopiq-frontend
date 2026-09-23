@@ -107,3 +107,27 @@ export function createReviewSyncQueue({
     },
   };
 }
+
+// Survives StudySession -> DeckDetail navigation, isolated by signed-in account.
+// Deliberately in-memory: this is not a persistent browser offline queue.
+const deckQueues = new Map();
+export function deckReviewSync({ userId, deckId, submit, currentUserId, ...options }) {
+  const key = JSON.stringify([userId, deckId]);
+  if (!deckQueues.has(key)) {
+    deckQueues.set(key, createReviewSyncQueue({
+      ...options,
+      submit: (job) => {
+        if (!userId || currentUserId() !== userId) throw new Error('Review belongs to another account');
+        return submit(job);
+      },
+    }));
+  }
+  return deckQueues.get(key);
+}
+
+export function assertReviewSyncResults(results) {
+  for (const id of [1, 2]) {
+    const row = results.find((result) => Number(result.id) === id);
+    if (row?.status !== 'ok') throw new Error(row?.error || 'Review save was not fully acknowledged');
+  }
+}

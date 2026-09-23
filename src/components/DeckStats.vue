@@ -61,18 +61,27 @@
       <section class="stat-card grade-card">
         <div class="grade-top">
           <SkeletonBlock v-if="gradePending" w="6.2ch" h="2.6rem" radius="12px" />
-          <template v-else>
+          <template v-else-if="gradeAvailable && histogram.total > 0">
             <b>{{ histogram.grade }}</b><i>%</i>
             <small>{{ $t('deck.grade') }}</small>
           </template>
+          <template v-else>
+            <b>—</b><small>{{ $t('deck.grade') }}</small>
+          </template>
         </div>
-        <div class="stack">
+        <p v-if="!gradePending && (!gradeAvailable || !histogram.total)" role="status">
+          {{ $t(gradeSyncing ? 'deck.gradeSyncing' : gradeAvailable ? 'deck.gradeEmpty' : 'deck.gradeUnavailable') }}
+        </p>
+        <button v-if="!gradePending && !gradeAvailable" class="text-btn" @click="$emit('retry-grade')">
+          {{ $t('common.retry') }}
+        </button>
+        <div v-if="gradeAvailable && !gradePending && histogram.total > 0" class="stack">
           <i class="seg again" :style="{ width: percent(shares.again) }"></i>
           <i class="seg hard" :style="{ width: percent(shares.hard) }"></i>
           <i class="seg good" :style="{ width: percent(shares.good) }"></i>
           <i class="seg easy" :style="{ width: percent(shares.easy) }"></i>
         </div>
-        <div class="legend">
+        <div v-if="gradeAvailable && !gradePending && histogram.total > 0" class="legend">
           <div v-for="item in gradeItems" :key="item.ease" class="legend-item">
             <span>{{ item.label }}</span>
             <p>
@@ -156,6 +165,8 @@ export default {
     },
     statsPending: { type: Boolean, default: false },
     gradePending: { type: Boolean, default: false },
+    gradeAvailable: { type: Boolean, default: true },
+    gradeSyncing: { type: Boolean, default: false },
     timePending: { type: Boolean, default: false },
   },
   data() {

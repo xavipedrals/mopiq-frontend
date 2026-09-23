@@ -1,5 +1,6 @@
 import { parseDeckConfig } from '../study/deckConfig.js';
 import { sharedDeckIdFromExtra } from '../study/deckFolders.js';
+import { deckGradeFromCounts } from '../study/deckStats.js';
 import { getDeckTopicByPostgresId } from '../utils.js';
 
 export const STUDY_BUNDLE_PAGE_SIZE = 1000;
@@ -127,7 +128,7 @@ export function mapHistogramRow(row) {
   return {
     counts,
     total,
-    grade: Number(row?.grade) || 0,
+    grade: deckGradeFromCounts(counts, total),
   };
 }
 

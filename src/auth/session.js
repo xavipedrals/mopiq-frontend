@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   createUserWithEmailAndPassword,
+  deleteUser,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -188,6 +189,16 @@ export async function logout() {
   await supabase.auth.signOut();
   currentUser = null;
   notify();
+}
+
+export async function deleteFirebaseUser() {
+  const user = auth.currentUser;
+  if (!user || user.isAnonymous) {
+    const error = new Error('Not signed in');
+    error.code = 'auth/user-not-found';
+    throw error;
+  }
+  await deleteUser(user);
 }
 
 export async function ensureSession() {

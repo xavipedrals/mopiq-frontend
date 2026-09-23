@@ -73,26 +73,12 @@
           <form v-else-if="page === 'pickTopic'" class="step topic-step" @submit.prevent="submitTopic">
             <h2 id="add-deck-topic-title" class="page-title">{{ $t('decks.selectTagTitle') }}</h2>
             <p class="page-body">{{ $t('decks.selectTagBody') }}</p>
-            <div class="topic-list" role="listbox" :aria-label="$t('decks.selectTagTitle')">
-              <button
-                v-for="topic in pickerTopics"
-                :key="topic.imageName"
-                type="button"
-                role="option"
-                class="topic-row"
-                :class="{ on: topicId === topic.imageName }"
-                :aria-selected="topicId === topic.imageName"
+            <div class="topic-picker">
+              <DeckTopicsPicker
+                v-model="topicId"
                 :disabled="saving"
-                @click="topicId = topic.imageName"
-              >
-                <span
-                  class="topic-dot"
-                  :style="{ background: topic.backgroundColor, color: topic.color }"
-                >
-                  <img :src="`/topics/${topic.imageName}.svg`" alt="">
-                </span>
-                <span>{{ $topic(topic) }}</span>
-              </button>
+                labelled-by="add-deck-topic-title"
+              />
             </div>
             <p v-if="formError" class="form-error">{{ formError }}</p>
             <button type="submit" class="primary-btn" :disabled="saving">
@@ -175,6 +161,15 @@
             </button>
           </form>
 
+          <div v-else-if="page === 'magicImport'" class="step">
+            <MagicImportPanel
+              :source="magicSource"
+              @busy="saving = $event"
+              @queued="onMagicQueued"
+              @done="onMagicDone"
+            />
+          </div>
+
           <div v-else-if="page === 'appOnly'" class="app-only">
             <h2 id="add-deck-app-title" class="page-title">{{ $t('decks.appOnlyTitle') }}</h2>
             <p class="page-body">{{ $t('decks.appOnlyBody', { name: $t(appOnlyNameKey) }) }}</p>
@@ -190,7 +185,9 @@
 import { createDeck, createDeckFromSpreadsheet } from '../api/mopiq';
 import { MAX_DECK_NAME_LENGTH } from '../api/emptyDeck';
 import { APP_STORE_URL } from '../constants';
-import { getAllDeckTopics } from '../utils';
+import DeckTopicsPicker from './DeckTopicsPicker.vue';
+import MagicImportPanel from './MagicImportPanel.vue';
+import { MAGIC_SOURCES, magicImportRoute } from '../study/magicImport';
 import {
   autoDetectSpreadsheet,
   decodeSpreadsheetBytes,
@@ -198,11 +195,6 @@ import {
   MAX_SPREADSHEET_BYTES,
   MAX_SPREADSHEET_CHARS,
 } from '../study/spreadsheetImport';
-
-const TOPIC_ORDER = [
-  'other', 'medicine', 'languages', 'anatomy', 'biology', 'law', 'maths',
-  'chemistry', 'physics', 'geography', 'history', 'music', 'school', 'computing', 'games',
-];
 
 const MAGIC_COLORS = [
   { bg: '#BBF7D0', fg: '#16a34a' },
@@ -215,40 +207,13 @@ const MAGIC_COLORS = [
   { bg: '#ddd6fe', fg: '#7c3aed' },
 ];
 
-const MAGIC_ICONS = {
-  sparkles: 'M12 2.4l1.15 5.05L18 8.6l-4.85 1.15L12 14.8l-1.15-5.05L6 8.6l4.85-1.15L12 2.4zm6.6 10.3l.7 3.05 3.1.7-3.1.7-.7 3.05-.7-3.05-3.1-.7 3.1-.7.7-3.05zM5.4 14.2l.55 2.4 2.45.55-2.45.55-.55 2.4-.55-2.4-2.45-.55 2.45-.55.55-2.4z',
-  pdf: 'M7 3h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm7 1.5V9h4.5',
-  ppt: 'M4 7.5h11a2 2 0 0 1 2 2V18H6a2 2 0 0 1-2-2V7.5zm4-3h11a2 2 0 0 1 2 2v1.2',
-  word: 'M7 3h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 7l1.4 7h1.3L14.2 12 16 17h1.3L17 10h-1.3l-1.2 5.2L13.2 10H12l-1.3 5.2L9.6 10H8.2z',
-  mic: 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zm7 9a7 7 0 0 1-14 0h2a5 5 0 0 0 10 0h2zM11 19h2v2h-2z',
-  headphones: 'M5 13a7 7 0 0 1 14 0v6a2 2 0 0 1-2 2h-1v-7h3M8 21H7a2 2 0 0 1-2-2v-6h3v7z',
-  camera: 'M9 6l1.2-1.6A2 2 0 0 1 11.8 4h.4a2 2 0 0 1 1.6.4L15 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3zm3 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
-  box: 'M3.5 8.5L12 4l8.5 4.5v9L12 22l-8.5-4.5v-9zM12 12.5l8.5-4.5M12 12.5V22M12 12.5L3.5 8.5',
-  paste: 'M8 4h2.2a2 2 0 0 1 3.6 0H16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm1 7h6v1.6H9V11zm0 3.5h6V16H9v-1.5z',
-  table: 'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6zm0 4h16M4 14h16M10 6v12',
-  youtube: 'M3 8.2A3.2 3.2 0 0 1 6.2 5h11.6A3.2 3.2 0 0 1 21 8.2v7.6A3.2 3.2 0 0 1 17.8 19H6.2A3.2 3.2 0 0 1 3 15.8V8.2zM10 9.2v5.6l5-2.8-5-2.8z',
-};
-
-const MAGIC_OPTIONS = [
-  { id: 'aiPrompt', titleKey: 'decks.magicAiPrompt', icon: MAGIC_ICONS.sparkles, filled: true },
-  { id: 'pdf', titleKey: 'decks.magicPdf', icon: MAGIC_ICONS.pdf },
-  { id: 'powerpoint', titleKey: 'decks.magicPowerpoint', icon: MAGIC_ICONS.ppt },
-  { id: 'word', titleKey: 'decks.magicWord', icon: MAGIC_ICONS.word },
-  { id: 'record', titleKey: 'decks.magicRecord', icon: MAGIC_ICONS.mic },
-  { id: 'audioFile', titleKey: 'decks.magicAudioFile', icon: MAGIC_ICONS.headphones },
-  { id: 'photo', titleKey: 'decks.magicPhoto', icon: MAGIC_ICONS.camera },
-  { id: 'anki', titleKey: 'decks.magicAnki', icon: MAGIC_ICONS.box },
-  { id: 'paste', titleKey: 'decks.magicPaste', icon: MAGIC_ICONS.paste },
-  { id: 'sheets', titleKey: 'decks.magicSheets', icon: MAGIC_ICONS.table },
-  { id: 'youtube', titleKey: 'decks.magicYoutube', icon: MAGIC_ICONS.youtube },
-];
-
 export default {
   name: 'CreateDeckSheet',
+  components: { DeckTopicsPicker, MagicImportPanel },
   props: {
     open: { type: Boolean, default: false },
   },
-  emits: ['dismiss', 'created'],
+  emits: ['dismiss', 'created', 'queued'],
   data() {
     return {
       saving: false,
@@ -261,8 +226,8 @@ export default {
       detectTimer: 0,
       formError: '',
       appOnlyNameKey: 'decks.magicAiPrompt',
+      magicSource: 'aiPrompt',
       storeUrl: APP_STORE_URL,
-      topics: getAllDeckTopics(),
     };
   },
   computed: {
@@ -279,6 +244,7 @@ export default {
         pickTopic: 'add-deck-topic-title',
         magic: 'add-deck-magic-title',
         spreadsheet: 'add-deck-sheets-title',
+        magicImport: 'add-deck-import-title',
         appOnly: 'add-deck-app-title',
       }[this.page] || 'add-deck-title';
     },
@@ -287,16 +253,13 @@ export default {
         options: 'sheet-options',
         magic: 'sheet-magic',
         spreadsheet: 'sheet-wide',
+        magicImport: 'sheet-wide',
         pickTopic: 'sheet-topics',
         appOnly: 'sheet-app',
       }[this.page] || 'sheet-step';
     },
-    pickerTopics() {
-      const byName = Object.fromEntries(this.topics.map((topic) => [topic.imageName, topic]));
-      return TOPIC_ORDER.map((id) => byName[id]).filter(Boolean);
-    },
     magicOptions() {
-      return MAGIC_OPTIONS.map((option, index) => ({
+      return MAGIC_SOURCES.map((option, index) => ({
         ...option,
         ...MAGIC_COLORS[index % MAGIC_COLORS.length],
       }));
@@ -373,12 +336,20 @@ export default {
       this.go('pickTopic');
     },
     selectMagic(option) {
-      if (option.id === 'sheets') {
+      const route = magicImportRoute(option.id);
+      if (route === 'spreadsheet') {
         this.go('spreadsheet');
         return;
       }
-      this.appOnlyNameKey = option.titleKey;
-      this.go('appOnly');
+      if (route !== 'job') return;
+      this.magicSource = option.id;
+      this.go('magicImport');
+    },
+    onMagicQueued(deck) {
+      this.$emit('queued', deck);
+    },
+    onMagicDone(deck) {
+      this.$emit('created', deck);
     },
     pickSpreadsheet() {
       this.$refs.fileInput?.click();
@@ -691,48 +662,7 @@ export default {
 }
 .primary-btn:hover { background: var(--blue-button-hover); }
 .primary-btn:disabled { opacity: 0.45; cursor: default; }
-.topic-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0 0 20px;
-}
-.topic-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 60px;
-  padding: 8px 12px;
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: 1rem;
-  text-align: left;
-  cursor: pointer;
-}
-.topic-row.on {
-  background: #E6F6FF;
-  color: #2185EB;
-  font-weight: 700;
-}
-.topic-dot {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-}
-.topic-row.on .topic-dot { box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 35%, transparent); }
-.topic-dot img {
-  width: 25px;
-  height: 25px;
-  object-fit: contain;
-}
+.topic-picker { margin: 0 0 20px; }
 .magic-list {
   display: flex;
   flex-direction: column;
@@ -869,10 +799,6 @@ html[data-theme="dark"] .option.magic .copy strong { color: #CCFBF1; }
 html[data-theme="dark"] .option.create .copy small { color: #BEF264; }
 html[data-theme="dark"] .option.magic .copy small,
 html[data-theme="dark"] .and-more { color: #5EEAD4; }
-html[data-theme="dark"] .topic-row.on {
-  background: #0C4A6E;
-  color: #F0F9FF;
-}
 @media (min-width: 560px) {
   .sheet-root { align-items: center; }
 }
