@@ -11,6 +11,7 @@ import {
   mapHistogramRow,
   mapProgressCountsRow,
   mapStudyBundleRow,
+  mapSubdeckCountRows,
   mapUserDeckRow,
   nextStudyBundleCursor,
 } from './webReads.js';
@@ -155,6 +156,15 @@ describe('webReads mappers', () => {
       { position: 4, id: 'b' },
     );
     assert.equal(nextStudyBundleCursor([]), null);
+  });
+
+  it('maps folder counts and ignores empty groups', () => {
+    assert.deepEqual(mapSubdeckCountRows([
+      { subdeck_id: 1, card_count: 2 },
+      { subdeck_id: 2, card_count: 1 },
+      { subdeck_id: 3, card_count: 0 },
+    ]), { 1: 2, 2: 1 });
+    assert.deepEqual(mapSubdeckCountRows(null), {});
   });
 });
 

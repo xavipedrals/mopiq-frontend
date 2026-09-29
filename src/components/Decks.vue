@@ -96,15 +96,8 @@
               @click="selectMagic(option)"
             >
               <span class="magic-icon" :style="{ background: option.bg, color: option.fg }">
-                <svg viewBox="0 0 24 24" aria-hidden="true" :class="{ sparkle: option.id === 'aiPrompt' }">
-                  <path
-                    :d="option.icon"
-                    :fill="option.filled ? 'currentColor' : 'none'"
-                    :stroke="option.filled ? 'none' : 'currentColor'"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path v-for="(d, index) in option.icon" :key="index" :d="d" />
                 </svg>
               </span>
               <span class="magic-label">{{ $t(option.titleKey) }}</span>
@@ -165,7 +158,9 @@
             <MagicImportPanel
               :source="magicSource"
               @busy="saving = $event"
+              @layout="magicLayout = $event"
               @queued="onMagicQueued"
+              @background="onMagicBackground"
               @done="onMagicDone"
             />
           </div>
@@ -213,7 +208,7 @@ export default {
   props: {
     open: { type: Boolean, default: false },
   },
-  emits: ['dismiss', 'created', 'queued'],
+  emits: ['dismiss', 'created', 'queued', 'background'],
   data() {
     return {
       saving: false,
@@ -227,6 +222,7 @@ export default {
       formError: '',
       appOnlyNameKey: 'decks.magicAiPrompt',
       magicSource: 'aiPrompt',
+      magicLayout: '',
       storeUrl: APP_STORE_URL,
     };
   },
@@ -249,6 +245,7 @@ export default {
       }[this.page] || 'add-deck-title';
     },
     sheetClass() {
+      if (this.page === 'magicImport' && this.magicLayout === 'pdf-pages') return 'sheet-pdf';
       return {
         options: 'sheet-options',
         magic: 'sheet-magic',
@@ -283,6 +280,7 @@ export default {
       this.resetCreateForm();
     },
     page(page) {
+      if (page !== 'magicImport') this.magicLayout = '';
       this.formError = '';
       this.$nextTick(() => {
         if (page === 'setName') this.$refs.nameInput?.focus();
@@ -308,6 +306,7 @@ export default {
       this.formError = '';
       this.saving = false;
       this.appOnlyNameKey = 'decks.magicAiPrompt';
+      this.magicLayout = '';
     },
     go(page) {
       if (this.saving) return;
@@ -341,12 +340,20 @@ export default {
         this.go('spreadsheet');
         return;
       }
+      if (route === 'appOnly') {
+        this.appOnlyNameKey = option.titleKey;
+        this.go('appOnly');
+        return;
+      }
       if (route !== 'job') return;
       this.magicSource = option.id;
       this.go('magicImport');
     },
     onMagicQueued(deck) {
       this.$emit('queued', deck);
+    },
+    onMagicBackground(job) {
+      this.$emit('background', job);
     },
     onMagicDone(deck) {
       this.$emit('created', deck);
@@ -488,6 +495,7 @@ export default {
   text-align: left;
 }
 .sheet-wide { width: min(560px, 100%); }
+.sheet-pdf { width: min(920px, 100%); }
 .sheet-magic, .sheet-topics { width: min(520px, 100%); }
 .sheet-header {
   display: flex;
@@ -694,8 +702,12 @@ export default {
 .magic-icon svg {
   width: 20px;
   height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
-.magic-icon svg.sparkle { transform: rotate(90deg); }
 .magic-label {
   flex: 1 1 auto;
   min-width: 0;

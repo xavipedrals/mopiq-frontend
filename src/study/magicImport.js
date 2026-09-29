@@ -7,26 +7,72 @@ export const MAX_NOTES_CHARS = 400_000;
 export const MAX_IMPORT_BYTES = 100 * 1024 * 1024;
 export const MAX_ANKI_BYTES = 80 * 1024 * 1024;
 
+// Tabler Icons (MIT), outline set. https://tabler.io/icons
 const ICONS = {
-  sparkles: 'M12 2.4l1.15 5.05L18 8.6l-4.85 1.15L12 14.8l-1.15-5.05L6 8.6l4.85-1.15L12 2.4zm6.6 10.3l.7 3.05 3.1.7-3.1.7-.7 3.05-.7-3.05-3.1-.7 3.1-.7.7-3.05zM5.4 14.2l.55 2.4 2.45.55-2.45.55-.55 2.4-.55-2.4-2.45-.55 2.45-.55.55-2.4z',
-  pdf: 'M7 3h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm7 1.5V9h4.5',
-  ppt: 'M4 7.5h11a2 2 0 0 1 2 2V18H6a2 2 0 0 1-2-2V7.5zm4-3h11a2 2 0 0 1 2 2v1.2',
-  word: 'M7 3h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 7l1.4 7h1.3L14.2 12 16 17h1.3L17 10h-1.3l-1.2 5.2L13.2 10H12l-1.3 5.2L9.6 10H8.2z',
-  mic: 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zm7 9a7 7 0 0 1-14 0h2a5 5 0 0 0 10 0h2zM11 19h2v2h-2z',
-  headphones: 'M5 13a7 7 0 0 1 14 0v6a2 2 0 0 1-2 2h-1v-7h3M8 21H7a2 2 0 0 1-2-2v-6h3v7z',
-  camera: 'M9 6l1.2-1.6A2 2 0 0 1 11.8 4h.4a2 2 0 0 1 1.6.4L15 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3zm3 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
-  box: 'M3.5 8.5L12 4l8.5 4.5v9L12 22l-8.5-4.5v-9zM12 12.5l8.5-4.5M12 12.5V22M12 12.5L3.5 8.5',
-  paste: 'M8 4h2.2a2 2 0 0 1 3.6 0H16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm1 7h6v1.6H9V11zm0 3.5h6V16H9v-1.5z',
-  table: 'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6zm0 4h16M4 14h16M10 6v12',
-  youtube: 'M3 8.2A3.2 3.2 0 0 1 6.2 5h11.6A3.2 3.2 0 0 1 21 8.2v7.6A3.2 3.2 0 0 1 17.8 19H6.2A3.2 3.2 0 0 1 3 15.8V8.2zM10 9.2v5.6l5-2.8-5-2.8z',
+  sparkles: ['M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z'],
+  pdf: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+    'M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
+    'M17 18h2',
+    'M20 15h-3v6',
+    'M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z',
+  ],
+  ppt: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
+    'M11 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
+    'M16.5 15h3',
+    'M18 15v6',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+  ],
+  word: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+    'M5 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z',
+    'M20 16.5a1.5 1.5 0 0 0 -3 0v3a1.5 1.5 0 0 0 3 0',
+    'M12.5 15a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1 -3 0v-3a1.5 1.5 0 0 1 1.5 -1.5z',
+  ],
+  headphones: [
+    'M4 13m0 2a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2z',
+    'M15 13m0 2a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2z',
+    'M4 15v-3a8 8 0 0 1 16 0v3',
+  ],
+  camera: [
+    'M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2',
+    'M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0',
+  ],
+  box: [
+    'M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5',
+    'M12 12l8 -4.5',
+    'M12 12l0 9',
+    'M12 12l-8 -4.5',
+    'M16 5.25l-8 4.5',
+  ],
+  paste: [
+    'M5 3m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z',
+    'M9 7l6 0',
+    'M9 11l6 0',
+    'M9 15l4 0',
+  ],
+  table: [
+    'M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z',
+    'M3 10h18',
+    'M10 3v18',
+  ],
+  youtube: [
+    'M2 8a4 4 0 0 1 4 -4h12a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-8z',
+    'M10 9l5 3l-5 3z',
+  ],
 };
+
+const FILE_DROP_SOURCES = new Set(['pdf', 'powerpoint', 'word', 'photo', 'audioFile', 'anki']);
 
 const FILE_EXTENSIONS = {
   pdf: ['pdf'],
   powerpoint: ['pptx'],
   word: ['docx'],
   photo: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-  record: ['mp3', 'm4a', 'wav', 'webm', 'mp4', 'aac', 'ogg'],
   audioFile: ['mp3', 'm4a', 'wav', 'webm', 'mp4', 'aac', 'ogg'],
   anki: ['apkg', 'colpkg'],
 };
@@ -41,11 +87,10 @@ const ACCEPT = {
 };
 
 export const MAGIC_SOURCES = [
-  { id: 'aiPrompt', titleKey: 'decks.magicAiPrompt', edge: 'create_deck_from_prompt', icon: ICONS.sparkles, filled: true },
+  { id: 'aiPrompt', titleKey: 'decks.magicAiPrompt', edge: 'create_deck_from_prompt', icon: ICONS.sparkles },
   { id: 'pdf', titleKey: 'decks.magicPdf', edge: 'create_deck_from_file', icon: ICONS.pdf },
   { id: 'powerpoint', titleKey: 'decks.magicPowerpoint', edge: 'create_deck_from_file', icon: ICONS.ppt },
   { id: 'word', titleKey: 'decks.magicWord', edge: 'create_deck_from_file', icon: ICONS.word },
-  { id: 'record', titleKey: 'decks.magicRecord', edge: 'create_deck_from_audio', icon: ICONS.mic },
   { id: 'audioFile', titleKey: 'decks.magicAudioFile', edge: 'create_deck_from_audio', icon: ICONS.headphones },
   { id: 'photo', titleKey: 'decks.magicPhoto', edge: 'create_deck_from_file', icon: ICONS.camera },
   { id: 'anki', titleKey: 'decks.magicAnki', edge: 'import_anki_package', icon: ICONS.box },
@@ -54,6 +99,10 @@ export const MAGIC_SOURCES = [
   { id: 'youtube', titleKey: 'decks.magicYoutube', edge: 'create_deck_from_text', icon: ICONS.youtube },
 ];
 
+export function isFileDropSource(sourceId) {
+  return FILE_DROP_SOURCES.has(sourceId);
+}
+
 export function sourcesForExistingDeck() {
   return MAGIC_SOURCES.filter((source) => source.id !== 'anki');
 }
@@ -61,7 +110,7 @@ export function sourcesForExistingDeck() {
 export function magicImportRoute(sourceId, { existingDeck = false } = {}) {
   const source = MAGIC_SOURCES.find((item) => item.id === sourceId);
   if (!source) return 'rejected';
-  if (existingDeck && source.id === 'anki') return 'rejected';
+  if (source.id === 'anki') return existingDeck ? 'rejected' : 'appOnly';
   if (source.id === 'sheets') return 'spreadsheet';
   return 'job';
 }
@@ -106,11 +155,19 @@ export function validateYouTubeUrl(url) {
   return '';
 }
 
+const MAX_OBJECT_NAME = 80;
+const MAX_OBJECT_EXT = 12;
+
 export function magicImportObjectPath(userId, jobId, fileName) {
-  const safe = String(fileName || 'source')
+  const cleaned = String(fileName || 'source')
     .replace(/[^a-zA-Z0-9._-]+/g, '_')
-    .replace(/^\.+/, '')
-    .slice(0, 80) || 'source';
+    .replace(/^\.+/, '');
+  const dot = cleaned.lastIndexOf('.');
+  const hasExt = dot > 0 && dot < cleaned.length - 1;
+  const ext = hasExt ? cleaned.slice(dot + 1).slice(0, MAX_OBJECT_EXT).toLowerCase() : '';
+  const base = (hasExt ? cleaned.slice(0, dot) : cleaned).replace(/\.+$/, '');
+  const suffix = ext ? `.${ext}` : '';
+  const safe = `${base.slice(0, Math.max(1, MAX_OBJECT_NAME - suffix.length))}${suffix}` || 'source';
   return `users/${String(userId || '').toLowerCase()}/imports/${String(jobId || '').toLowerCase()}/${safe}`;
 }
 
@@ -129,6 +186,15 @@ export function mapImportJob(row) {
     errorCode: row.error_code || row.errorCode || '',
     errorMessage: row.error_message || row.errorMessage || '',
   };
+}
+
+export function usesPdfPagePicker(source) {
+  return source === 'pdf';
+}
+
+export function backgroundsPromptDeck({ source, deckId, jobId, status } = {}) {
+  if (source !== 'aiPrompt' || deckId || !jobId) return false;
+  return importJobView({ status: status || 'queued' }).phase === 'active';
 }
 
 export function importJobView(job) {

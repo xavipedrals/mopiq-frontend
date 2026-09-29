@@ -7,6 +7,7 @@ import {
   cachedDeckList,
   cachedDeckStats,
   clearDeckCache,
+  orderByLastUsed,
   prependCachedDeck,
   removeCachedDeck,
 } from './deckCache.js';
@@ -63,6 +64,15 @@ describe('deckCache', () => {
   it('looks up by string even when ids arrive as numbers', () => {
     cacheDeck({ id: 7, name: 'Seven' });
     assert.equal(cachedDeck('7').name, 'Seven');
+  });
+
+  it('orders decks by last used, newest first', () => {
+    const ordered = orderByLastUsed([
+      { id: 'old', last_used_at: '2026-09-01T00:00:00.000Z' },
+      { id: 'new', lastUsedAt: '2026-09-24T14:00:00.000Z' },
+      { id: 'mid', last_used_at: '2026-09-20T00:00:00.000Z' },
+    ]);
+    assert.deepEqual(ordered.map((deck) => deck.id), ['new', 'mid', 'old']);
   });
 
   it('puts a created deck first in the list', () => {

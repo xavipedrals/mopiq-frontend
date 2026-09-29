@@ -6,6 +6,16 @@ const deckById = new Map();
 const listStatsById = new Map();
 let listOrder = null;
 
+/** Newest last-used first. The list RPC does not keep that order through its join. */
+export function orderByLastUsed(rows) {
+  if (!Array.isArray(rows)) return rows;
+  return rows.slice().sort((a, b) => {
+    const aTime = Date.parse(a?.lastUsedAt || a?.last_used_at || '') || 0;
+    const bTime = Date.parse(b?.lastUsedAt || b?.last_used_at || '') || 0;
+    return bTime - aTime;
+  });
+}
+
 export function cacheDeckList(rows) {
   if (!Array.isArray(rows)) return rows;
   const order = [];

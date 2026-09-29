@@ -77,10 +77,12 @@
   --quiz-pick-on-text: #0369A1;
   --quiz-pick-icon-bg: #E2E8F0;
   /* iOS deck stat cards (StudyDashboardView / StudyStatsView) */
-  --stat-card-border: #D3CEC4;
+  --stat-card-border: #CBD5E1;
   --stat-pill-bg: #F1F5F9;
   --stat-pill-border: #E2E8F0;
   --stat-gauge-track: #E2E8F0;
+  --grade-empty-fill: #E2E8F0;
+  --grade-empty-muted: #64748B;
   --stat-gauge-fill: #22C55E;
   --stat-new: #0EA5E9;
   --stat-review: #8B5CF6;
@@ -193,6 +195,8 @@ html[data-theme="dark"] body.app-shell {
   --stat-pill-bg: #1E293B;
   --stat-pill-border: transparent;
   --stat-gauge-track: #475569;
+  --grade-empty-fill: #475569;
+  --grade-empty-muted: #CBD5E1;
   --stat-gauge-fill: #22C55E;
   --stat-new: #38BDF8;
   --stat-review: #A78BFA;

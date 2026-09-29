@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  backgroundsPromptDeck,
   fileMatchesSource,
   fileTooLarge,
   importJobView,
+  isFileDropSource,
+  MAGIC_SOURCES,
   magicImportObjectPath,
   magicImportRoute,
   mapImportJob,
@@ -15,9 +18,9 @@ import {
 } from './magicImport.js';
 
 describe('magic import routing', () => {
-  it('sends spreadsheet to the existing importer and every other new-deck source to a job', () => {
+  it('sends spreadsheet to the importer, Anki to the app, and other new-deck sources to a job', () => {
     assert.equal(magicImportRoute('sheets'), 'spreadsheet');
-    assert.equal(magicImportRoute('anki'), 'job');
+    assert.equal(magicImportRoute('anki'), 'appOnly');
     assert.equal(magicImportRoute('pdf'), 'job');
     assert.equal(magicImportRoute('aiPrompt'), 'job');
     assert.equal(magicImportRoute('missing'), 'rejected');
@@ -29,6 +32,19 @@ describe('magic import routing', () => {
     assert.equal(ids.includes('sheets'), true);
     assert.equal(magicImportRoute('anki', { existingDeck: true }), 'rejected');
     assert.equal(magicImportRoute('paste', { existingDeck: true }), 'job');
+  });
+
+  it('uses Tabler icons and a file-only drop step for uploads', () => {
+    for (const source of MAGIC_SOURCES) {
+      assert.ok(Array.isArray(source.icon) && source.icon.length > 0);
+    }
+    for (const id of ['pdf', 'powerpoint', 'word', 'photo', 'audioFile', 'anki']) {
+      assert.equal(isFileDropSource(id), true);
+    }
+    for (const id of ['aiPrompt', 'paste', 'sheets', 'youtube']) {
+      assert.equal(isFileDropSource(id), false);
+    }
+    assert.equal(MAGIC_SOURCES.some((source) => source.id === 'record'), false);
   });
 });
 
@@ -61,6 +77,30 @@ describe('magic import jobs', () => {
     assert.equal(importJobView({ status: 'failed', progress: 100 }).phase, 'failed');
     assert.equal(importJobView(null).phase, 'missing');
     assert.equal(mapImportJob(null), null);
+    assert.equal(backgroundsPromptDeck({
+      source: 'aiPrompt',
+      deckId: '',
+      jobId: 'job-1',
+      status: 'queued',
+    }), true);
+    assert.equal(backgroundsPromptDeck({
+      source: 'aiPrompt',
+      deckId: 'deck-1',
+      jobId: 'job-1',
+      status: 'queued',
+    }), false);
+    assert.equal(backgroundsPromptDeck({
+      source: 'pdf',
+      deckId: '',
+      jobId: 'job-1',
+      status: 'queued',
+    }), false);
+    assert.equal(backgroundsPromptDeck({
+      source: 'aiPrompt',
+      deckId: '',
+      jobId: 'job-1',
+      status: 'done',
+    }), false);
   });
 });
 
@@ -80,5 +120,10 @@ describe('magic import input checks', () => {
       magicImportObjectPath('USER', 'JOB', 'my notes.pdf'),
       'users/user/imports/job/my_notes.pdf',
     );
+    const longAudio = 'ytmp3free.cc_the-entire-history-of-the-united-states-of-america-youtubemp3free.org.mp3';
+    const audioPath = magicImportObjectPath('USER', 'JOB', longAudio);
+    assert.equal(audioPath.endsWith('.mp3'), true);
+    assert.equal(audioPath.split('/').pop().length <= 80, true);
+    assert.equal(fileMatchesSource('audioFile', audioPath), true);
   });
 });

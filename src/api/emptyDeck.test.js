@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { WEB_CLOZE_NOTE_MODEL_ID, WEB_QA_NOTE_MODEL_ID } from '../study/sanitizeCardHtml.js';
+import { WEB_CLOZE_NOTE_MODEL_ID, WEB_OCCLUSION_NOTE_MODEL_ID, WEB_QA_NOTE_MODEL_ID } from '../study/sanitizeCardHtml.js';
 import { parseDeckFolders, rootFolderId } from '../study/deckFolders.js';
 import {
   createUlid,
@@ -64,6 +64,13 @@ describe('emptyDeckCreatePayload', () => {
     assert.equal(qa.did, now);
     assert.equal(cloze.name, 'mopiqCloze');
     assert.equal(cloze.type, 1);
+    const occlusion = payload.noteModels[WEB_OCCLUSION_NOTE_MODEL_ID];
+    assert.equal(occlusion.name, 'ankiFlashcardsBrandedImageOcclusion');
+    assert.equal(occlusion.type, 0);
+    assert.equal(occlusion.flds[0].name, 'Occlusion');
+    assert.equal(occlusion.flds[1].name, 'Image');
+    assert.match(occlusion.tmpls[0].qfmt, /\{\{cloze:Occlusion\}\}/);
+    assert.match(occlusion.tmpls[0].afmt, /id="toggle"/);
   });
 
   it('falls unknown topics back to other and trims long names', () => {

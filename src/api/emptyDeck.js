@@ -1,5 +1,6 @@
-import { WEB_CLOZE_NOTE_MODEL_ID, WEB_QA_NOTE_MODEL_ID } from '../study/sanitizeCardHtml.js';
+import { WEB_CLOZE_NOTE_MODEL_ID, WEB_OCCLUSION_NOTE_MODEL_ID, WEB_QA_NOTE_MODEL_ID } from '../study/sanitizeCardHtml.js';
 import { getDeckTopicByPostgresId } from '../utils.js';
+import { imageOcclusionNoteModel } from '../study/imageOcclusion.js';
 
 export const MAX_DECK_NAME_LENGTH = 120;
 export const ULID_PATTERN = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/;
@@ -81,6 +82,7 @@ export function emptyDeckNoteModels(ankiDeckId) {
   const did = Number(ankiDeckId);
   const qaId = Number(WEB_QA_NOTE_MODEL_ID);
   const clozeId = Number(WEB_CLOZE_NOTE_MODEL_ID);
+  const occlusionId = Number(WEB_OCCLUSION_NOTE_MODEL_ID);
   return {
     [String(qaId)]: noteModel({
       id: qaId,
@@ -106,6 +108,7 @@ export function emptyDeckNoteModels(ankiDeckId) {
         afmt: '{{FrontSide}}\n<hr id=answer>\n{{Back Extra}}',
       })],
     }),
+    [String(occlusionId)]: imageOcclusionNoteModel(did, occlusionId),
   };
 }
 

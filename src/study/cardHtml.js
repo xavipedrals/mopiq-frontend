@@ -1,4 +1,5 @@
 import { containsClozeMarkup, WEB_CLOZE_NOTE_MODEL_ID } from './sanitizeCardHtml.js';
+import { cardHasImageOcclusion, renderOcclusionStudyHtml } from './imageOcclusion.js';
 
 export const CARD_THEME = {
   light: {
@@ -108,16 +109,33 @@ export function cardHasCloze(card) {
   return containsClozeMarkup(fields[0] || '') || containsClozeMarkup(card?.question || '');
 }
 
+function occlusionStudyHtml(card, mediaMap, options) {
+  const fields = card?.noteFields || [];
+  const occlusionField = fields[0] == null || fields[0] === ''
+    ? (card?.question || '')
+    : fields[0];
+  return renderOcclusionStudyHtml({
+    occlusionField,
+    imageHtml: fieldHtml(card, 1, mediaMap),
+    templateIndex: card?.templateIndex || 0,
+    reveal: options.reveal,
+    showAnswers: options.showAnswers,
+    hideAnswers: options.hideAnswers,
+  });
+}
+
 function cardHr(dark) {
   const hr = CARD_THEME[dark ? 'dark' : 'light'].hr;
   return `<hr style="border:none;border-top:1px solid ${hr};margin:18px 0;">`;
 }
 
-export function frontHtml(card, mediaMap) {
+export function frontHtml(card, mediaMap, options = {}) {
+  if (cardHasImageOcclusion(card)) return occlusionStudyHtml(card, mediaMap, { ...options, reveal: false });
   return renderClozeHtml(fieldHtml(card, 0, mediaMap), { reveal: false });
 }
 
-export function backHtml(card, mediaMap, { dark = false } = {}) {
+export function backHtml(card, mediaMap, { dark = false, ...options } = {}) {
+  if (cardHasImageOcclusion(card)) return occlusionStudyHtml(card, mediaMap, { ...options, reveal: true });
   if (cardHasCloze(card)) {
     const revealed = renderClozeHtml(fieldHtml(card, 0, mediaMap), { reveal: true });
     const extra = fieldHtml(card, 1, mediaMap);
@@ -133,7 +151,7 @@ export function backHtml(card, mediaMap, { dark = false } = {}) {
   return back;
 }
 
-function cardCss(theme) {
+function cardCss(theme, { browse = false } = {}) {
   const t = CARD_THEME[theme];
   const darkOverrides = theme === 'dark'
     ? `
@@ -145,7 +163,7 @@ function cardCss(theme) {
       background-color: ${t.background} !important;
       background: ${t.background} !important;
     }
-    h1, h2, h3, h4, h5, h6 { color: ${t.heading}; }
+    h1, h2, h3, h4, h5, h6 { color: ${t.heading}; line-height: 1.2; }
     p, div, li, ol, ul { color: ${t.text}; }
     a { color: ${t.link}; }
     img { background-color: white; }
@@ -154,18 +172,20 @@ function cardCss(theme) {
   return `
     html, body { margin: 0; padding: 0; background: ${t.background}; height: 100%; }
     body {
-      font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
-      font-size: 22px;
-      line-height: 1.45;
+      font-family: ${browse ? '-apple-system, system-ui, "Helvetica Neue", sans-serif' : 'system-ui, -apple-system, "Helvetica Neue", sans-serif'};
+      font-size: ${browse ? '14pt' : '22px'};
+      line-height: ${browse ? '1.5' : '1.45'};
       color: ${t.text};
-      padding: 8px 4px;
+      padding: ${browse ? '0' : '8px 4px'};
       word-wrap: break-word;
       box-sizing: border-box;
     }
     .card {
-      width: 100%;
+      width: ${browse ? '90%' : '100%'};
+      ${browse ? 'max-width: 90%; min-height: 100%; margin-left: auto; margin-right: auto; padding-top: 30px; padding-bottom: 30px;' : ''}
       box-sizing: border-box;
     }
+    ${browse ? 'p { margin-block-start: 0; margin-block-end: 0; }' : ''}
     img, video { max-width: 100%; max-height: 100%; height: auto; object-fit: contain; }
     audio { width: 100%; margin: 8px 0; }
     hr {
@@ -190,6 +210,9 @@ function cardCss(theme) {
       color: ${t.inputText};
       border: 1px solid ${t.inputBorder};
     }
+    h1, h2, h3, h4, h5, h6 { line-height: 1.2; margin: 0; }
+    .card-title { font-size: 2em; font-weight: 700; line-height: 1.2; }
+    .card-subtitle { font-size: 1.5em; font-weight: 650; line-height: 1.2; }
     .cloze {
       border-radius: 5px;
       padding: 1px 4px;
@@ -197,11 +220,71 @@ function cardCss(theme) {
       border-bottom: 2.5px solid ${t.clozeBorder};
       color: ${t.clozeText};
     }
+    .io-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .io-frame {
+      position: relative;
+      display: block;
+      max-width: 100%;
+      line-height: 0;
+    }
+    .io-frame img {
+      display: block;
+      max-width: 100%;
+      max-height: 70vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+    .io-masks {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .io-mask {
+      position: absolute;
+      box-sizing: border-box;
+    }
+    .io-mask.target {
+      background: #A7F3D0;
+      border: 1px solid #34D399;
+    }
+    .io-mask.other {
+      background: #FDE68A;
+      border: 1px solid #FBBF24;
+    }
+    .io-check {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: 0;
+      border: 0;
+      opacity: 0;
+    }
+    .io-toggle {
+      display: block;
+      margin: 16px auto 0;
+      line-height: 1.2;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid ${t.hr};
+      color: ${t.text};
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .io-check:checked ~ .io-toggle .io-hide { display: none; }
+    .io-check:not(:checked) ~ .io-toggle .io-show { display: none; }
+    .io-check:not(:checked) ~ .io-frame .io-masks { display: none; }
     ${darkOverrides}
   `;
 }
 
-export function cardDocument(bodyHtml, { dark = false } = {}) {
+export function cardDocument(bodyHtml, { dark = false, browse = false } = {}) {
   const theme = dark ? 'dark' : 'light';
   const night = dark ? ' night_mode nightMode' : '';
   return `<!DOCTYPE html>
@@ -210,7 +293,7 @@ export function cardDocument(bodyHtml, { dark = false } = {}) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="${theme}">
-  <style>${cardCss(theme)}</style>
+  <style>${cardCss(theme, { browse })}</style>
 </head>
 <body class="${night.trim()}">
 <div class="card${night}">

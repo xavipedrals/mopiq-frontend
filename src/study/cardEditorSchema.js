@@ -25,6 +25,55 @@ export const Cloze = Mark.create({
   },
 });
 
+export const TextSize = Mark.create({
+  name: 'textSize',
+  inclusive: true,
+  addAttributes() {
+    return {
+      size: {
+        default: 'title',
+        parseHTML: (element) => {
+          const fontSize = String(element.style.fontSize || '').replace(/\s+/g, '').toLowerCase();
+          if (fontSize === '1.5em') return 'subtitle';
+          if (fontSize === '2em') return 'title';
+          return 'title';
+        },
+        renderHTML: (attributes) => (
+          attributes.size === 'subtitle'
+            ? { style: 'font-size: 1.5em; font-weight: 600' }
+            : { style: 'font-size: 2em; font-weight: 700' }
+        ),
+      },
+    };
+  },
+  parseHTML() {
+    return [
+      {
+        tag: 'span',
+        getAttrs: (element) => {
+          const fontSize = String(element.style.fontSize || '').replace(/\s+/g, '').toLowerCase();
+          if (fontSize === '2em') return { size: 'title' };
+          if (fontSize === '1.5em') return { size: 'subtitle' };
+          return false;
+        },
+      },
+    ];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', mergeAttributes(HTMLAttributes), 0];
+  },
+  addCommands() {
+    return {
+      toggleTextSize: (size) => ({ editor, commands }) => (
+        editor.isActive(this.name, { size })
+          ? commands.unsetMark(this.name)
+          : commands.setMark(this.name, { size })
+      ),
+      unsetTextSize: () => ({ commands }) => commands.unsetMark(this.name),
+    };
+  },
+});
+
 export function cardEditorExtensions() {
   return [
     StarterKit.configure({
@@ -46,5 +95,6 @@ export function cardEditorExtensions() {
     }),
     Image.configure({ allowBase64: false }),
     Cloze,
+    TextSize,
   ];
 }

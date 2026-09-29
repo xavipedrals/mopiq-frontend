@@ -129,9 +129,7 @@
             </div>
 
             <button type="button" class="add-many" :disabled="saving" @click="openImport">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 4.5l.7 2.1H15l-1.8 1.3.7 2.1L12 8.7l-1.9 1.3.7-2.1L9 6.6h2.3zM18 11l.5 1.5H20l-1.3.9.5 1.5-1.4-.9-1.4.9.5-1.5-1.3-.9h1.5zM6.5 13l.45 1.35H8.4l-1.15.85.45 1.35-1.2-.8-1.2.8.45-1.35-1.15-.85h1.45z" fill="currentColor"/>
-              </svg>
+              <TablerIcon name="sparkles" />
               {{ $t('editor.addMultiple') }}
             </button>
           </template>
@@ -141,64 +139,62 @@
 
         <div v-if="!lockReason" class="toolbar-dock" :class="{ pending: contentPending }">
           <div class="toolbar" role="toolbar" :aria-label="$t('editor.formatting')">
-            <div class="tb-scroll">
+            <div class="tb-scroll" @scroll="onToolbarScroll">
               <div class="tb-group">
                 <button type="button" class="tb" :title="$t('editor.image')" @click="pickImage">
-                  <svg viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="13" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8.6" cy="10.4" r="1.35" fill="currentColor"/><path d="M7 16.5l4-3.4 2.6 2.2 2.2-1.8 4.2 3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <TablerIcon name="photo" />
+                </button>
+                <button v-if="!card" type="button" class="tb" :title="$t('editor.occlusion')" @click="pickOcclusion">
+                  <TablerIcon name="layersIntersect" />
                 </button>
                 <button type="button" class="tb" :title="$t('editor.ttsButton')" @click="openTts">
-                  <svg viewBox="0 0 24 24"><path d="M5 10v4h3.2L13 18.2V5.8L8.2 10H5zM16.2 8.6a4.2 4.2 0 0 1 0 6.8M18.6 6.2a7.6 7.6 0 0 1 0 11.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <TablerIcon name="volume" />
                 </button>
                 <div class="tb-wrap">
-                  <button type="button" class="tb" :title="$t('editor.heading')" :aria-expanded="headingOpen" @click="headingOpen = !headingOpen">
-                    <svg viewBox="0 0 24 24"><path d="M6 17V7M6 12h7M13 17V7M17.5 17V9.5M17.5 17h2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <button type="button" class="tb" :title="$t('editor.heading')" :aria-expanded="headingOpen" @click.stop="toggleHeadingMenu">
+                    <TablerIcon name="heading" />
                   </button>
-                  <div v-if="headingOpen" class="tb-menu" @click.stop>
-                    <button type="button" @click="setHeading(1)">{{ $t('editor.headingTitle') }}</button>
-                    <button type="button" @click="setHeading(2)">{{ $t('editor.headingSubtitle') }}</button>
-                    <button type="button" @click="setParagraph()">{{ $t('editor.headingText') }}</button>
-                  </div>
                 </div>
               </div>
               <span class="tb-sep"></span>
               <div class="tb-group">
                 <button type="button" class="tb" :class="{ on: isActive('bold') }" :title="$t('editor.bold')" @click="run('toggleBold')">
-                  <svg viewBox="0 0 24 24"><path d="M7 5.5h6.2a3.4 3.4 0 0 1 0 6.8H7zm0 6.8h7.1A3.5 3.5 0 0 1 14.1 19H7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                  <TablerIcon name="bold" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive('italic') }" :title="$t('editor.italic')" @click="run('toggleItalic')">
-                  <svg viewBox="0 0 24 24"><path d="M10 5.5h8M6 18.5h8M14.5 5.5L9.5 18.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <TablerIcon name="italic" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive('underline') }" :title="$t('editor.underline')" @click="run('toggleUnderline')">
-                  <svg viewBox="0 0 24 24"><path d="M7 5.5v7.2a5 5 0 0 0 10 0V5.5M6 19h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <TablerIcon name="underline" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive('strike') }" :title="$t('editor.strike')" @click="run('toggleStrike')">
-                  <svg viewBox="0 0 24 24"><path d="M6 12h12M9.2 8.2C9.6 6.6 11 5.6 13 5.6c2.1 0 3.5 1.1 3.5 2.8 0 1.2-.6 2-2.4 2.6M8.4 13.4c.4 2.2 2 3.3 4.4 3.3 2.5 0 4.2-1.2 4.2-3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <TablerIcon name="strikethrough" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive('cloze') }" :title="$t('editor.cloze')" @click="toggleCloze">
-                  <svg viewBox="0 0 24 24"><path d="M9 7.5c-2.8 0-4.5 1.9-4.5 4.5S6.2 16.5 9 16.5M15 7.5c2.8 0 4.5 1.9 4.5 4.5s-1.7 4.5-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <TablerIcon name="brackets" />
                 </button>
               </div>
               <span class="tb-sep"></span>
               <div class="tb-group">
                 <button type="button" class="tb" :class="{ on: isActive({ textAlign: 'left' }) }" :title="$t('editor.alignLeft')" @click="setAlign('left')">
-                  <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h10M5 17h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <TablerIcon name="alignLeft" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive({ textAlign: 'center' }) }" :title="$t('editor.alignCenter')" @click="setAlign('center')">
-                  <svg viewBox="0 0 24 24"><path d="M5 7h14M7 12h10M5 17h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <TablerIcon name="alignCenter" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive({ textAlign: 'right' }) }" :title="$t('editor.alignRight')" @click="setAlign('right')">
-                  <svg viewBox="0 0 24 24"><path d="M5 7h14M9 12h10M5 17h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <TablerIcon name="alignRight" />
                 </button>
               </div>
               <span class="tb-sep"></span>
               <div class="tb-group">
                 <label class="tb color" :title="$t('editor.textColor')">
-                  <svg viewBox="0 0 24 24"><path d="M6 18.5h12M8.2 15.2L12 6.5l3.8 8.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.3 12.6h5.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                  <TablerIcon name="letterA" />
                   <i :style="{ background: textColor }"></i>
                   <input type="color" :value="textColor" @input="setColor($event.target.value)">
                 </label>
                 <label class="tb color" :title="$t('editor.highlight')">
-                  <svg viewBox="0 0 24 24"><path d="M7 15.5l8.2-8.2a2 2 0 0 1 2.8 2.8L9.8 18.3H7zM5.5 19.2h13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg>
+                  <TablerIcon name="highlight" />
                   <i :style="{ background: highlightColor }"></i>
                   <input type="color" :value="highlightColor" @input="setHighlight($event.target.value)">
                 </label>
@@ -206,36 +202,36 @@
               <span class="tb-sep"></span>
               <div class="tb-group">
                 <button type="button" class="tb" :class="{ on: isActive('bulletList') }" :title="$t('editor.bullets')" @click="run('toggleBulletList')">
-                  <svg viewBox="0 0 24 24"><circle cx="6.2" cy="7" r="1.15" fill="currentColor"/><circle cx="6.2" cy="12" r="1.15" fill="currentColor"/><circle cx="6.2" cy="17" r="1.15" fill="currentColor"/><path d="M10 7h8.5M10 12h8.5M10 17h8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <TablerIcon name="list" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive('orderedList') }" :title="$t('editor.numbers')" @click="run('toggleOrderedList')">
-                  <svg viewBox="0 0 24 24"><path d="M10 7h8.5M10 12h8.5M10 17h8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M5.2 5.6v3.6M4.5 9.2h1.6M4.4 13.1h2.1L4.5 16.4h2.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <TablerIcon name="listNumbers" />
                 </button>
               </div>
               <span class="tb-sep"></span>
               <div class="tb-group">
                 <button type="button" class="tb" :class="{ on: isActive('link') }" :title="$t('editor.link')" @click="addLink">
-                  <svg viewBox="0 0 24 24"><path d="M10 13.5l4-4M8.8 11.2l-1.6 1.6a3.2 3.2 0 0 0 4.5 4.5l1.7-1.7M15.2 12.8l1.6-1.6a3.2 3.2 0 0 0-4.5-4.5l-1.6 1.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                  <TablerIcon name="link" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive('superscript') }" :title="$t('editor.superscript')" @click="run('toggleSuperscript')">
-                  <svg viewBox="0 0 24 24"><path d="M5 17.5L10.4 7h.4L16.2 17.5M6.7 14.2h8.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M17.2 6.2h2.6l-2.6 3.2h2.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <TablerIcon name="superscript" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive('subscript') }" :title="$t('editor.subscript')" @click="run('toggleSubscript')">
-                  <svg viewBox="0 0 24 24"><path d="M5 15.5L10.4 5h.4L16.2 15.5M6.7 12.2h8.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M17.2 16.4h2.6l-2.6 3.2h2.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <TablerIcon name="subscript" />
                 </button>
               </div>
               <span class="tb-sep"></span>
               <div class="tb-group">
                 <button type="button" class="tb" :title="$t('editor.undo')" @click="run('undo')">
-                  <svg viewBox="0 0 24 24"><path d="M8 8.5H6.2A3.2 3.2 0 0 0 3 11.7v0A3.2 3.2 0 0 0 6.2 15H16a5 5 0 0 0 0-10H9.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M8 4.8L5.2 8.5 8 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <TablerIcon name="undo" />
                 </button>
                 <button type="button" class="tb" :title="$t('editor.redo')" @click="run('redo')">
-                  <svg viewBox="0 0 24 24"><path d="M16 8.5h1.8A3.2 3.2 0 0 1 21 11.7v0A3.2 3.2 0 0 1 17.8 15H8a5 5 0 0 1 0-10h6.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M16 4.8L18.8 8.5 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <TablerIcon name="redo" />
                 </button>
               </div>
               <span class="tb-sep"></span>
               <button type="button" class="tb" :title="$t('editor.hideKeyboard')" @click="hideKeyboard">
-                <svg viewBox="0 0 24 24"><rect x="3.5" y="6.2" width="17" height="10.4" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7 9.2h.1M10 9.2h.1M13 9.2h.1M16 9.2h.1M7 12h10M9.4 18.4L12 16.2l2.6 2.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <TablerIcon name="keyboardOff" />
               </button>
             </div>
             <input
@@ -244,6 +240,13 @@
               type="file"
               accept="image/jpeg,image/png,image/gif,image/webp"
               @change="onPickImage"
+            >
+            <input
+              ref="occlusionInput"
+              class="file"
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              @change="onPickOcclusion"
             >
           </div>
         </div>
@@ -296,7 +299,7 @@
 
     <div v-if="open && importOpen" class="overlay" @keydown.esc.stop="closeImport">
       <button type="button" class="overlay-backdrop" :aria-label="$t('common.close')" @click="closeImport"></button>
-      <section class="sheet import-sheet" role="dialog" aria-modal="true" :aria-labelledby="'import-title'">
+      <section class="sheet import-sheet" :class="{ 'pdf-pages': importLayout === 'pdf-pages' }" role="dialog" aria-modal="true" :aria-labelledby="'import-title'">
         <header class="sheet-nav">
           <button type="button" class="nav-text" :disabled="importing" @click="importBack">
             {{ importPage === 'menu' ? $t('common.cancel') : $t('common.back') }}
@@ -314,14 +317,7 @@
           >
             <span class="source-icon" :style="{ background: option.bg, color: option.fg }">
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  :d="option.icon"
-                  :fill="option.filled ? 'currentColor' : 'none'"
-                  :stroke="option.filled ? 'none' : 'currentColor'"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
+                <path v-for="(d, index) in option.icon" :key="index" :d="d" />
               </svg>
             </span>
             <span>{{ $t(option.titleKey) }}</span>
@@ -332,6 +328,7 @@
             :source="importSource"
             :deck-id="deck ? deck.id : ''"
             @busy="importing = $event"
+            @layout="importLayout = $event"
             @done="onMagicImported"
           />
         </div>
@@ -414,6 +411,28 @@
         </form>
       </section>
     </div>
+    <Teleport to="body">
+      <div
+        v-if="headingOpen"
+        class="tb-menu"
+        :style="headingMenuStyle"
+        @click.stop
+      >
+        <button type="button" @click="setHeading(1)">{{ $t('editor.headingTitle') }}</button>
+        <button type="button" @click="setHeading(2)">{{ $t('editor.headingSubtitle') }}</button>
+        <button type="button" @click="setParagraph()">{{ $t('editor.headingText') }}</button>
+      </div>
+    </Teleport>
+    <Teleport to="body">
+      <ImageOcclusionEditor
+        v-if="occlusionOpen"
+        :image-url="occlusionImageUrl"
+        :saving="occlusionSaving"
+        :save-error="occlusionError"
+        @cancel="closeOcclusion"
+        @save="onOcclusionSave"
+      />
+    </Teleport>
   </Teleport>
 </template>
 
@@ -422,12 +441,15 @@ import { Editor, EditorContent } from '@tiptap/vue-3';
 import SkeletonBlock from './SkeletonBlock.vue';
 import {
   createDeckCard,
+  createImageOcclusionCards,
   fetchMediaMap,
   importSpreadsheetCards,
   requestTextToSpeech,
   updateDeckCard,
 } from '../api/mopiq';
 import MagicImportPanel from './MagicImportPanel.vue';
+import ImageOcclusionEditor from './ImageOcclusionEditor.vue';
+import TablerIcon from './TablerIcon.vue';
 import { magicImportRoute, sourcesForExistingDeck } from '../study/magicImport';
 import { cardEditorHtmlFields, cardWebEditLock } from '../study/cardFields';
 import { cardEditorExtensions } from '../study/cardEditorSchema';
@@ -457,7 +479,7 @@ import {
 
 export default {
   name: 'CardEditor',
-  components: { EditorContent, MagicImportPanel, SkeletonBlock },
+  components: { EditorContent, ImageOcclusionEditor, MagicImportPanel, SkeletonBlock, TablerIcon },
   props: {
     open: { type: Boolean, default: false },
     embedded: { type: Boolean, default: false },
@@ -480,10 +502,13 @@ export default {
       reverseCards: false,
       extraOpen: false,
       headingOpen: false,
+      headingMenuStyle: {},
+      headingIgnoreScroll: false,
       reverseInfoOpen: false,
       importOpen: false,
       importPage: 'menu',
       importSource: 'paste',
+      importLayout: '',
       importing: false,
       importError: '',
       pasteText: '',
@@ -504,6 +529,11 @@ export default {
       ttsPreviewUrl: '',
       ttsFileName: '',
       ttsError: '',
+      occlusionOpen: false,
+      occlusionImageUrl: '',
+      occlusionFile: null,
+      occlusionSaving: false,
+      occlusionError: '',
     };
   },
   computed: {
@@ -578,16 +608,42 @@ export default {
     },
   },
   mounted() {
-    document.addEventListener('click', this.closeMenus);
+    document.addEventListener('pointerdown', this.closeMenus);
   },
   beforeUnmount() {
-    document.removeEventListener('click', this.closeMenus);
+    document.removeEventListener('pointerdown', this.closeMenus);
     this.teardown();
     document.documentElement.classList.remove('card-editor-open');
   },
   methods: {
     closeMenus(event) {
-      if (!event.target.closest?.('.tb-wrap')) this.headingOpen = false;
+      if (!this.headingOpen || this.headingIgnoreScroll) return;
+      const target = event.target;
+      if (target?.closest?.('.tb-wrap') || target?.closest?.('.tb-menu')) return;
+      this.headingOpen = false;
+    },
+    onToolbarScroll() {
+      if (this.headingOpen && !this.headingIgnoreScroll) this.headingOpen = false;
+    },
+    toggleHeadingMenu(event) {
+      if (this.headingOpen) {
+        this.headingOpen = false;
+        return;
+      }
+      const button = event.currentTarget || event.target?.closest?.('button');
+      const rect = button.getBoundingClientRect();
+      const width = 180;
+      const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
+      this.headingMenuStyle = {
+        left: `${left}px`,
+        top: `${Math.max(8, rect.top - 8)}px`,
+        transform: 'translateY(-100%)',
+      };
+      this.headingIgnoreScroll = true;
+      this.headingOpen = true;
+      window.setTimeout(() => {
+        this.headingIgnoreScroll = false;
+      }, 350);
     },
     syncBodyLock(isOpen) {
       document.documentElement.classList.toggle('card-editor-open', Boolean(isOpen) && !this.embedded);
@@ -606,11 +662,20 @@ export default {
     },
     setHeading(level) {
       this.headingOpen = false;
-      this.activeEditor?.chain().focus().toggleHeading({ level }).run();
+      const editor = this.activeEditor;
+      if (!editor) return;
+      const size = level === 2 ? 'subtitle' : 'title';
+      const chain = editor.chain().focus();
+      if (editor.isActive('heading')) chain.setParagraph();
+      chain.toggleTextSize(size).run();
     },
     setParagraph() {
       this.headingOpen = false;
-      this.activeEditor?.chain().focus().setParagraph().run();
+      const editor = this.activeEditor;
+      if (!editor) return;
+      const chain = editor.chain().focus();
+      if (editor.isActive('heading')) chain.setParagraph();
+      chain.unsetTextSize().run();
     },
     setColor(value) {
       this.textColor = value;
@@ -624,15 +689,30 @@ export default {
       this.activeEditor?.commands.blur();
     },
     addLink() {
-      const previous = this.activeEditor?.getAttributes('link').href || 'https://';
+      const editor = this.activeEditor;
+      if (!editor) return;
+      const previous = editor.getAttributes('link').href || 'https://';
       const url = window.prompt(this.$t('editor.linkPrompt'), previous);
       if (url === null) return;
       const trimmed = url.trim();
       if (!trimmed) {
-        this.activeEditor?.chain().focus().unsetLink().run();
+        editor.chain().focus().unsetLink().run();
         return;
       }
-      this.activeEditor?.chain().focus().setLink({ href: trimmed }).run();
+      const href = /^(https?:|mailto:)/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      const { empty } = editor.state.selection;
+      if (empty) {
+        editor.chain().focus().insertContent([
+          {
+            type: 'text',
+            text: href,
+            marks: [{ type: 'link', attrs: { href } }],
+          },
+          { type: 'text', text: ' ' },
+        ]).run();
+        return;
+      }
+      editor.chain().focus().setLink({ href }).run();
     },
     toggleCloze() {
       if (this.activeSide !== 'front') {
@@ -643,6 +723,63 @@ export default {
     },
     pickImage() {
       this.$refs.imageInput?.click();
+    },
+    pickOcclusion() {
+      this.$refs.occlusionInput?.click();
+    },
+    async onPickOcclusion(event) {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file || this.card) return;
+      this.error = '';
+      this.occlusionError = '';
+      try {
+        const prepared = await prepareCardImage(file);
+        this.closeOcclusion();
+        this.occlusionFile = {
+          blob: prepared.blob,
+          contentType: prepared.contentType,
+          fileName: prepared.fileName,
+        };
+        this.occlusionImageUrl = URL.createObjectURL(prepared.blob);
+        this.occlusionOpen = true;
+      } catch (error) {
+        this.error = error.code === 'too-big'
+          ? this.$t('editor.imageTooBig')
+          : this.$t('editor.imageError');
+      }
+    },
+    closeOcclusion() {
+      if (this.occlusionImageUrl) URL.revokeObjectURL(this.occlusionImageUrl);
+      this.occlusionImageUrl = '';
+      this.occlusionFile = null;
+      this.occlusionOpen = false;
+      this.occlusionSaving = false;
+      this.occlusionError = '';
+    },
+    async onOcclusionSave({ rectangles, mode }) {
+      if (!this.deck || this.occlusionSaving || !this.occlusionFile) return;
+      this.occlusionSaving = true;
+      this.occlusionError = '';
+      try {
+        const imported = await createImageOcclusionCards(this.deck, {
+          rectangles,
+          file: this.occlusionFile,
+          mode,
+          position: this.nextPosition || 0,
+          subdeckId: Number(this.selectedSubdeckId) || 0,
+        });
+        this.closeOcclusion();
+        this.$emit('saved', { imported, created: true, keepOpen: true });
+        this.toastAdded(imported.length);
+      } catch (error) {
+        console.error(error);
+        const code = error.code;
+        if (code === 'no-rectangles') this.occlusionError = this.$t('editor.occlusionNone');
+        else if (code === 'too-many') this.occlusionError = this.$t('editor.occlusionTooMany');
+        else this.occlusionError = error.message || this.$t('editor.occlusionSaveError');
+        this.occlusionSaving = false;
+      }
     },
     openTts() {
       const raw = stripHtml(this.activeEditor?.getHTML?.() || '');
@@ -795,7 +932,11 @@ export default {
         : this.$t('editor.addedMany', { count }));
     },
     onCancel() {
-      if (this.saving || this.importing || this.ttsBusy) return;
+      if (this.saving || this.importing || this.ttsBusy || this.occlusionSaving) return;
+      if (this.occlusionOpen) {
+        this.closeOcclusion();
+        return;
+      }
       if (this.ttsOpen) {
         this.closeTts();
         return;
@@ -886,11 +1027,15 @@ export default {
       if (this.importing) return;
       this.importOpen = false;
       this.importPage = 'menu';
+      this.importLayout = '';
     },
     importBack() {
       if (this.importing) return;
       if (this.importPage === 'menu') this.closeImport();
-      else this.importPage = 'menu';
+      else {
+        this.importPage = 'menu';
+        this.importLayout = '';
+      }
     },
     chooseImport(option) {
       const route = magicImportRoute(option.id, { existingDeck: true });
@@ -970,6 +1115,7 @@ export default {
       this.hydrateId += 1;
       this.hydrating = false;
       window.clearTimeout(this.toastTimer);
+      this.closeOcclusion();
       this.revokePending();
       this.frontEditor?.destroy();
       this.backEditor?.destroy();
@@ -1231,6 +1377,16 @@ export default {
   margin: 0;
   line-height: 1.2;
 }
+.editor-frame :deep(.card-title) {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.editor-frame :deep(.card-subtitle) {
+  font-size: 1.5em;
+  font-weight: 650;
+  line-height: 1.2;
+}
 .editor-frame :deep(img) {
   display: block;
   max-width: min(100%, 420px);
@@ -1263,7 +1419,7 @@ export default {
   font-size: 17px;
   cursor: pointer;
 }
-.add-many svg { width: 19px; height: 19px; transform: rotate(90deg); }
+.add-many :deep(.tabler-icon) { width: 19px; height: 19px; }
 .add-many { align-self: center; }
 
 .toolbar-dock {
@@ -1329,15 +1485,13 @@ export default {
 }
 .tb-wrap { position: relative; }
 .tb-menu {
-  position: absolute;
-  right: 0;
-  bottom: 48px;
-  min-width: 148px;
+  position: fixed;
+  z-index: 200;
+  min-width: 180px;
   background: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
   padding: 6px;
-  z-index: 2;
 }
 .tb-menu button {
   display: block;
@@ -1448,6 +1602,7 @@ export default {
   border-radius: 20px 20px 0 0;
   box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.2);
 }
+.import-sheet.pdf-pages { width: min(920px, 100%); }
 .sheet-nav {
   display: grid;
   grid-template-columns: 44px 1fr 44px;
@@ -1536,7 +1691,15 @@ export default {
   justify-content: center;
   flex: 0 0 auto;
 }
-.source-icon svg { width: 18px; height: 18px; }
+.source-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .import-body textarea, .dropzone {
   border: 1px solid var(--empty-bar);
   border-radius: 14px;

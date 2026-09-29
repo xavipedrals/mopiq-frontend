@@ -2,6 +2,7 @@ import type { IncomingMessage } from 'node:http';
 import { fileURLToPath, URL } from 'node:url';
 import { defineConfig, type ProxyOptions } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import { visitorCountryPlugin } from './visitorCountryPlugin.js';
 
 function supabaseFunctionsProxy(): ProxyOptions {
   return {
@@ -21,7 +22,7 @@ function supabaseFunctionsProxy(): ProxyOptions {
 }
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), visitorCountryPlugin()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

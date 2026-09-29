@@ -86,8 +86,14 @@
       </div>
       <div v-if="prompt" class="prompt-root">
         <button type="button" class="prompt-backdrop" :aria-label="$t('common.cancel')" @click="prompt = null"></button>
-        <form class="prompt" @submit.prevent="submitPrompt">
-          <h3>{{ prompt.title }}</h3>
+        <form class="prompt" role="dialog" aria-modal="true" aria-labelledby="folder-prompt-title" @submit.prevent="submitPrompt">
+          <div v-if="prompt.kind === 'add'" class="prompt-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h3.2l2 2H18a2.5 2.5 0 0 1 2.5 2.5v8A2.5 2.5 0 0 1 18 20H6a2.5 2.5 0 0 1-2.5-2.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              <path d="M12 10v6m-3-3h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3 id="folder-prompt-title">{{ prompt.title }}</h3>
           <p v-if="prompt.message">{{ prompt.message }}</p>
           <label>
             <span class="sr-only">{{ $t('deck.folderName') }}</span>
@@ -98,9 +104,12 @@
               maxlength="80"
               :placeholder="$t('deck.folderName')"
               required
+              autocomplete="off"
+              :aria-invalid="prompt.error ? 'true' : 'false'"
+              :aria-describedby="prompt.error ? 'folder-prompt-error' : undefined"
             >
           </label>
-          <p v-if="prompt.error" class="prompt-error">{{ prompt.error }}</p>
+          <p v-if="prompt.error" id="folder-prompt-error" class="prompt-error" role="alert">{{ prompt.error }}</p>
           <div class="prompt-actions">
             <button type="button" class="text" @click="prompt = null">{{ $t('common.cancel') }}</button>
             <button type="submit" class="ok">{{ $t('common.ok') }}</button>
@@ -109,8 +118,8 @@
       </div>
       <div v-if="pendingDelete" class="prompt-root">
         <button type="button" class="prompt-backdrop" :aria-label="$t('common.cancel')" @click="pendingDelete = null"></button>
-        <form class="prompt" @submit.prevent="confirmDelete">
-          <h3>{{ $t('deck.deleteFolder') }}</h3>
+        <form class="prompt" role="dialog" aria-modal="true" aria-labelledby="delete-folder-prompt-title" @submit.prevent="confirmDelete">
+          <h3 id="delete-folder-prompt-title">{{ $t('deck.deleteFolder') }}</h3>
           <p>{{ $t('deck.deleteFolderMessage') }}</p>
           <div class="prompt-actions">
             <button type="button" class="text" @click="pendingDelete = null">{{ $t('common.cancel') }}</button>
@@ -400,7 +409,11 @@ h2 {
   padding: 0;
   background: transparent;
 }
-.prompt-backdrop { background: rgba(15, 23, 42, 0.28); }
+.prompt-backdrop {
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
 .menu-panel,
 .prompt {
   position: absolute;
@@ -414,39 +427,76 @@ h2 {
 }
 .prompt {
   left: 50%;
-  top: 22%;
-  transform: translateX(-50%);
-  width: min(420px, calc(100% - 32px));
-  padding: 18px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  padding: 28px;
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  border-radius: 22px;
+  box-shadow: 0 24px 72px rgba(15, 23, 42, 0.28), 0 4px 14px rgba(15, 23, 42, 0.1);
+  animation: prompt-enter 180ms cubic-bezier(.2, .75, .25, 1) both;
 }
-.prompt h3 { margin: 0 0 8px; color: var(--title); font-size: 1.15rem; }
-.prompt p { margin: 0 0 12px; color: var(--text); }
+.prompt-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--blue-button) 12%, transparent);
+  color: var(--blue-button);
+}
+.prompt-icon svg { display: block; width: 25px; height: 25px; }
+.prompt h3 { margin: 0 0 8px; color: var(--title); font-size: 1.3rem; line-height: 1.25; letter-spacing: -0.02em; }
+.prompt p { margin: 0 0 16px; color: var(--text-secondary, var(--text)); line-height: 1.45; }
 .prompt input {
   width: 100%;
   box-sizing: border-box;
-  min-height: 44px;
-  padding: 8px 12px;
-  border-radius: 10px;
+  min-height: 50px;
+  padding: 12px 14px;
+  border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
-  background: var(--card-bg);
+  background: color-mix(in srgb, var(--card-bg) 88%, var(--text) 3%);
   color: var(--title);
   font: inherit;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
 }
-.prompt-error { color: #ff3b30 !important; }
-.prompt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.prompt input::placeholder { color: var(--text-secondary, var(--text)); opacity: 0.75; }
+.prompt input:focus { border-color: var(--blue-button); background: var(--card-bg); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue-button) 17%, transparent); }
+.prompt-error { margin-top: 9px !important; margin-bottom: 0 !important; color: #d92d20 !important; font-size: 0.9rem; }
+.prompt-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .prompt-actions button {
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 42px;
+  padding: 0 17px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 11px;
   background: transparent;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease, opacity 140ms ease;
 }
-.prompt-actions .text { color: var(--text); }
-.prompt-actions .ok { color: var(--button-text, #fff); background: var(--blue-button); }
+.prompt-actions button:active { transform: scale(0.98); }
+.prompt-actions .text { color: var(--text-secondary, var(--text)); }
+.prompt-actions .text:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
+.prompt-actions .ok { color: var(--button-text, #fff); background: var(--blue-button); box-shadow: 0 3px 8px color-mix(in srgb, var(--blue-button) 24%, transparent); }
+.prompt-actions .ok:hover { filter: brightness(1.06); }
 .prompt-actions .danger { color: #fff; background: #ff3b30; }
+@keyframes prompt-enter {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(0.98); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@media (max-width: 480px) {
+  .prompt { padding: 24px 20px 20px; border-radius: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prompt { animation: none; }
+  .prompt input, .prompt-actions button { transition: none; }
+}
 .menu-item {
   display: flex !important;
   align-items: center;

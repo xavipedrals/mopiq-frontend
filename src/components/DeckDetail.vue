@@ -1,6 +1,38 @@
 <template>
   <div class="detail-page" :class="{ selecting: selectionMode }">
-      <p v-if="error" class="error">{{ error }}</p>
+      <div v-if="deckGeneration" class="detail generation-hold">
+        <div class="topbar">
+          <router-link :to="listTo" class="back">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            {{ $t('decks.title') }}
+          </router-link>
+          <div class="tools">
+            <button
+              v-if="deck?.canEdit"
+              type="button"
+              class="tool"
+              :aria-label="$t('deck.settings')"
+              @click="settingsOpen = true"
+            >
+              <StudyMenuIcon name="settings" />
+            </button>
+          </div>
+        </div>
+        <div class="generation-copy" role="status" aria-live="polite">
+          <span v-if="deckGeneration.status !== 'failed'" class="generation-spin" aria-hidden="true"></span>
+          <h1>{{ generationTitle }}</h1>
+          <p v-if="deckGeneration.status !== 'failed'">{{ $t('decks.generatingBody') }}</p>
+          <template v-else>
+            <p class="error">{{ deckGeneration.errorMessage || $t('decks.magicProgressFailed') }}</p>
+            <button type="button" class="mopiq-btn" @click="openGeneratedDeck">
+              {{ $t('decks.generatingOpenDeck') }}
+            </button>
+          </template>
+        </div>
+      </div>
+      <p v-else-if="error" class="error">{{ error }}</p>
       <div v-else class="detail" :aria-busy="pending">
         <div class="topbar">
           <router-link :to="listTo" class="back">
@@ -299,7 +331,7 @@
         <p v-if="deckPending" class="cta">
           <SkeletonBlock w="min(480px, 92%)" h="1rem" radius="6px" />
         </p>
-        <p v-else class="cta" v-html="ctaHtml"></p>
+        <p v-else-if="deck && !deck.canEdit" class="cta" v-html="ctaHtml"></p>
       </div>
     <StudyLimitSheet
       :open="limitOpen"
@@ -490,6 +522,7 @@ import StudyModeSheet from './StudyModeSheet.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
 import { APP_STORE_URL } from '../constants';
 import { ankiDayString } from '../study/ankiDay';
+import { isImageOcclusionMarkup } from '../study/imageOcclusion';
 import { FREE_CARD_DAILY_LIMIT, isDailyLimitReached } from '../study/freeStudyQuota';
 import {
   copyDeckCard,
@@ -525,6 +558,12 @@ import {
 import { canShowInspectorColumn } from '../study/splitInspector';
 import { cardEditableOnWeb, reversedCardFields } from '../study/cardFields';
 import { containsClozeMarkup } from '../study/sanitizeCardHtml';
+import {
+  blocksDeckGeneration,
+  dismissGenerationJob,
+  generationForDeck,
+  subscribeGenerationJobs,
+} from '../study/generationJobs';
 import {
   deleteFolder,
   findFolder,
@@ -599,6 +638,8 @@ export default {
       storeUrl: APP_STORE_URL,
       limitOpen: false,
       settingsOpen: false,
+      generationJobs: [],
+      suppressGenerationReload: false,
       filtersOpen: false,
       addingCard: false,
       inspectedCard: null,
@@ -660,6 +701,16 @@ export default {
     },
   },
   created() {
+    if (!this.$route.meta.preview) {
+      this.unsubscribeGenerations = subscribeGenerationJobs((next) => {
+        const deckId = this.$route.params.deckId;
+        const wasBlocking = blocksDeckGeneration(generationForDeck(this.generationJobs, deckId));
+        this.generationJobs = next;
+        const nowBlocking = blocksDeckGeneration(generationForDeck(next, deckId));
+        if (this.suppressGenerationReload) return;
+        if (wasBlocking && !nowBlocking && deckId) this.reloadAll(deckId);
+      });
+    }
     if (this.$route.meta.preview) {
       this.applyLayoutPreview();
     } else {
@@ -675,6 +726,7 @@ export default {
     window.addEventListener('online', this.retryGradeSync);
   },
   beforeUnmount() {
+    this.unsubscribeGenerations?.();
     this.unsubscribeGradeSync?.();
     window.removeEventListener('online', this.retryGradeSync);
     clearTimeout(this.searchTimer);
@@ -684,6 +736,13 @@ export default {
     this.setInspectorOpen?.(false);
   },
   computed: {
+    deckGeneration() {
+      const job = generationForDeck(this.generationJobs, this.$route.params.deckId);
+      return blocksDeckGeneration(job) ? job : null;
+    },
+    generationTitle() {
+      return this.deck?.name || this.$t('decks.generatingTitle');
+    },
     freeLimit() {
       return FREE_CARD_DAILY_LIMIT;
     },
@@ -706,8 +765,7 @@ export default {
     },
     ctaHtml() {
       const app = `<a href="${this.storeUrl}" target="_blank" rel="noopener">${escapeHtml(this.$t('common.app'))}</a>`;
-      const key = this.deck?.canEdit ? 'deck.ctaMedia' : 'deck.cta';
-      return this.$t(key, { app });
+      return this.$t('deck.cta', { app });
     },
     hasActiveFilters() {
       return hasActiveCardBrowseFilters(this.browseQuery);
@@ -845,6 +903,9 @@ export default {
     },
   },
   methods: {
+    openGeneratedDeck() {
+      dismissGenerationJob(this.$route.params.deckId);
+    },
     reloadAll(deckId) {
       ++this.loadGen;
       this.cardsRequestId += 1;
@@ -856,6 +917,7 @@ export default {
       this.gradePending = true;
       this.gradeAvailable = false;
       this.gradeSyncing = false;
+      this.histogram = { counts: { AGAIN: 0, HARD: 0, GOOD: 0, EASY: 0 }, total: 0, grade: 0 };
       this.seenPending = true;
       this.unsubscribeGradeSync?.();
       this.reviewSync = deckReviewSync({
@@ -867,7 +929,6 @@ export default {
       this.unsubscribeGradeSync = this.reviewSync.subscribe((state) => {
         const wasSyncing = this.gradeSyncing;
         this.gradeSyncing = state.pending > 0;
-        if (this.gradeSyncing) this.gradeAvailable = false;
         if (wasSyncing && !this.gradeSyncing) {
           this.loadGrade(deckId);
           this.loadSeen(deckId);
@@ -921,11 +982,15 @@ export default {
       };
       this.seenCount = 40;
       this.studiedToday = 1;
-      const previewCounts = { AGAIN: 10, HARD: 1, GOOD: 1, EASY: 0 };
+      const gradePreview = this.$route.query.grade;
+      const previewCounts = gradePreview === 'empty' || gradePreview === 'loading'
+        ? { AGAIN: 0, HARD: 0, GOOD: 0, EASY: 0 }
+        : { AGAIN: 10, HARD: 1, GOOD: 1, EASY: 0 };
+      const previewTotal = previewCounts.AGAIN + previewCounts.HARD + previewCounts.GOOD + previewCounts.EASY;
       this.histogram = {
         counts: previewCounts,
-        total: 12,
-        grade: deckGradeFromCounts(previewCounts, 12),
+        total: previewTotal,
+        grade: deckGradeFromCounts(previewCounts, previewTotal),
       };
       this.time = {
         todayMilliseconds: 3000,
@@ -962,8 +1027,9 @@ export default {
       this.deckPending = false;
       this.statsPending = false;
       this.timePending = false;
-      this.gradePending = false;
-      this.gradeAvailable = true;
+      this.gradePending = gradePreview === 'loading';
+      this.gradeAvailable = gradePreview !== 'loading' && gradePreview !== 'error';
+      this.gradeSyncing = gradePreview === 'loading' || gradePreview === 'syncing';
       this.seenPending = false;
       this.cardsReady = true;
       this.subdeckCounts = { 1: 22, 2: 12, 3: 11, 4: 8 };
@@ -1021,18 +1087,15 @@ export default {
     },
     async loadGrade(deckId) {
       const gen = this.loadGen;
-      this.gradePending = true;
+      const keepVisibleGrade = this.gradeAvailable && this.histogram.total > 0;
+      if (!keepVisibleGrade) this.gradePending = true;
       try {
-        if (this.reviewSync?.pendingCount()) {
-          this.gradeAvailable = false;
-          return;
-        }
         const histogram = await fetchAnswerHistogram(deckId);
-        if (gen !== this.loadGen || this.reviewSync?.pendingCount()) return;
+        if (gen !== this.loadGen) return;
         this.histogram = histogram;
         this.gradeAvailable = true;
       } catch {
-        if (gen === this.loadGen) this.gradeAvailable = false;
+        if (gen === this.loadGen && !this.reviewSync?.pendingCount()) this.gradeAvailable = false;
       } finally {
         if (gen === this.loadGen) this.gradePending = false;
       }
@@ -1046,6 +1109,7 @@ export default {
       this.seenPending = false;
     },
     preview(text) {
+      if (isImageOcclusionMarkup(text)) return this.$t('deck.occlusionLabel');
       return String(text || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     },
     openStudySheet() {
@@ -1176,6 +1240,8 @@ export default {
       this.refreshAppSplit?.();
     },
     onDeckDeleted() {
+      this.suppressGenerationReload = true;
+      dismissGenerationJob(this.$route.params.deckId);
       this.settingsOpen = false;
       this.refreshAppSplit?.();
       this.$router.replace(this.listTo);
@@ -1683,6 +1749,47 @@ export default {
 }
 .detail-page.selecting { padding-bottom: 112px; }
 .detail { text-align: left; }
+.generation-hold {
+  min-height: calc(100dvh - 24px);
+  display: flex;
+  flex-direction: column;
+}
+.generation-copy {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  padding: 48px 24px;
+}
+.generation-copy h1 {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 1.5rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+.generation-copy p {
+  margin: 0;
+  max-width: 28rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+.generation-copy .error { color: var(--error); }
+.generation-spin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--blue-button) 25%, transparent);
+  border-top-color: var(--blue-button);
+  animation: generation-spin 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .generation-spin { animation: none; }
+}
+@keyframes generation-spin { to { transform: rotate(360deg); } }
 .topbar {
   display: flex;
   align-items: center;

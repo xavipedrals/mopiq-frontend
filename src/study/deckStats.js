@@ -40,6 +40,23 @@ export function gaugeProgress({ cardsForToday = 0, cardsStudiedToday = 0 } = {})
 }
 
 /** iOS CardAnswersCount.currentGrade: latest-answer weights, integer truncation. */
+export function gradeCardState({
+  total = 0,
+  pending = false,
+  available = true,
+  syncing = false,
+} = {}) {
+  const hasAnswers = total > 0;
+  const showError = !pending && !syncing && !available;
+  const showEmpty = !showError && !hasAnswers;
+  return {
+    showError,
+    showEmpty,
+    emptySettled: available && !pending && !syncing,
+    showSyncBadge: hasAnswers && syncing,
+  };
+}
+
 export function deckGradeFromCounts(counts = {}, total) {
   const hard = Math.max(0, Number(counts.HARD) || 0);
   const good = Math.max(0, Number(counts.GOOD) || 0);

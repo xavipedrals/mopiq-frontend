@@ -26,6 +26,16 @@ describe('sanitizeCardHtml', () => {
     assert.match(html, /text-align: center/);
   });
 
+  it('keeps inline title and subtitle sizes and drops other sizes', () => {
+    const html = sanitizeCardHtml(
+      '<p>Say <span style="font-size: 2em; font-weight: 700">hello</span> in a <span style="font-size: 1.5em; font-weight: 600; font-size: 40px">line</span></p>',
+    );
+    assert.match(html, /font-size: 2em/);
+    assert.match(html, /font-weight: 700/);
+    assert.match(html, /font-size: 1.5em/);
+    assert.equal(html.includes('40px'), false);
+  });
+
   it('strips scripts, event handlers, javascript URLs, svg, and iframes', () => {
     const html = sanitizeCardHtml(
       '<p onclick="alert(1)">Hi</p><script>alert(1)</script><img src="x.jpg" onerror="alert(1)">'

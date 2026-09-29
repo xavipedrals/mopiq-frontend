@@ -8,18 +8,25 @@
       :aria-labelledby="'card-viewer-title'"
       @keydown.esc="dismiss"
     >
-      <header class="viewer-nav">
-        <button type="button" class="close-circle" :aria-label="$t('common.close')" @click="dismiss">×</button>
-        <h2 id="card-viewer-title">{{ $t('deck.viewCard') }}</h2>
-        <span class="nav-spacer"></span>
-      </header>
-      <div class="viewer-stage">
-        <iframe
-          class="viewer-frame"
-          sandbox=""
-          :srcdoc="shownHtml"
-          :title="$t('deck.viewCard')"
-        ></iframe>
+      <div class="card-shell">
+        <header class="viewer-nav">
+          <button type="button" class="close-circle" :aria-label="$t('common.close')" @click="dismiss">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="currentColor"/>
+              <path d="M9.2 9.2l5.6 5.6M14.8 9.2l-5.6 5.6" fill="none" stroke="var(--study-webview)" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <h2 id="card-viewer-title" class="review-pill" :class="reviewClass">{{ reviewLabel }}</h2>
+          <span class="nav-spacer"></span>
+        </header>
+        <div class="viewer-stage">
+          <iframe
+            class="viewer-frame"
+            sandbox=""
+            :srcdoc="shownHtml"
+            :title="$t('deck.viewCard')"
+          ></iframe>
+        </div>
       </div>
       <div class="viewer-actions">
         <button type="button" class="toggle" @click="revealed = !revealed">
@@ -54,13 +61,31 @@ export default {
     teleportTo() {
       return this.embedded ? '#browse-inspector' : 'body';
     },
+    reviewKey() {
+      const raw = String(this.card?.lastAnswerGiven || '').toUpperCase();
+      return ['AGAIN', 'HARD', 'GOOD', 'EASY'].includes(raw) ? raw : '';
+    },
+    reviewClass() {
+      return this.reviewKey ? this.reviewKey.toLowerCase() : 'none';
+    },
+    reviewLabel() {
+      const key = this.reviewKey;
+      if (!key) return this.$t('deck.noReviews');
+      return this.$t(`study.${key.toLowerCase()}`);
+    },
+    occlusionLabels() {
+      return {
+        showAnswers: this.$t('study.occlusionShow'),
+        hideAnswers: this.$t('study.occlusionHide'),
+      };
+    },
     shownHtml() {
       if (!this.card) return '';
       const dark = document.documentElement.getAttribute('data-theme') === 'dark';
       const html = this.revealed
-        ? backHtml(this.card, this.mediaMap, { dark })
-        : frontHtml(this.card, this.mediaMap);
-      return cardDocument(html, { dark });
+        ? backHtml(this.card, this.mediaMap, { dark, ...this.occlusionLabels })
+        : frontHtml(this.card, this.mediaMap, this.occlusionLabels);
+      return cardDocument(html, { dark, browse: true });
     },
   },
   watch: {
@@ -106,7 +131,7 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--card-bg);
+  background: var(--page-bg);
   color: var(--title);
 }
 .viewer-root.overlay {
@@ -117,39 +142,61 @@ export default {
 .viewer-root.embedded {
   height: 100%;
 }
+.card-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 20px 20px 0;
+  border-radius: 30px;
+  overflow: hidden;
+  background: var(--study-webview);
+  box-shadow: var(--card-shadow);
+}
 .viewer-nav {
   display: grid;
   grid-template-columns: 44px 1fr 44px;
   align-items: center;
-  min-height: 52px;
-  padding: 8px 10px 0;
+  height: 60px;
   flex: 0 0 auto;
+  background: var(--study-webview);
+  border-bottom: 1px solid var(--separator);
 }
-.viewer-nav h2 {
+.review-pill {
+  justify-self: center;
   margin: 0;
-  text-align: center;
-  font-size: 17px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--title) 10%, transparent);
+  color: var(--title);
+  font-size: 15px;
   font-weight: 650;
+  line-height: 1.2;
 }
+.review-pill.again { background: var(--grade-again-bg); color: var(--grade-again-text); }
+.review-pill.hard { background: var(--grade-hard-bg); color: var(--grade-hard-text); }
+.review-pill.good { background: var(--grade-good-bg); color: var(--grade-good-text); }
+.review-pill.easy { background: var(--grade-easy-bg); color: var(--grade-easy-text); }
 .close-circle {
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
+  margin-left: 6px;
+  padding: 0;
   border: 0;
-  border-radius: 15px;
-  background: var(--empty-bar);
-  color: var(--text);
-  font-size: 1.2rem;
-  line-height: 1;
+  background: transparent;
+  color: var(--close-button);
   cursor: pointer;
 }
-.nav-spacer { width: 30px; }
+.close-circle svg { width: 24px; height: 24px; display: block; margin: 0 auto; }
+.nav-spacer { width: 44px; }
 .viewer-stage {
   flex: 1 1 auto;
   min-height: 0;
-  margin: 8px 16px 0;
-  border-radius: 20px;
-  overflow: hidden;
-  background: var(--page-bg);
+  background: var(--study-webview);
 }
 .viewer-frame {
   width: 100%;

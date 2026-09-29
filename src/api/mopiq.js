@@ -11,7 +11,7 @@ import { parseDeckConfig } from '../study/deckConfig';
 import { mapDisplayProfileRow, mergeHighestStats } from '../profile/mapProfile';
 import { getAvatarImageName, getDeckTopicByPostgresId } from '../utils';
 import { edgeFunctionUrl } from './functionsUrl';
-import { cacheDeck, cacheDeckList, clearDeckCache, prependCachedDeck, removeCachedDeck } from './deckCache';
+import { cacheDeck, cacheDeckList, clearDeckCache, orderByLastUsed, prependCachedDeck, removeCachedDeck } from './deckCache';
 import { emptyDeckCreatePayload } from './emptyDeck';
 import {
   adoptFromProfileIfNeeded,
@@ -41,6 +41,7 @@ import {
   assertSpreadsheetLimits,
   spreadsheetCardFields,
 } from '../study/spreadsheetImport';
+import { buildOcclusionCards } from '../study/imageOcclusion';
 import {
   edgeForSource,
   fileMatchesSource,
@@ -52,6 +53,7 @@ import {
   validatePrompt,
   validateYouTubeUrl,
 } from '../study/magicImport';
+import { sortedPdfPages, validatePdfPages } from '../study/pdfPages';
 import {
   MEDIA_URL_PAGE_SIZE,
   STUDY_BUNDLE_PAGE_SIZE,
@@ -63,6 +65,7 @@ import {
   mapHistogramRow,
   mapProgressCountsRow,
   mapStudyBundleRow,
+  mapSubdeckCountRows,
   mapUserDeckRow,
   nextStudyBundleCursor,
 } from './webReads.js';
@@ -133,7 +136,7 @@ export async function fetchDeckList() {
     offset += page.length;
   } while (page.length >= PAGE_SIZE);
 
-  return cacheDeckList(rows.map((row) => mapDeckListRow(row, supabaseUid)));
+  return cacheDeckList(orderByLastUsed(rows).map((row) => mapDeckListRow(row, supabaseUid)));
 }
 
 export async function fetchDeck(deckId) {
@@ -357,26 +360,11 @@ export async function saveDeckFolders(deck, decks) {
 }
 
 export async function fetchSubdeckCardCounts(deckId) {
-  const counts = {};
-  const pageSize = 1000;
-  let from = 0;
-  for (;;) {
-    const { data, error } = await supabase
-      .from('cards_static')
-      .select('subdeck_id')
-      .eq('deck_version_id', deckId)
-      .is('deleted_at', null)
-      .range(from, from + pageSize - 1);
-    throwIfError(error, 'Could not load folders');
-    const rows = data || [];
-    for (const row of rows) {
-      const id = Number(row.subdeck_id) || 0;
-      counts[id] = (counts[id] || 0) + 1;
-    }
-    if (rows.length < pageSize) break;
-    from += pageSize;
-  }
-  return counts;
+  const { data, error } = await supabase.rpc('get_deck_subdeck_card_counts', {
+    p_deck_id: deckId,
+  });
+  throwIfError(error, 'Could not load folders');
+  return mapSubdeckCountRows(data);
 }
 
 export async function saveDeckSettings(deck, settings) {
@@ -495,6 +483,68 @@ export async function importSpreadsheetCards(deck, cards, {
   return created;
 }
 
+const OCCLUSION_CARD_BATCH = 80;
+
+export async function createImageOcclusionCards(deck, {
+  rectangles,
+  file,
+  mode = 'hideAll',
+  position = 0,
+  subdeckId = 0,
+} = {}) {
+  const specs = buildOcclusionCards({
+    rectangles,
+    fileName: file?.fileName,
+    mode,
+  });
+  const folderId = Number(subdeckId) || 0;
+  const updatedAt = new Date().toISOString();
+  const created = specs.map((spec, index) => ({
+    id: spec.cardId,
+    question: spec.fields[0],
+    answer: spec.fields[1],
+    noteFields: spec.fields,
+    position: (Number(position) || 0) + index,
+    hasImage: true,
+    hasAudio: false,
+    templateIndex: spec.templateIndex,
+    subdeckId: folderId,
+    noteId: spec.noteId,
+    noteGuid: spec.noteGuid,
+    noteModelId: spec.noteModelId,
+    tags: [],
+    updatedAt,
+    dueDate: null,
+    reviewCount: 0,
+    state: 'NEW',
+  }));
+  for (let offset = 0; offset < created.length; offset += OCCLUSION_CARD_BATCH) {
+    const batch = created.slice(offset, offset + OCCLUSION_CARD_BATCH);
+    const operations = batch.map((card, index) => bulkOp(index + 1, 'card', 'create', card.id, {
+      deckId: deck.id,
+      cardId: card.id,
+      noteId: card.noteId,
+      noteGuid: card.noteGuid,
+      fields: card.noteFields,
+      question: card.question,
+      answer: card.answer,
+      subdeckId: card.subdeckId,
+      tags: [],
+      noteModelId: card.noteModelId,
+      templateIndex: card.templateIndex,
+      position: card.position,
+      hasImage: true,
+      hasAudio: false,
+      updatedAt: card.updatedAt,
+    }));
+    await invokeBulkSync(operations, 'Could not save these cards');
+  }
+  if (file?.blob) {
+    await uploadDeckMediaFile(deck, created[0].id, file);
+  }
+  return created;
+}
+
 export class MagicImportError extends Error {
   constructor(message, details = {}) {
     super(message);
@@ -581,6 +631,7 @@ export async function startMagicImport({
   topic = 'other',
   text = '',
   file = null,
+  pages = null,
 } = {}) {
   const edge = edgeForSource(source);
   if (!edge) throw new MagicImportError('This import is not available', { code: 'source_kind' });
@@ -607,6 +658,12 @@ export async function startMagicImport({
     body.sourceKind = 'youtube';
     body.url = String(text).trim();
   } else {
+    if (source === 'pdf') {
+      const selected = sortedPdfPages(Array.isArray(pages) ? pages : []);
+      const code = validatePdfPages(selected);
+      if (code) throw new MagicImportError('Choose the PDF pages to use', { code });
+      body.pages = selected;
+    }
     if (!file) throw new MagicImportError('Choose a file first', { code: 'file_required' });
     if (!fileMatchesSource(source, file.name)) {
       throw new MagicImportError('That file type is not supported for this import', { code: 'file_type' });

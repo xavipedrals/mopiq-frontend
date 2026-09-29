@@ -143,6 +143,17 @@ export function mapProgressCountsRow(row) {
   };
 }
 
+export function mapSubdeckCountRows(rows) {
+  const counts = {};
+  for (const row of rows || []) {
+    const id = Number(row?.subdeck_id ?? row?.subdeckId) || 0;
+    const count = Math.max(0, Number(row?.card_count ?? row?.cardCount) || 0);
+    if (!count) continue;
+    counts[id] = (counts[id] || 0) + count;
+  }
+  return counts;
+}
+
 export function nextStudyBundleCursor(page) {
   if (!page?.length) return null;
   const last = page[page.length - 1];

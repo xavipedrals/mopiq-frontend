@@ -12,6 +12,8 @@ import DeckDetailPage from './components/DeckDetail.vue';
 import StudySessionPage from './components/StudySession.vue';
 import QuizSessionPage from './components/QuizSession.vue';
 import ProfilePage from './components/Profile.vue';
+import PricingPage from './components/Pricing.vue';
+import WelcomePage from './components/Welcome.vue';
 import { HELP_CENTER_URL } from './constants';
 import { markArrivedViaShare } from './analytics';
 import { authReady, isLoggedIn } from './auth/session';
@@ -80,6 +82,8 @@ const routes: RouteRecordRaw[] = [
       return false;
     },
   },
+  { path: '/pricing', component: PricingPage },
+  { path: '/welcome', component: WelcomePage },
   { path: '/about', component: AboutPage },
   { path: '/contact', component: ContactPage },
   { path: '/shared/:globalDeckId', component: SharedDeck },

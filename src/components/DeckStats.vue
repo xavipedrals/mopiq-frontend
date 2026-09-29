@@ -59,36 +59,74 @@
 
     <div class="side">
       <section class="stat-card grade-card">
-        <div class="grade-top">
-          <SkeletonBlock v-if="gradePending" w="6.2ch" h="2.6rem" radius="12px" />
-          <template v-else-if="gradeAvailable && histogram.total > 0">
-            <b>{{ histogram.grade }}</b><i>%</i>
-            <small>{{ $t('deck.grade') }}</small>
-          </template>
-          <template v-else>
-            <b>—</b><small>{{ $t('deck.grade') }}</small>
-          </template>
-        </div>
-        <p v-if="!gradePending && (!gradeAvailable || !histogram.total)" role="status">
-          {{ $t(gradeSyncing ? 'deck.gradeSyncing' : gradeAvailable ? 'deck.gradeEmpty' : 'deck.gradeUnavailable') }}
-        </p>
-        <button v-if="!gradePending && !gradeAvailable" class="text-btn" @click="$emit('retry-grade')">
-          {{ $t('common.retry') }}
-        </button>
-        <div v-if="gradeAvailable && !gradePending && histogram.total > 0" class="stack">
-          <i class="seg again" :style="{ width: percent(shares.again) }"></i>
-          <i class="seg hard" :style="{ width: percent(shares.hard) }"></i>
-          <i class="seg good" :style="{ width: percent(shares.good) }"></i>
-          <i class="seg easy" :style="{ width: percent(shares.easy) }"></i>
-        </div>
-        <div v-if="gradeAvailable && !gradePending && histogram.total > 0" class="legend">
-          <div v-for="item in gradeItems" :key="item.ease" class="legend-item">
-            <span>{{ item.label }}</span>
-            <p>
-              <i class="dot" :style="{ background: item.color }"></i>
-              <SkeletonBlock v-if="gradePending" w="2ch" h="0.85rem" radius="5px" />
-              <b v-else>{{ item.count }}</b>
-            </p>
+        <div class="grade-stage">
+          <div
+            class="grade-filled"
+            :class="{ ghost: showEmptyGrade || showGradeError }"
+            :aria-hidden="showEmptyGrade || showGradeError ? 'true' : undefined"
+          >
+            <div class="grade-top">
+              <b>{{ histogram.grade }}</b><i>%</i>
+              <small>{{ $t('deck.grade') }}</small>
+              <span v-if="showSyncBadge" class="sync-badge">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M20.5 12a8.5 8.5 0 0 1-14.6 5.9L4 16M4 12a8.5 8.5 0 0 1 14.6-5.9L20 8M4 16v4.5M4 16h4.5M20 8V3.5M20 8h-4.5"
+                  />
+                </svg>
+                {{ $t('deck.gradeSyncing') }}
+              </span>
+            </div>
+            <div class="stack">
+              <i class="seg again" :style="{ width: percent(shares.again) }"></i>
+              <i class="seg hard" :style="{ width: percent(shares.hard) }"></i>
+              <i class="seg good" :style="{ width: percent(shares.good) }"></i>
+              <i class="seg easy" :style="{ width: percent(shares.easy) }"></i>
+            </div>
+            <div class="legend">
+              <div v-for="item in gradeItems" :key="item.ease" class="legend-item">
+                <span>{{ item.label }}</span>
+                <p>
+                  <i class="dot" :style="{ background: item.color }"></i>
+                  <b>{{ item.count }}</b>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="showEmptyGrade" class="grade-empty" role="status">
+            <div class="empty-top">
+              <span class="empty-label">{{ $t('deck.grade') }}</span>
+              <span v-if="emptyGradeSettled" class="empty-pill">{{ $t('deck.gradeNoReviews') }}</span>
+              <span v-else class="sync-badge">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M20.5 12a8.5 8.5 0 0 1-14.6 5.9L4 16M4 12a8.5 8.5 0 0 1 14.6-5.9L20 8M4 16v4.5M4 16h4.5M20 8V3.5M20 8h-4.5"
+                  />
+                </svg>
+                {{ $t('deck.gradeSyncing') }}
+              </span>
+            </div>
+            <div class="empty-track" aria-hidden="true"></div>
+            <p class="empty-title">{{ $t(emptyGradeSettled ? 'deck.gradeEmptyTitle' : 'deck.gradeLoadingTitle') }}</p>
+            <p class="empty-subtitle">{{ $t(emptyGradeSettled ? 'deck.gradeEmptySubtitle' : 'deck.gradeLoadingSubtitle') }}</p>
+          </div>
+
+          <div v-else-if="showGradeError" class="grade-error" role="status">
+            <p>{{ $t('deck.gradeUnavailable') }}</p>
+            <button type="button" class="text-btn" @click="$emit('retry-grade')">
+              {{ $t('common.retry') }}
+            </button>
           </div>
         </div>
       </section>
@@ -142,7 +180,7 @@ import DoneBadge from './DoneBadge.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
 import { formatDuration } from '../api/mopiq';
 import { localeTag } from '../i18n';
-import { durationParts, gaugeProgress, histogramShares, shortDate } from '../study/deckStats';
+import { durationParts, gaugeProgress, gradeCardState, histogramShares, shortDate } from '../study/deckStats';
 import { GRADE_COLORS } from '../study/sessionProgress';
 
 // Semicircle trimmed 7° at each end, like iOS SemicircleShape (187° → 353°).
@@ -152,6 +190,7 @@ const ARC_LENGTH = 243.37;
 export default {
   name: 'DeckStats',
   components: { DoneBadge, SkeletonBlock },
+  emits: ['retry-grade'],
   props: {
     listStats: { type: Object, default: null },
     studiedToday: { type: Number, default: 0 },
@@ -194,6 +233,26 @@ export default {
         cardsStudiedToday: this.hasStats ? this.studiedToday : 0,
       }) * ARC_LENGTH;
       return `${filled.toFixed(2)} ${ARC_LENGTH}`;
+    },
+    gradeState() {
+      return gradeCardState({
+        total: this.histogram.total,
+        pending: this.gradePending,
+        available: this.gradeAvailable,
+        syncing: this.gradeSyncing,
+      });
+    },
+    showGradeError() {
+      return this.gradeState.showError;
+    },
+    showEmptyGrade() {
+      return this.gradeState.showEmpty;
+    },
+    emptyGradeSettled() {
+      return this.gradeState.emptySettled;
+    },
+    showSyncBadge() {
+      return this.gradeState.showSyncBadge;
     },
     shares() {
       return histogramShares(this.histogram.counts);
@@ -343,12 +402,99 @@ export default {
 
 /* ---------- side stack ---------- */
 .side { display: grid; gap: 18px; }
+.grade-stage { display: grid; }
+.grade-filled,
+.grade-empty,
+.grade-error { grid-area: 1 / 1; }
+.grade-filled.ghost {
+  visibility: hidden;
+  pointer-events: none;
+}
 .grade-top {
   display: flex;
   align-items: baseline;
   gap: 2px;
   margin-bottom: 12px;
   color: var(--blue-button);
+}
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  align-self: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue-button) 10%, transparent);
+  color: var(--blue-button);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.sync-badge svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+.empty-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+}
+.empty-label {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--title);
+}
+.empty-pill {
+  margin-left: auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--grade-empty-fill);
+  color: var(--grade-empty-muted);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  text-align: right;
+}
+.empty-track {
+  height: 18px;
+  margin-top: 16px;
+  border-radius: 6px;
+  background: var(--grade-empty-fill);
+}
+.empty-title {
+  margin: 19px 0 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--title);
+}
+.empty-subtitle {
+  margin: 5px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--grade-empty-muted);
+}
+.grade-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  background: var(--card-bg);
+}
+.grade-error p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+.text-btn {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue-button);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 .grade-top b { font-size: 2.625rem; font-weight: 800; line-height: 1; }
 .grade-top i { font-style: normal; font-size: 1.5rem; font-weight: 800; }

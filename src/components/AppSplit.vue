@@ -76,7 +76,8 @@
             :key="deck.id"
             :to="deckTo(deck.id)"
             class="deck-row"
-            :class="{ selected: selectedDeckId === deck.id }"
+            :class="{ selected: selectedDeckId === deck.id, generating: deck.generationPhase === 'active' }"
+            :aria-busy="deck.generationPhase === 'active' ? 'true' : undefined"
           >
             <div
               class="topic-icon"
@@ -87,7 +88,13 @@
             </div>
             <div class="deck-copy">
               <div class="deck-name">{{ deck.name }}</div>
-              <div class="deck-sub">{{ deckSubtitle(deck) }}</div>
+              <div
+                class="deck-sub"
+                :class="{ generating: deck.generationPhase === 'active', failed: deck.generationPhase === 'failed' }"
+              >
+                <span v-if="deck.generationPhase === 'active'" class="gen-spin" aria-hidden="true"></span>
+                <span class="deck-sub-text">{{ deckSubtitle(deck) }}</span>
+              </div>
             </div>
           </router-link>
         </div>
@@ -115,6 +122,7 @@
       @dismiss="addOpen = false"
       @created="onDeckCreated"
       @queued="onDeckQueued"
+      @background="onDeckBackground"
     />
   </div>
 </template>
@@ -122,8 +130,17 @@
 <script>
 import CreateDeckSheet from './Decks.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
-import { fetchDeckList, fetchUserProfile } from '../api/mopiq';
+import { fetchDeckList, fetchMagicImportJob, fetchUserProfile } from '../api/mopiq';
 import { cachedDeckList } from '../api/deckCache';
+import { getCurrentUser } from '../auth/session';
+import {
+  bindGenerationUser,
+  generationForDeck,
+  generationPhase,
+  startGenerationPolling,
+  subscribeGenerationJobs,
+  trackGenerationJob,
+} from '../study/generationJobs';
 import { getAvatarImageName, sidebarTablerIconUrl } from '../utils';
 import { getLevelAndPercentage } from '../profile/experience';
 import { APP_STORE_URL } from '../constants';
@@ -148,6 +165,7 @@ export default {
       profile: null,
       storeUrl: APP_STORE_URL,
       inspectorOpen: false,
+      generationJobs: [],
     };
   },
   computed: {
@@ -171,8 +189,13 @@ export default {
     },
     visibleDecks() {
       const query = this.searchText.trim().toLowerCase();
-      if (!query) return this.decks;
-      return this.decks.filter((deck) => (deck.name || '').toLowerCase().includes(query));
+      const decks = query
+        ? this.decks.filter((deck) => (deck.name || '').toLowerCase().includes(query))
+        : this.decks;
+      return decks.map((deck) => ({
+        ...deck,
+        generationPhase: generationPhase(generationForDeck(this.generationJobs, deck.id)),
+      }));
     },
     profileName() {
       return this.profile?.name || this.$t('nav.profile');
@@ -194,12 +217,17 @@ export default {
     },
   },
   async created() {
+    if (!this.isPreview) this.watchGenerations();
     if (this.isPreview) {
       this.applyPreview();
       return;
     }
     this.loadProfile();
     await this.refreshDecks();
+  },
+  beforeUnmount() {
+    this.unsubscribeGenerations?.();
+    this.stopGenerationPolling?.();
   },
   methods: {
     topicIconStyle(deck) {
@@ -243,6 +271,8 @@ export default {
       ];
     },
     deckSubtitle(deck) {
+      if (deck.generationPhase === 'active') return this.$t('decks.generatingSubtitle');
+      if (deck.generationPhase === 'failed') return this.$t('decks.generatingFailedSubtitle');
       const count = deck.cardCount || 0;
       if (deck.statsAvailable) {
         const due = count > 0 ? Math.min(deck.cardsForToday || 0, count) : (deck.cardsForToday || 0);
@@ -277,6 +307,21 @@ export default {
     },
     onDeckQueued() {
       this.syncFromCache();
+    },
+    onDeckBackground(job) {
+      trackGenerationJob(job);
+      this.addOpen = false;
+      this.syncFromCache();
+    },
+    watchGenerations() {
+      bindGenerationUser(getCurrentUser()?.supabaseUid || '');
+      this.unsubscribeGenerations = subscribeGenerationJobs((next) => {
+        this.generationJobs = next;
+      });
+      this.stopGenerationPolling = startGenerationPolling({
+        fetchJob: fetchMagicImportJob,
+        onSettled: () => this.refreshDecks(),
+      });
     },
     async onDeckCreated(deck) {
       this.addOpen = false;
@@ -438,12 +483,34 @@ html[data-theme="dark"] .topic-icon.bordered {
   text-overflow: ellipsis;
 }
 .deck-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   font-size: 1rem;
   color: var(--text-secondary);
+}
+.deck-sub-text {
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.deck-sub.generating { color: var(--blue-button); }
+.deck-sub.failed { color: var(--error); }
+.gen-spin {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: gen-spin 0.7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-spin { animation: none; }
+}
+@keyframes gen-spin { to { transform: rotate(360deg); } }
 .empty, .error {
   margin: 24px 22px;
   color: var(--text);

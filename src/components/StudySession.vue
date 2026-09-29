@@ -465,9 +465,13 @@ export default {
     shownHtml() {
       if (!this.current) return '';
       const dark = this.theme === 'dark';
+      const labels = {
+        showAnswers: this.$t('study.occlusionShow'),
+        hideAnswers: this.$t('study.occlusionHide'),
+      };
       const html = this.showAnswer
-        ? backHtml(this.current, this.mediaMap, { dark })
-        : frontHtml(this.current, this.mediaMap);
+        ? backHtml(this.current, this.mediaMap, { dark, ...labels })
+        : frontHtml(this.current, this.mediaMap, labels);
       return cardDocument(html, { dark });
     },
     formatInterval() {
@@ -1323,11 +1327,17 @@ export default {
   margin-top: 10px;
 }
 .write-cancel {
-  background: none !important;
-  color: var(--text) !important;
-  padding: 10px 14px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0 !important;
+  border: none;
+  border-radius: 50px;
+  background: var(--secondary-btn-bg);
+  color: var(--secondary-btn-text);
+  font: inherit;
+  font-weight: 600;
+  padding: 12px 28px;
+  cursor: pointer;
+}
+.write-cancel:hover {
+  background: var(--secondary-btn-hover);
 }
 .typed-overlay {
   margin-bottom: 12px;

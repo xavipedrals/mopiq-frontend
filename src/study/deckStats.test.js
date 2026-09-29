@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { deckGradeFromCounts, durationParts, gaugeProgress, histogramShares, shortDate, todayStatsFromCounts } from './deckStats.js';
+import { deckGradeFromCounts, durationParts, gaugeProgress, gradeCardState, histogramShares, shortDate, todayStatsFromCounts } from './deckStats.js';
 
 describe('todayStatsFromCounts', () => {
   it('caps new cards by the daily allowance and reviews by the live due queue', () => {
@@ -66,6 +66,50 @@ describe('gaugeProgress', () => {
 
   it('ignores negative and unparseable counts', () => {
     assert.equal(gaugeProgress({ cardsForToday: -5, cardsStudiedToday: 'x' }), 0.01);
+  });
+});
+
+describe('gradeCardState', () => {
+  it('shows the loading empty state until a grade with no reviews has settled', () => {
+    assert.deepEqual(gradeCardState({ total: 0, pending: true, available: false }), {
+      showError: false,
+      showEmpty: true,
+      emptySettled: false,
+      showSyncBadge: false,
+    });
+    assert.deepEqual(gradeCardState({ total: 0, syncing: true, available: true }), {
+      showError: false,
+      showEmpty: true,
+      emptySettled: false,
+      showSyncBadge: false,
+    });
+  });
+
+  it('shows the settled empty state only after sync finishes with no reviews', () => {
+    assert.deepEqual(gradeCardState({ total: 0, available: true }), {
+      showError: false,
+      showEmpty: true,
+      emptySettled: true,
+      showSyncBadge: false,
+    });
+  });
+
+  it('keeps a provisional grade visible and badges it while answers are still syncing', () => {
+    assert.deepEqual(gradeCardState({ total: 12, available: true, syncing: true }), {
+      showError: false,
+      showEmpty: false,
+      emptySettled: false,
+      showSyncBadge: true,
+    });
+  });
+
+  it('offers retry when the grade cannot be loaded and nothing is syncing', () => {
+    assert.deepEqual(gradeCardState({ total: 0, available: false }), {
+      showError: true,
+      showEmpty: false,
+      emptySettled: false,
+      showSyncBadge: false,
+    });
   });
 });
 

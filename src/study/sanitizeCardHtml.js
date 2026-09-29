@@ -2,6 +2,7 @@
 export const MAX_CARD_FIELD_HTML_BYTES = 100_000;
 export const WEB_QA_NOTE_MODEL_ID = '777000001';
 export const WEB_CLOZE_NOTE_MODEL_ID = '777000002';
+export const WEB_OCCLUSION_NOTE_MODEL_ID = '777000003';
 
 const ALLOWED_TAGS = new Set([
   'p', 'br', 'div', 'span', 'b', 'strong', 'i', 'em', 'u', 's', 'sub', 'sup',
@@ -13,7 +14,7 @@ const SKIP_SUBTREE_TAGS = new Set([
   'link', 'meta', 'audio', 'video', 'source', 'textarea', 'noscript',
 ]);
 const ALLOWED_ALIGN = new Set(['left', 'center', 'right', 'justify']);
-const CLOZE_CLASS = new Set(['cloze', 'anki-cloze']);
+const SPAN_CLASS = new Set(['cloze', 'anki-cloze', 'card-title', 'card-subtitle']);
 
 const NAMED_ENTITIES = {
   amp: '&',
@@ -112,6 +113,15 @@ function isSafeCssColor(value) {
   return false;
 }
 
+function isAllowedFontSize(value) {
+  return /^(?:1\.5|2)em$/i.test(String(value || '').replace(/\s+/g, ''));
+}
+
+function isAllowedFontWeight(value) {
+  const weight = String(value || '').trim().toLowerCase();
+  return weight === '600' || weight === '700' || weight === 'bold';
+}
+
 function sanitizeStyle(style) {
   const allowed = [];
   for (const part of String(style || '').split(';')) {
@@ -124,6 +134,10 @@ function sanitizeStyle(style) {
       allowed.push(`${prop}: ${value}`);
     } else if (prop === 'text-align' && ALLOWED_ALIGN.has(value.toLowerCase())) {
       allowed.push(`${prop}: ${value.toLowerCase()}`);
+    } else if (prop === 'font-size' && isAllowedFontSize(value)) {
+      allowed.push(`${prop}: ${value.replace(/\s+/g, '').toLowerCase()}`);
+    } else if (prop === 'font-weight' && isAllowedFontWeight(value)) {
+      allowed.push(`${prop}: ${value.trim().toLowerCase()}`);
     }
   }
   return allowed.join('; ');
@@ -133,7 +147,7 @@ function sanitizeClassList(tag, className) {
   if (tag !== 'span') return '';
   return String(className || '')
     .split(/\s+/)
-    .filter((name) => CLOZE_CLASS.has(name))
+    .filter((name) => SPAN_CLASS.has(name))
     .join(' ');
 }
 

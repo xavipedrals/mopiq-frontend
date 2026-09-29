@@ -1,9 +1,7 @@
 <template>
   <div class="page">
         <router-link :to="listTo" class="pane-back">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <TablerIcon name="chevronLeft" />
           {{ $t('decks.title') }}
         </router-link>
         <div v-if="loading" aria-busy="true">
@@ -47,10 +45,7 @@
                 :class="{ on: theme === 'system' }"
                 @click="setAppearance('system')"
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="4" y="5" width="16" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                  <path d="M8 19h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
+                <TablerIcon name="deviceDesktop" />
                 {{ $t('profile.system') }}
               </button>
               <button
@@ -60,10 +55,7 @@
                 :class="{ on: theme === 'light' }"
                 @click="setAppearance('light')"
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                  <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4l1.4-1.4M17 7l1.4-1.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
+                <TablerIcon name="sun" />
                 {{ $t('profile.light') }}
               </button>
               <button
@@ -73,9 +65,7 @@
                 :class="{ on: theme === 'dark' }"
                 @click="setAppearance('dark')"
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16.5 13.5A7 7 0 0 1 10.5 5a7 7 0 1 0 8 10.2 5.5 5.5 0 0 1-2-1.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-                </svg>
+                <TablerIcon name="moon" />
                 {{ $t('profile.dark') }}
               </button>
             </div>
@@ -139,28 +129,19 @@
 
           <div class="stats">
             <div class="stat">
-              <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="4" y="5" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                <rect x="7" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
-              </svg>
+              <TablerIcon class="stat-icon" name="copy" />
               <div class="value orange">{{ profile.cardsStudied }}</div>
               <div class="label">{{ $t('profile.cardsStudied') }}</div>
             </div>
             <div class="stat">
-              <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="4" y="5" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                <path d="M8 3v4M16 3v4M4 10h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              </svg>
+              <TablerIcon class="stat-icon" name="calendar" />
               <div class="value indigo">
                 {{ profile.daysUsingApp }}<span class="unit">{{ $t('profile.daysUnit') }}</span>
               </div>
               <div class="label">{{ $t('profile.comingBack') }}</div>
             </div>
             <div class="stat">
-              <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                <path d="M12 8v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              <TablerIcon class="stat-icon" name="clock" />
               <div class="value cyan">
                 <template v-if="studiedTime.parts">
                   <span v-for="(part, index) in studiedTime.parts" :key="index">
@@ -175,9 +156,7 @@
               <div class="label">{{ $t('profile.studied') }}</div>
             </div>
             <div class="stat">
-              <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 3l1.8 5.4H19l-4.4 3.2 1.7 5.4L12 13.8 7.7 17l1.7-5.4L5 8.4h5.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-              </svg>
+              <TablerIcon class="stat-icon" name="star" />
               <div class="value lime">{{ expLabel }}</div>
               <div class="label">{{ $t('profile.experience') }}</div>
             </div>
@@ -186,7 +165,7 @@
           <div class="account">
             <button type="button" class="menu-row" @click="settingsOpen = true">
               <span>{{ $t('profile.settings') }}</span>
-              <span class="chevron" aria-hidden="true">›</span>
+              <TablerIcon class="chevron" name="chevronRight" />
             </button>
             <button type="button" class="mopiq-btn secondary" :disabled="loggingOut" @click="onLogout">
               {{ loggingOut ? $t('profile.loggingOut') : $t('profile.logOut') }}
@@ -214,6 +193,7 @@
 
 <script>
 import LanguagePicker from './LanguagePicker.vue';
+import TablerIcon from './TablerIcon.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
 import StudyConfirmSheet from './StudyConfirmSheet.vue';
 import { deleteCurrentAccount, fetchUserProfile, updateUserProfileLocale } from '../api/mopiq';
@@ -229,7 +209,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * 60;
 
 export default {
   name: 'ProfilePage',
-  components: { LanguagePicker, SkeletonBlock, StudyConfirmSheet },
+  components: { LanguagePicker, SkeletonBlock, StudyConfirmSheet, TablerIcon },
   data() {
     return {
       loading: true,
@@ -364,7 +344,7 @@ export default {
   text-decoration: none;
   font-weight: 600;
 }
-.pane-back svg { width: 18px; height: 18px; display: block; }
+.pane-back :deep(.tabler-icon) { width: 18px; height: 18px; display: block; }
 .hero {
   display: flex;
   flex-direction: column;
@@ -432,7 +412,7 @@ h1 {
   padding: 18px 20px 16px;
   text-align: left;
 }
-.stat-icon {
+.stat :deep(.stat-icon) {
   width: 28px;
   height: 28px;
   color: var(--stat-icon);
@@ -477,7 +457,8 @@ h1 {
   font-weight: 650;
   cursor: pointer;
 }
-.chevron { color: var(--text-secondary); font-size: 1.4rem; line-height: 1; }
+.chevron { color: var(--text-secondary); }
+.menu-row :deep(.chevron) { width: 22px; height: 22px; }
 .settings { max-width: 480px; margin: 8px auto 0; text-align: left; }
 .back {
   border: 0;
@@ -547,7 +528,7 @@ h1 {
   font-size: 1rem;
   cursor: pointer;
 }
-.theme-toggle button svg {
+.theme-toggle button :deep(.tabler-icon) {
   width: 18px;
   height: 18px;
 }
