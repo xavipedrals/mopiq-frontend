@@ -14,10 +14,11 @@
         <p>
           {{ $t('limit.body', { limit }) }}
         </p>
+        <router-link class="mopiq-btn" to="/pricing">{{ $t('limit.upgrade') }}</router-link>
         <p class="limit-note">
           {{ $t('limit.note') }}
         </p>
-        <button type="button" class="mopiq-btn" @click="$emit('dismiss')">{{ actionText }}</button>
+        <button type="button" class="limit-later" @click="$emit('dismiss')">{{ actionText }}</button>
         <a class="limit-store" :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.getMopiqStore') }}</a>
       </section>
     </div>
@@ -100,7 +101,19 @@ export default {
 .limit-note {
   color: var(--text-secondary) !important;
   font-size: 0.92rem !important;
-  margin-bottom: 22px !important;
+  margin: 14px 0 !important;
+}
+.limit-later {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  padding: 8px 12px;
+}
+a.mopiq-btn {
+  display: block;
+  text-align: center;
+  text-decoration: none;
 }
 .mopiq-btn {
   width: 100%;

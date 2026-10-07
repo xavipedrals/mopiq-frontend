@@ -4,6 +4,7 @@
     <ul class="footer-links">
       <li><router-link to="/privacy">{{ $t('common.privacy') }}</router-link></li>
       <li><router-link to="/terms">{{ $t('common.terms') }}</router-link></li>
+      <li><router-link to="/refund">{{ $t('common.refund') }}</router-link></li>
       <li><a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a></li>
     </ul>
   </div>

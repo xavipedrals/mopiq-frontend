@@ -18,6 +18,7 @@ export default {
     loading: 'Loading…',
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
+    refund: 'Refund Policy',
     support: 'Support',
     copyright: '© {year} Xavier Pedrals. All rights reserved.',
     legal: 'Legal',
@@ -142,6 +143,8 @@ export default {
     privacyDescription: 'How Mopiq collects, uses, and protects your information.',
     termsTitle: 'Terms of Service — Mopiq Flashcards',
     termsDescription: 'The terms that govern your use of Mopiq Flashcards.',
+    refundTitle: 'Refund Policy — Mopiq Flashcards',
+    refundDescription: 'How cancellations and refunds work for Mopiq Flashcards subscriptions.',
     appTitle: 'Mopiq Flashcards',
   },
   login: {
@@ -658,7 +661,8 @@ export default {
   limit: {
     title: 'Daily limit reached',
     body: 'You’ve studied {limit} free cards today. Upgrade to keep studying without limits.',
-    note: 'Web checkout isn’t available yet. Come back tomorrow, or upgrade in the iOS app.',
+    upgrade: 'Upgrade on the web',
+    note: 'You can also upgrade in the iOS app, or come back tomorrow.',
   },
   askAi: {
     title: 'Ask AI',

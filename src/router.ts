@@ -13,6 +13,7 @@ import StudySessionPage from './components/StudySession.vue';
 import QuizSessionPage from './components/QuizSession.vue';
 import ProfilePage from './components/Profile.vue';
 import PricingPage from './components/Pricing.vue';
+import RefundPolicy from './components/RefundPolicy.vue';
 import WelcomePage from './components/Welcome.vue';
 import { HELP_CENTER_URL } from './constants';
 import { markArrivedViaShare } from './analytics';
@@ -74,6 +75,7 @@ const routes: RouteRecordRaw[] = [
   ] : []),
   { path: '/terms', component: TermsOfService },
   { path: '/privacy', component: PrivacyPolicy },
+  { path: '/refund', component: RefundPolicy },
   {
     path: '/support',
     component: { render: () => null },

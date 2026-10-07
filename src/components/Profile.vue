@@ -28,6 +28,7 @@
               <a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a>
               <router-link to="/privacy">{{ $t('common.privacy') }}</router-link>
               <router-link to="/terms">{{ $t('common.terms') }}</router-link>
+              <router-link to="/refund">{{ $t('common.refund') }}</router-link>
             </div>
           </div>
         </div>
@@ -175,6 +176,7 @@
               <a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a>
               <router-link to="/privacy">{{ $t('common.privacy') }}</router-link>
               <router-link to="/terms">{{ $t('common.terms') }}</router-link>
+              <router-link to="/refund">{{ $t('common.refund') }}</router-link>
             </div>
           </div>
         </template>

@@ -181,6 +181,7 @@
         <nav class="legal-links" :aria-label="$t('common.legal')">
           <router-link to="/privacy">{{ $t('common.privacy') }}</router-link>
           <router-link to="/terms">{{ $t('common.terms') }}</router-link>
+          <router-link to="/refund">{{ $t('common.refund') }}</router-link>
           <a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a>
         </nav>
         <p class="copy">{{ $t('common.copyright', { year }) }}</p>
@@ -298,6 +299,10 @@ export default {
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
   overflow-x: clip;
+}
+.landing-bar:has(:deep(.language-menu)) {
+  /* Let the menu blur the page instead of stopping at the header's backdrop. */
+  backdrop-filter: none;
 }
 .bar-inner {
   display: flex;

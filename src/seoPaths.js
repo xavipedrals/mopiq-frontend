@@ -24,6 +24,14 @@ export function seoForPath(path) {
       canonicalPath: '/terms',
     };
   }
+  if (clean === '/refund') {
+    return {
+      titleKey: 'seo.refundTitle',
+      descriptionKey: 'seo.refundDescription',
+      indexable: true,
+      canonicalPath: '/refund',
+    };
+  }
   return {
     titleKey: 'seo.appTitle',
     descriptionKey: 'seo.homeDescription',

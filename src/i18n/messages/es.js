@@ -18,6 +18,7 @@ export default {
     loading: 'Cargando…',
     privacy: 'Política de privacidad',
     terms: 'Términos de servicio',
+    refund: 'Política de reembolso',
     support: 'Soporte',
     copyright: '© {year} Xavier Pedrals. Todos los derechos reservados.',
     legal: 'Legal',
@@ -142,6 +143,8 @@ export default {
     privacyDescription: 'Cómo Mopiq recoge, usa y protege tu información.',
     termsTitle: 'Términos de servicio — Mopiq Flashcards',
     termsDescription: 'Las condiciones que rigen el uso de Mopiq Flashcards.',
+    refundTitle: 'Política de reembolso — Mopiq Flashcards',
+    refundDescription: 'Cómo funcionan las cancelaciones y los reembolsos de las suscripciones de Mopiq Flashcards.',
     appTitle: 'Mopiq Flashcards',
   },
   login: {
@@ -658,7 +661,8 @@ export default {
   limit: {
     title: 'Límite diario alcanzado',
     body: 'Has estudiado {limit} tarjetas gratis hoy. Mejora tu plan para seguir sin límites.',
-    note: 'El pago en la web aún no está disponible. Vuelve mañana o mejora el plan en la app de iOS.',
+    upgrade: 'Mejorar en la web',
+    note: 'También puedes mejorar el plan en la app de iOS, o volver mañana.',
   },
   askAi: {
     title: 'Preguntar a la IA',

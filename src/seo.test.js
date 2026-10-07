@@ -8,6 +8,8 @@ describe('seoForPath', () => {
     assert.equal(seoForPath('/').titleKey, 'seo.homeTitle');
     assert.equal(seoForPath('/privacy').canonicalPath, '/privacy');
     assert.equal(seoForPath('/terms').titleKey, 'seo.termsTitle');
+    assert.equal(seoForPath('/refund').canonicalPath, '/refund');
+    assert.equal(seoForPath('/refund').titleKey, 'seo.refundTitle');
   });
 
   it('keeps app and stub pages out of search results', () => {

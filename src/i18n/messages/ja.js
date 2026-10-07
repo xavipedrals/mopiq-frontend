@@ -18,6 +18,7 @@ export default {
     loading: '読み込み中…',
     privacy: 'プライバシーポリシー',
     terms: '利用規約',
+    refund: '返金ポリシー',
     support: 'サポート',
     copyright: '© {year} Xavier Pedrals. All rights reserved.',
     legal: '法的情報',
@@ -142,6 +143,8 @@ export default {
     privacyDescription: 'Mopiqが情報を収集・利用・保護する方法。',
     termsTitle: '利用規約 — Mopiq Flashcards',
     termsDescription: 'Mopiq Flashcardsの利用に関する条件。',
+    refundTitle: '返金ポリシー — Mopiq Flashcards',
+    refundDescription: 'Mopiq Flashcardsのサブスクリプションの解約と返金について。',
     appTitle: 'Mopiq Flashcards',
   },
   login: {
@@ -658,7 +661,8 @@ export default {
   limit: {
     title: '1日の上限に達しました',
     body: '今日は無料で{limit}枚学習しました。無制限に続けるにはアップグレードしてください。',
-    note: 'ウェブでの決済はまだありません。明日戻るか、iOSアプリでアップグレードしてください。',
+    upgrade: 'ウェブでアップグレード',
+    note: 'iOSアプリでアップグレードするか、明日戻ることもできます。',
   },
   askAi: {
     title: 'AIに聞く',
