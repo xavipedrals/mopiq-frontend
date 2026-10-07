@@ -1,11 +1,11 @@
 export const APP_LANGUAGES = [
-  { code: 'en', nativeName: 'English' },
-  { code: 'es', nativeName: 'Español' },
-  { code: 'pt', nativeName: 'Português' },
-  { code: 'fr', nativeName: 'Français' },
-  { code: 'it', nativeName: 'Italiano' },
-  { code: 'ja', nativeName: '日本語' },
-  { code: 'de', nativeName: 'Deutsch' },
+  { code: 'en', nativeName: 'English', flag: '/flags/en.png' },
+  { code: 'es', nativeName: 'Español', flag: '/flags/es.png' },
+  { code: 'pt', nativeName: 'Português', flag: '/flags/pt.png' },
+  { code: 'fr', nativeName: 'Français', flag: '/flags/fr.png' },
+  { code: 'it', nativeName: 'Italiano', flag: '/flags/it.png' },
+  { code: 'ja', nativeName: '日本語', flag: '/flags/ja.png' },
+  { code: 'de', nativeName: 'Deutsch', flag: '/flags/de.png' },
 ];
 
 const BY_CODE = Object.fromEntries(APP_LANGUAGES.map((language) => [language.code, language]));
