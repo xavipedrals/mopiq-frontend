@@ -1,71 +1,40 @@
 <template>
-  <div class="container general-container">
+  <div class="container general-container legal-document">
     <div class="text-container">
       <router-link to="/">
         <img src="/logo-small.svg" class="homeLogo" alt="Mopiq">
       </router-link>
       <h1 class="textTitle">{{ $t('common.refund') }}</h1>
-      <p class="bodyText">This refund policy is a contract between you and Xavier Pedrals for paid subscriptions to Mopiq Flashcards. It matches the Paid Services section of our Terms of Service. Who handles a refund depends on where you paid.</p>
+      <p class="bodyText legal-revision">Last updated: 21 October 2026</p>
+      <p class="bodyText">This policy supplements the paid-access provisions of the Mopiq Flashcards Terms of Service. The applicable seller and billing channel determine how cancellation, withdrawal, and refund requests are processed, subject to mandatory consumer rights.</p>
 
-      <p class="bodyText textSection">Subscriptions paid on an Apple device</p>
+      <h2 class="textSection">Subscriptions paid on an Apple device</h2>
       <p class="bodyText">Subscriptions paid through the App Store on an iPhone, iPad, or Mac are billed by Apple. Apple handles cancellation and refunds for those purchases. We cannot refund an App Store payment. To request a refund, follow <a :href="appleGuideUrl" target="_blank" rel="noopener">Apple's guide</a>. To stop renewal, open Settings, tap your name, then Subscriptions.</p>
 
-      <p class="bodyText textSection">Subscriptions paid on this website</p>
+      <h2 class="textSection">Subscriptions paid on this website</h2>
       <p class="bodyText">These rules apply to subscriptions bought on mopiq.app.</p>
 
-      <p class="bodyText textSection">First payment</p>
-      <p class="bodyText">Web subscriptions do not include a free trial. Your first payment is taken at checkout for the monthly or yearly billing period you choose.</p>
+      <h2 class="textSection">First payment</h2>
+      <p class="bodyText">Unless an offer expressly provides otherwise, web subscriptions do not include a free trial. The first payment is collected at checkout for the billing period shown in your order.</p>
 
-      <p class="bodyText textSection">Renewals</p>
+      <h2 class="textSection">Renewals</h2>
       <p class="bodyText">Subscriptions renew until you cancel. Cancel before the current period ends and you will not be charged for the next period. Access continues until the end of the period you already paid for.</p>
 
-      <p class="bodyText textSection">Refunds</p>
-      <p class="bodyText">Payments that have already been collected are not refunded, whether or not you use the service. We do not refund a payment because of a later price reduction or promotion.</p>
+      <h2 class="textSection">Withdrawal and refunds</h2>
+      <p class="bodyText">EU and UK consumers generally have 14 days from conclusion of a distance contract to withdraw, subject to applicable statutory conditions and exceptions. Immediate access does not automatically remove that right. Any valid loss of the right for digital content, or proportionate payment for services already supplied, depends on the nature of the purchase, the required disclosures and express consents, and applicable law. Request withdrawal through Paddle or contact support within the applicable period for assistance. Statutory remedies for defective or non-conforming service remain available. Later price reductions do not create a right to a retrospective price adjustment.</p>
 
-      <p class="bodyText textSection">How to cancel</p>
-      <p class="bodyText">Use the link in your Paddle receipt, or the subscription management page, and cancel before the period ends.</p>
+      <h2 class="textSection">How to cancel</h2>
+      <p class="bodyText">Use the link in your Paddle receipt or the subscription management page and cancel before the next renewal. Account deletion or removal of the application does not itself cancel a subscription.</p>
 
-      <p class="bodyText textSection">Contact us</p>
-      <p class="bodyText">Questions about a charge can be sent to support@ankiflashcards.app.</p>
+      <h2 class="textSection">Contact us</h2>
+      <p class="bodyText">Questions about a charge can be sent to <a href="mailto:support@mopiq.app">support@mopiq.app</a>.</p>
     </div>
     <hr>
     <FooterComponent/>
   </div>
 </template>
 
-<style>
-.general-container {
-  background: #ffffff;
-  box-shadow: 0 6px 20px 0 #CBD5E1;
-}
-.text-container {
-  padding: 24px;
-}
-.homeLogo {
-  margin-top: 30px;
-}
-.textTitle {
-  margin-top: 45px;
-  margin-bottom: 35px;
-  font-weight: 600;
-}
-.textSection {
-  font-size: 1.3em;
-  font-weight: 600;
-  margin-top: 40px;
-}
-.bodyText {
-  text-align: justify;
-}
-.bodyText a {
-  color: #0a7aff;
-}
-@media (max-width: 576px) {
-  .text-container {
-    padding: 12px;
-  }
-}
-</style>
+<style scoped src="../legal.css"></style>
 
 <script>
 import { appleRefundGuideUrl } from '../refund/appleRefundGuide';

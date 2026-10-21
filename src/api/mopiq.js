@@ -1,3 +1,4 @@
+import { startSharedGeneration, sharedGenerationEnabled } from './aiGeneration';
 import { assertReviewSyncResults } from '../study/reviewSync';
 import { supabase, supabaseAnonKey, supabaseUrl } from '../supabaseInit';
 import { getDownloadURL, ref as storageRef } from 'firebase/storage';
@@ -618,6 +619,8 @@ async function deckFromImport(started, { name, topic, existingDeckId }) {
 }
 
 export async function fetchMagicImportJob(jobId) {
+  const shared = await supabase.rpc('get_ai_generation_job_v1', { p_job_id: jobId });
+  if (!shared.error && shared.data) return mapImportJob(shared.data);
   const { data, error } = await supabase.rpc('get_magic_import_job', { p_job_id: jobId });
   throwIfError(error, 'Could not check this import');
   const row = Array.isArray(data) ? data[0] : data;
@@ -632,7 +635,14 @@ export async function startMagicImport({
   text = '',
   file = null,
   pages = null,
+  generationInstructions = '',
+  targetSubdeckId = null,
 } = {}) {
+  if (sharedGenerationEnabled && source !== 'anki') {
+    const started = await startSharedGeneration({ source, deckId, name, topic, text, file, pages, generationInstructions, targetSubdeckId });
+    const deck = await deckFromImport(started, { name, topic, existingDeckId: deckId });
+    return { ...started, deck };
+  }
   const edge = edgeForSource(source);
   if (!edge) throw new MagicImportError('This import is not available', { code: 'source_kind' });
   const preferredLanguage = getLocale() || 'en';

@@ -1,0 +1,72 @@
+.legal-document {
+  --legal-background: #ffffff;
+  --legal-title: #1e293b;
+  --legal-text: #475569;
+  --legal-muted: #64748b;
+  --legal-link: #0868d9;
+  --legal-rule: #cbd5e1;
+  background: var(--legal-background);
+  color: var(--legal-text);
+  min-height: 100vh;
+  box-shadow: 0 6px 20px rgb(15 23 42 / 8%);
+}
+html[data-theme='dark'] .legal-document {
+  --legal-background: #1e293b;
+  --legal-title: #f1f5f9;
+  --legal-text: #cbd5e1;
+  --legal-muted: #94a3b8;
+  --legal-link: #7dd3fc;
+  --legal-rule: #475569;
+}
+.text-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.homeLogo {
+  margin-top: 30px;
+}
+.textTitle {
+  color: var(--legal-title);
+  margin: 45px 0 24px;
+  font-weight: 600;
+}
+.textSection {
+  color: var(--legal-title);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 32px 0 14px;
+  line-height: 1.4;
+}
+.bodyText {
+  color: var(--legal-text);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.legal-revision {
+  color: var(--legal-muted);
+  font-size: 0.85rem;
+}
+.bodyText a {
+  color: var(--legal-link);
+  text-underline-offset: 2px;
+}
+.legal-document hr {
+  border-color: var(--legal-rule);
+}
+.legal-document :deep(.copyright),
+.legal-document :deep(.footer-links a) {
+  color: var(--legal-muted);
+}
+.legal-document :deep(.footer-links) {
+  flex-wrap: wrap;
+}
+.legal-document :deep(.footer-links a:hover) {
+  color: var(--legal-link);
+}
+@media (max-width: 576px) {
+  .text-container {
+    padding: 12px;
+  }
+}

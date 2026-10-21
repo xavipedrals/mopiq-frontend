@@ -1,4 +1,11 @@
 export default {
+  generation: {
+    title: 'AI flashcards', saved: '{count} cards saved', queued: 'Queued', generating: 'Generating', paused: 'Paused', failed: 'Needs retry', cancelled: 'Stopped', done: 'Complete', done_with_warnings: 'Complete with warnings',
+    pause: 'Pause', resume: 'Continue', cancel: 'Stop',
+    instructions: 'Custom instructions (optional)', instructionsPlaceholder: 'For example, focus on differences between cell types.',
+    instructionsHelp: 'Applied to every batch. Answers will stay grounded in your PDF.',
+  },
+
   common: {
     brand: 'Mopiq Flashcards',
     mopiq: 'Mopiq',
@@ -17,10 +24,13 @@ export default {
     retry: 'Retry save',
     loading: 'Loading…',
     privacy: 'Privacy Policy',
+    cookieBody: 'We use an analytics cookie to count visits and sign-ins. It stays off until you allow it.',
+    cookieAllow: 'Allow',
+    cookieRefuse: 'Refuse',
     terms: 'Terms of Service',
     refund: 'Refund Policy',
     support: 'Support',
-    copyright: '© {year} Xavier Pedrals. All rights reserved.',
+    copyright: '© {year} Mopiq. All rights reserved.',
     legal: 'Legal',
     iosApp: 'iOS app',
     app: 'app',
@@ -668,6 +678,7 @@ export default {
     title: 'Ask AI',
     close: 'Close Ask AI',
     welcome: "Hi! I'm here to help with this flashcard. Ask me anything — for an explanation, examples, or more context.",
+    disclaimer: 'Answers are for studying. They are not medical, legal, or other professional advice.',
     error: 'Sorry, something went wrong. Please try again.',
     unavailable: 'Ask AI is unavailable right now.',
     noReply: 'Ask AI did not return a reply.',

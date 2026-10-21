@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <title>Your Mopiq invitation</title>
+  <style>
+    :root{font:17px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#211c30;background:#faf7f0;color-scheme:light dark}
+    body{margin:0;min-height:100svh;display:grid;place-items:center}main{max-width:420px;padding:40px 28px;text-align:center}
+    .mark{font-size:52px}.eyebrow{font-size:11px;letter-spacing:.22em;font-weight:700;color:#776b90}h1{font-size:38px;line-height:1.15;letter-spacing:-.03em}p{color:#706879}
+    a{color:inherit}.open{display:block;background:#7a59db;border-radius:18px;color:white;text-decoration:none;padding:17px 20px;font-weight:600;margin:28px 0 18px}.small{font-size:14px}
+    [hidden]{display:none!important}
+    @media(prefers-color-scheme:dark){:root{background:#14131f;color:#f2edf9}p{color:#b6acc6}.eyebrow{color:#c2b2e3}}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark" aria-hidden="true">✦</div>
+    <div class="eyebrow">MOPIQ · BY INVITATION</div>
+    <h1>Your invitation is waiting.</h1>
+    <p id="message">Open this link on your iPhone or iPad with the latest version of Mopiq to see your special offer.</p>
+    <a class="open" id="open" hidden>Open in Mopiq</a>
+    <p class="small">Need the app? <a href="https://apps.apple.com/app/id6443485322" rel="noreferrer">Get Mopiq on the App Store</a>, then return to your invitation link.</p>
+  </main>
+  <script>
+    const match = location.pathname.match(/^\/offer\/([a-fA-F0-9]{64})\/?$/);
+    if (match) {
+      const open = document.getElementById('open');
+      open.href = 'ankicards://offer/' + match[1].toLowerCase();
+      open.hidden = false;
+    } else {
+      document.getElementById('message').textContent = 'This invitation link is incomplete. Please open the original link from your email.';
+    }
+  </script>
+</body>
+</html>

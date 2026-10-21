@@ -130,6 +130,8 @@
 <script>
 import CreateDeckSheet from './Decks.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
+import { listSharedGenerationJobs } from '../api/aiGeneration';
+import { mapImportJob } from '../study/magicImport';
 import { fetchDeckList, fetchMagicImportJob, fetchUserProfile } from '../api/mopiq';
 import { cachedDeckList } from '../api/deckCache';
 import { getCurrentUser } from '../auth/session';
@@ -320,6 +322,7 @@ export default {
       });
       this.stopGenerationPolling = startGenerationPolling({
         fetchJob: fetchMagicImportJob,
+        fetchJobs: async () => (await listSharedGenerationJobs()).map(j => ({ ...mapImportJob(j), deckId: j.deck_version_id })),
         onSettled: () => this.refreshDecks(),
       });
     },

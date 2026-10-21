@@ -172,9 +172,11 @@ export function magicImportObjectPath(userId, jobId, fileName) {
 }
 
 export function mapImportJob(row) {
-  if (!row?.job_id && !row?.jobId) return null;
+  if (!row?.job_id && !row?.jobId && !row?.id) return null;
   return {
-    jobId: row.job_id || row.jobId,
+    jobId: row.job_id || row.jobId || row.id,
+    pipeline: row.recipe_version ? "shared" : "legacy",
+    revision: Number(row.revision) || 0,
     deckVersionId: row.deck_version_id || row.deckVersionId,
     sourceKind: row.source_kind || row.sourceKind,
     status: row.status,
@@ -199,7 +201,7 @@ export function backgroundsPromptDeck({ source, deckId, jobId, status } = {}) {
 
 export function importJobView(job) {
   const status = job?.status || '';
-  const failed = status === 'failed';
+  const failed = ['failed', 'paused', 'cancelled'].includes(status);
   const finished = status === 'done' || status === 'done_with_warnings';
   const active = status === 'queued' || status === 'generating';
   let phase = 'missing';

@@ -43,6 +43,7 @@
           </button>
         </div>
 
+        <p class="ask-ai-disclaimer">{{ $t('askAi.disclaimer') }}</p>
         <form v-if="!limitReached" class="ask-ai-input" @submit.prevent="sendTyped">
           <input
             v-model="draft"
@@ -391,6 +392,14 @@ export default {
   padding: 12px 16px;
   color: var(--text-secondary);
   font-size: 0.92rem;
+}
+.ask-ai-disclaimer {
+  margin: 0;
+  padding: 8px 16px 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  text-align: center;
 }
 .ask-ai-input {
   display: flex;

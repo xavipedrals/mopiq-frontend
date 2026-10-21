@@ -6,6 +6,24 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    "headers": [
+      {
+        "source": "**/apple-app-site-association",
+        "headers": [{ "key": "Content-Type", "value": "application/json" }]
+      },
+      {
+        "source": "/offer/**",
+        "headers": [
+          { "key": "Referrer-Policy", "value": "no-referrer" },
+          { "key": "Cache-Control", "value": "no-store" },
+          { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+        ]
+      }
+    ],
+    "rewrites": [
+      { "source": "/.well-known/apple-app-site-association", "destination": "/apple-app-site-association" },
+      { "source": "/offer/**", "destination": "/offer/index.html" },
+      { "source": "**", "destination": "/index.html" }
+    ]
   }
 }

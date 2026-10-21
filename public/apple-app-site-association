@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["24Q78SLQKT.com.bestindieapps.Anki"],
+        "components": [
+          {"/": "/shared/*", "comment": "Existing shared deck links."},
+          {"/": "/offer/*", "comment": "Private purchase invitations, validated in the app."}
+        ]
+      }
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 <template>
   <div class="detail-page" :class="{ selecting: selectionMode }">
+      <SharedGenerationStatus :deck-id="$route.params.deckId" @committed="onGenerationCommitted" />
       <div v-if="deckGeneration" class="detail generation-hold">
         <div class="topbar">
           <router-link :to="listTo" class="back">
@@ -507,6 +508,7 @@
 </template>
 
 <script>
+import SharedGenerationStatus from "./SharedGenerationStatus.vue";
 import { deckReviewSync } from '../study/reviewSync';
 import { getCurrentUser } from '../auth/session';
 import { submitReview } from '../api/mopiq';
@@ -592,6 +594,7 @@ export default {
     setInspectorOpen: { default: null },
   },
   components: {
+    SharedGenerationStatus,
     DeckStats,
     StudyLimitSheet,
     DeckSettings,
@@ -639,6 +642,8 @@ export default {
       limitOpen: false,
       settingsOpen: false,
       generationJobs: [],
+      sharedRefreshStamp: '',
+      sharedRefreshing: false,
       suppressGenerationReload: false,
       filtersOpen: false,
       addingCard: false,
@@ -1146,6 +1151,36 @@ export default {
       this.cards = [];
       this.cardTotal = 0;
       await this.loadMoreCards();
+    },
+    async refreshCommittedGeneration(deckId, stamp) {
+      if (!deckId || this.sharedRefreshing || this.cardsLoading || stamp === this.sharedRefreshStamp) return;
+      this.sharedRefreshing = true;
+      const gen = this.loadGen;
+      const query = { ...this.browseQuery };
+      try {
+        const deck = await fetchDeck(deckId);
+        const cards = [];
+        const wanted = Math.max(20, this.cards.length);
+        let total = 0;
+        do {
+          const page = await fetchCardsPage(deckId, cards.length, cardBrowsePageLimit(cards.length), query);
+          total = page.total;
+          cards.push(...page.cards);
+          if (!page.cards.length) break;
+        } while (cards.length < Math.min(wanted, total));
+        if (gen !== this.loadGen || JSON.stringify(query) !== JSON.stringify(this.browseQuery)) return;
+        this.deck = deck;
+        this.cards = cards;
+        this.cardTotal = total;
+        this.sharedRefreshStamp = stamp;
+        this.loadFolderCounts(deckId);
+        this.loadListStats(deckId);
+        // Inspector drafts, selected cards, filters and scroll stay intact.
+      } catch { /* The next job observation retries the committed revision. */ }
+      finally { this.sharedRefreshing = false; }
+    },
+    onGenerationCommitted(job) {
+      this.refreshCommittedGeneration(this.$route.params.deckId, `${job.id}:${job.revision}`);
     },
     onBrowseFiltersUpdate(query) {
       this.browseQuery = normalizeCardBrowseQuery({

@@ -250,6 +250,14 @@ export default {
     },
   },
   async created() {
+    this.onAnalyticsConsent = () => {
+      void trackAnonymousLandingVisit({
+        loggedIn: false,
+        path: this.$route.path,
+        nextQuery: this.loginNext,
+      });
+    };
+    window.addEventListener('mopiq-analytics-consent', this.onAnalyticsConsent);
     await authReady;
     if (isLoggedIn()) {
       this.$router.replace('/decks');
@@ -260,6 +268,9 @@ export default {
       path: this.$route.path,
       nextQuery: this.loginNext,
     });
+  },
+  beforeUnmount() {
+    window.removeEventListener('mopiq-analytics-consent', this.onAnalyticsConsent);
   },
   methods: {
     openLogin() {

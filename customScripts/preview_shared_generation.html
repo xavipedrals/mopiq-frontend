@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body class="app-shell"><div id="preview"></div>
+<script type="module">
+import {createApp} from 'vue';
+import SharedGenerationPreview from './SharedGenerationPreview.vue';
+import MagicImportPanel from '../src/components/MagicImportPanel.vue';
+import SharedGenerationStatus from '../src/components/SharedGenerationStatus.vue';
+import {createI18nPlugin} from '../src/i18n';
+import '../src/app.css';
+const theme=new URLSearchParams(location.search).get('theme')||'light';document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme;
+const app=createApp(SharedGenerationPreview);
+app.use(createI18nPlugin());app.mount('#preview');
+</script>
+<style>body{background:var(--page-bg);color:var(--title);margin:0}.preview-shell{max-width:880px;margin:32px auto;padding:0 24px}.preview-caption{font-size:13px;color:var(--text-secondary)}h1{font-size:30px;font-weight:700;letter-spacing:-.7px;margin-bottom:24px}.preview-card{background:var(--card-bg);padding:24px;border-radius:20px;border:1px solid var(--card-border)}.server-generation{margin:0 0 20px!important}.pdf-picker{min-height:420px!important}.pdf-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:340px}.field textarea{font-family:inherit}.magic-form{gap:18px}</style>
+</body></html>

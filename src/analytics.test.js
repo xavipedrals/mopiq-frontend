@@ -1,12 +1,18 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import {
+  ANALYTICS_CONSENT_KEY,
   LANDING_VISIT_KEY,
   LOGIN_EVENT,
   SHARE_VISIT_KEY,
+  analyticsConsentGranted,
   markArrivedViaShare,
   markLandingTracked,
+  readAnalyticsConsent,
+  setAnalyticsConsent,
   shouldTrackAnonymousLanding,
+  trackAnonymousLandingVisit,
+  trackWebLogin,
 } from './analytics.js';
 
 function memoryStorage() {
@@ -59,5 +65,34 @@ describe('shouldTrackAnonymousLanding', () => {
 describe('web login event', () => {
   it('uses a distinct Firebase event from landing visits', () => {
     assert.equal(LOGIN_EVENT, 'web_login');
+  });
+});
+
+describe('analytics consent', () => {
+  const previous = globalThis.localStorage;
+
+  beforeEach(() => {
+    globalThis.localStorage = memoryStorage();
+  });
+
+  afterEach(() => {
+    if (previous === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = previous;
+  });
+
+  it('stays off until the visitor allows analytics', async () => {
+    assert.equal(readAnalyticsConsent(), null);
+    assert.equal(analyticsConsentGranted(), false);
+    assert.equal(await trackAnonymousLandingVisit({ loggedIn: false, path: '/', nextQuery: '' }), false);
+    assert.equal(await trackWebLogin(), false);
+    setAnalyticsConsent('denied');
+    assert.equal(globalThis.localStorage.getItem(ANALYTICS_CONSENT_KEY), 'denied');
+    assert.equal(analyticsConsentGranted(), false);
+  });
+
+  it('records an allow choice', () => {
+    setAnalyticsConsent('granted');
+    assert.equal(readAnalyticsConsent(), 'granted');
+    assert.equal(analyticsConsentGranted(), true);
   });
 });

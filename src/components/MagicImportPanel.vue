@@ -6,6 +6,11 @@
     </div>
     <template v-else-if="pdfPhase === 'pages'">
       <p v-if="formError" class="form-error">{{ formError }}</p>
+      <label v-if="sharedGenerationEnabled" class="field">
+        <span>{{ $t('generation.instructions') }}</span>
+        <textarea v-model="generationInstructions" rows="3" :placeholder="$t('generation.instructionsPlaceholder')" @input="generationInstructions = trimInstructions(generationInstructions)"></textarea>
+        <small>{{ $t('generation.instructionsHelp') }}</small>
+      </label>
       <PdfPageSelector
         :pages="pdfPages"
         :selected="pdfPageSelection"
@@ -136,6 +141,8 @@
 </template>
 
 <script>
+import { sharedGenerationEnabled } from '../api/aiGeneration';
+import { trimGenerationInstructions } from '../study/sharedGeneration';
 import { fetchDeck, fetchMagicImportJob, startMagicImport } from '../api/mopiq';
 import DeckTopicsPicker from './DeckTopicsPicker.vue';
 import PdfPageSelector from './PdfPageSelector.vue';
@@ -201,10 +208,13 @@ export default {
   props: {
     source: { type: String, required: true },
     deckId: { type: String, default: '' },
+    targetSubdeckId: { type: Number, default: null },
   },
   emits: ['busy', 'queued', 'done', 'background', 'layout'],
   data() {
     return {
+      sharedGenerationEnabled,
+      generationInstructions: '',
       name: '',
       topicId: 'other',
       text: '',
@@ -292,6 +302,7 @@ export default {
     this.stopPoll();
   },
   methods: {
+    trimInstructions: trimGenerationInstructions,
     setBusy(value) {
       this.busy = value;
       this.$emit('busy', value);
@@ -497,8 +508,9 @@ export default {
           return;
         }
         const started = await startMagicImport({
-          source: 'paste',
+          source: sharedGenerationEnabled ? 'photo' : 'paste',
           deckId: this.deckId,
+          targetSubdeckId: this.targetSubdeckId,
           name: '',
           topic: '',
           text,
@@ -510,6 +522,10 @@ export default {
         if (view.finished || !started.jobId) {
           const deck = started.deck || await fetchDeck(started.deckId).catch(() => ({ id: started.deckId }));
           this.$emit('done', deck);
+          return;
+        }
+        if (started.pipeline === 'shared') {
+          this.$emit('background', { jobId: started.jobId, deckId: started.deckId, status: started.status || 'queued', pipeline: 'shared' });
           return;
         }
         this.polling = true;
@@ -543,11 +559,13 @@ export default {
         const started = await startMagicImport({
           source: this.source,
           deckId: this.deckId,
+          targetSubdeckId: this.targetSubdeckId,
           name: this.source === 'aiPrompt' ? '' : this.name,
           topic: this.source === 'aiPrompt' ? '' : this.topicId,
           text: this.text,
           file: this.file,
           pages: usesPdfPagePicker(this.source) ? sortedPdfPages(this.pdfPageSelection) : null,
+          generationInstructions: this.generationInstructions,
         });
         this.resultDeckId = started.deckId;
         this.jobId = started.jobId;
@@ -558,7 +576,7 @@ export default {
           this.$emit('done', deck);
           return;
         }
-        if (backgroundsPromptDeck({
+        if ((sharedGenerationEnabled && started.jobId) || backgroundsPromptDeck({
           source: this.source,
           deckId: this.deckId,
           jobId: started.jobId,
@@ -568,6 +586,7 @@ export default {
             jobId: started.jobId,
             deckId: started.deckId,
             status: started.status || 'queued',
+            pipeline: started.pipeline || 'legacy',
           });
           return;
         }

@@ -1,7 +1,7 @@
 import { importJobView, POLL_INTERVAL_MS } from './magicImport.js';
 
 const STORAGE_KEY = 'mopiq.generationJobs';
-const STATUSES = new Set(['queued', 'generating', 'failed']);
+const STATUSES = new Set(['queued', 'generating', 'failed', 'paused', 'cancelled', 'done', 'done_with_warnings']);
 
 let jobs = [];
 let currentUserId = '';
@@ -11,6 +11,7 @@ let pollTimer = 0;
 let polling = false;
 let pollAgain = false;
 let storageOverride = null;
+let settledSharedJobs = new Set();
 
 function browserStorage() {
   if (storageOverride) return storageOverride;
@@ -32,6 +33,9 @@ export function normalizeGenerationJob(input) {
     deckId,
     userId,
     status,
+    revision: Number(input?.revision) || 0,
+    insertedCards: Number(input?.insertedCards) || 0,
+    pipeline: input?.pipeline || 'legacy',
     errorMessage: String(input?.errorMessage || '').slice(0, 300),
   };
 }
@@ -44,6 +48,7 @@ export function generationPhase(job) {
 }
 
 export function blocksDeckGeneration(job) {
+  if (job?.pipeline === 'shared') return false;
   const phase = generationPhase(job);
   return phase === 'active' || phase === 'failed';
 }
@@ -106,22 +111,28 @@ export function reduceGenerationPoll(list, jobId, polled) {
   const view = importJobView(polled);
   if (view.phase === 'active') {
     const status = polled?.status === 'generating' ? 'generating' : 'queued';
-    if (status === current.status) {
+    if (status === current.status && Number(polled?.revision || 0) === current.revision) {
       return { jobs: list, outcome: 'active', deckId: current.deckId, changed: false };
     }
     return {
-      jobs: list.map((job) => (job.jobId === jobId ? { ...job, status } : job)),
+      jobs: list.map((job) => (job.jobId === jobId ? { ...job, status, revision: Number(polled?.revision) || 0, insertedCards: Number(polled?.insertedCards) || 0 } : job)),
       outcome: 'active',
       deckId: current.deckId,
       changed: true,
     };
   }
   if (view.phase === 'failed') {
+    const status = current.pipeline === 'shared' && STATUSES.has(polled?.status) ? polled.status : 'failed';
+    const revision = Number(polled?.revision) || 0;
+    const errorMessage = String(polled?.errorMessage || '').slice(0, 300);
+    if (current.status === status && current.revision === revision && current.errorMessage === errorMessage) {
+      return { jobs: list, outcome: 'failed', deckId: current.deckId, changed: false };
+    }
     return {
       jobs: list.map((job) => (job.jobId === jobId ? {
         ...job,
-        status: 'failed',
-        errorMessage: String(polled?.errorMessage || '').slice(0, 300),
+        status, revision, errorMessage,
+        insertedCards: Number(polled?.insertedCards) || current.insertedCards,
       } : job)),
       outcome: 'failed',
       deckId: current.deckId,
@@ -147,6 +158,7 @@ function emitJobs() {
 
 export function bindGenerationUser(userId) {
   currentUserId = String(userId || '');
+  settledSharedJobs = new Set();
   jobs = loadGenerationJobs(browserStorage(), currentUserId);
   emitJobs();
 }
@@ -191,7 +203,21 @@ async function pollGenerationJobs() {
   try {
     do {
       pollAgain = false;
-      const active = jobs.filter((job) => job.status === 'queued' || job.status === 'generating');
+      if (pollHooks?.fetchJobs) {
+        try {
+          const owner = currentUserId;
+          const remote = await pollHooks.fetchJobs();
+          if (owner !== currentUserId) return;
+          for (const row of remote) {
+            if (settledSharedJobs.has(`${row.jobId}:${row.revision}`)) continue;
+            const normalized = normalizeGenerationJob({ ...row, userId: currentUserId });
+            if (normalized && !jobs.some(j => j.jobId === normalized.jobId)) jobs = upsertGenerationJob(jobs, normalized);
+            else if (normalized?.pipeline === 'shared') jobs = jobs.map(j => j.jobId === normalized.jobId ? { ...j, pipeline: 'shared' } : j);
+          }
+          persistJobs(); emitJobs();
+        } catch { /* Migration may not be deployed yet. Keep legacy jobs. */ }
+      }
+      const active = jobs.filter((job) => job.status === 'queued' || job.status === 'generating' || job.pipeline === 'shared');
       for (const job of active) {
         const hooks = pollHooks;
         if (!hooks) return;
@@ -204,13 +230,14 @@ async function pollGenerationJobs() {
         if (!pollHooks) return;
         const result = reduceGenerationPoll(jobs, job.jobId, polled);
         if (!result.changed) continue;
-        if (result.outcome === 'done' || result.outcome === 'missing') {
+        if (result.outcome === 'done' || result.outcome === 'missing' || result.outcome === 'active') {
           try {
             await hooks.onSettled?.(result);
           } catch {
-            // Drop the local job anyway so the row can show the finished deck.
+            continue; // Keep the receipt until the committed deck refresh succeeds.
           }
         }
+        if (result.outcome === 'done' && job.pipeline === 'shared') settledSharedJobs.add(`${job.jobId}:${polled?.revision || job.revision}`);
         jobs = result.jobs;
         persistJobs();
         emitJobs();
@@ -228,9 +255,9 @@ async function pollGenerationJobs() {
   }
 }
 
-export function startGenerationPolling({ fetchJob, onSettled, intervalMs = POLL_INTERVAL_MS } = {}) {
+export function startGenerationPolling({ fetchJob, fetchJobs, onSettled, intervalMs = POLL_INTERVAL_MS } = {}) {
   if (!fetchJob) return stopGenerationPolling;
-  pollHooks = { fetchJob, onSettled };
+  pollHooks = { fetchJob, fetchJobs, onSettled };
   if (!pollTimer) {
     void pollGenerationJobs();
     pollTimer = setInterval(() => {
