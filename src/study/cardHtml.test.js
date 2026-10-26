@@ -79,3 +79,56 @@ describe('cloze study rendering', () => {
     assert.match(doc, /\.io-check:not\(:checked\) ~ \.io-frame \.io-masks/);
   });
 });
+
+describe('card flag HTML', () => {
+  const flags = [
+    { flag_id: 'important', name: 'Important', color: 'blue' },
+    { flag_id: 'later', name: 'Review later', color: 'orange' },
+  ];
+
+  it('shows applied flags once above both question and answer content', () => {
+    const card = { question: 'Question', answer: 'Answer' };
+    for (const body of [frontHtml(card, {}), backHtml(card, {})]) {
+      const html = cardDocument(body, { flags });
+      assert.equal((html.match(/class="mopiq-flags"/g) || []).length, 1);
+      assert.equal((html.match(/class="mopiq-flag"/g) || []).length, 2);
+      assert.ok(html.indexOf('class="mopiq-flags"') < html.indexOf('Question'));
+      assert.match(html, /color:#3b82f6;background-color:#eff6ff;border-color:#bfdbfe/);
+      assert.match(html, /color:#f97316;background-color:#fff7ed;border-color:#fed7aa/);
+    }
+  });
+
+  it('preserves the iOS dark palette separately from card content color conversion', () => {
+    const html = cardDocument('<p>Question</p>', { dark: true, viewer: true, flags });
+    assert.match(html, /color:#60a5fa;background-color:#172554;border-color:#1e40af/);
+    assert.match(html, /color:#fb923c;background-color:#431407;border-color:#9a3412/);
+  });
+
+  it('escapes flag names and emoji and prevents stored colors from injecting HTML or CSS', () => {
+    const html = cardDocument('Question', { flags: [{
+      name: '<img src=x onerror="alert(1)"> & "quoted"',
+      emoji: '<svg onload="alert(1)">',
+      color: 'red; background:url(https://example.com)',
+    }] });
+    assert.match(html, /&lt;img src=x onerror=&quot;alert\(1\)&quot;&gt; &amp; &quot;quoted&quot;/);
+    assert.match(html, /&lt;svg onload=&quot;alert\(1\)&quot;&gt;/);
+    assert.equal(html.includes('<img src=x'), false);
+    assert.equal(html.includes('<svg onload='), false);
+    assert.equal(html.includes('background:url'), false);
+    assert.match(html, /class="mopiq-emoji"/);
+    assert.match(html, /color:#334155;background-color:#f8fafc;border-color:#f1f5f9/);
+    const invalidColor = cardDocument('', { flags: [{ name: 'Flag', color: 'red; background:url(https://example.com)' }] });
+    assert.match(invalidColor, /color:#3b82f6;background-color:#eff6ff;border-color:#bfdbfe/);
+  });
+
+  it('supports legacy hex colors and omits removed flags and empty flag containers', () => {
+    const html = cardDocument('Question', { flags: [
+      { name: 'Custom', color: '#123456' },
+      { name: 'Deleted', color: 'red', deleted: true },
+    ] });
+    assert.match(html, /color:#123456;background-color:#dee3e7;border-color:#123456/);
+    assert.equal(html.includes('Deleted'), false);
+    assert.equal(cardDocument('Question').includes('class="mopiq-flags"'), false);
+    assert.equal(cardDocument('Question', { flags: [{ ...flags[0], deleted: true }] }).includes('class="mopiq-flags"'), false);
+  });
+});

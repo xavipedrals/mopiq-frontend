@@ -8,8 +8,8 @@
       <rect x="3" y="6.5" width="13" height="10" rx="1.6" transform="rotate(-12 9.5 11.5)" fill="none" stroke="currentColor" stroke-width="1.5"/>
       <rect x="8" y="5" width="13" height="10" rx="1.6" transform="rotate(10 14.5 10)" fill="none" stroke="currentColor" stroke-width="1.5"/>
     </svg>
-    <h1>{{ isLibrary ? $t('decks.premadeTitle') : $t('decks.selectTitle') }}</h1>
-    <p>{{ isLibrary ? $t('decks.premadeBody') : $t('decks.selectBody') }}</p>
+    <h1>{{ isLibrary ? $t('decks.premadeTitle') : $t('decks.empty') }}</h1>
+    <p v-if="isLibrary">{{ $t('decks.premadeBody') }}</p>
     <a
       v-if="isLibrary"
       class="store"

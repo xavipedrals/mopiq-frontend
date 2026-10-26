@@ -1,9 +1,25 @@
 <template>
-  <div class="page">
-        <router-link :to="listTo" class="pane-back">
-          <TablerIcon name="chevronLeft" />
-          {{ $t('decks.title') }}
-        </router-link>
+  <div class="page" :class="{ 'is-settings': settingsOpen }">
+        <div v-if="!settingsOpen" class="topbar">
+          <router-link :to="listTo" class="pane-back">
+            <TablerIcon name="chevronLeft" />
+            {{ $t('decks.title') }}
+          </router-link>
+          <button type="button" class="tool" @click="settingsOpen = true">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+            <span class="tool-label">{{ $t('profile.settings') }}</span>
+          </button>
+        </div>
+        <ProfileSettings
+          v-if="settingsOpen && !loading && !error"
+          :profile="profile"
+          @close="settingsOpen = false"
+          @updated="onProfileUpdated"
+        />
+        <div v-else-if="!settingsOpen" class="profile-body">
         <div v-if="loading" aria-busy="true">
           <div class="hero">
             <div class="avatar-block">
@@ -21,83 +37,8 @@
               <SkeletonBlock w="48%" h="1rem" radius="6px" />
             </div>
           </div>
-          <div class="account">
-            <SkeletonBlock class="s-row" w="100%" h="57px" radius="18px" />
-            <SkeletonBlock w="100%" h="51px" radius="50px" />
-            <div class="legal">
-              <a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a>
-              <router-link to="/privacy">{{ $t('common.privacy') }}</router-link>
-              <router-link to="/terms">{{ $t('common.terms') }}</router-link>
-              <router-link to="/refund">{{ $t('common.refund') }}</router-link>
-            </div>
-          </div>
         </div>
         <p v-else-if="error" class="error">{{ error }}</p>
-        <div v-else-if="settingsOpen" class="settings">
-          <button type="button" class="back" @click="settingsOpen = false">{{ $t('profile.settingsBack') }}</button>
-          <h2 class="settings-title">{{ $t('profile.settings') }}</h2>
-          <section class="appearance">
-            <h3>{{ $t('profile.appearance') }}</h3>
-            <div class="theme-toggle" role="radiogroup" :aria-label="$t('profile.appearance')">
-              <button
-                type="button"
-                role="radio"
-                :aria-checked="theme === 'system'"
-                :class="{ on: theme === 'system' }"
-                @click="setAppearance('system')"
-              >
-                <TablerIcon name="deviceDesktop" />
-                {{ $t('profile.system') }}
-              </button>
-              <button
-                type="button"
-                role="radio"
-                :aria-checked="theme === 'light'"
-                :class="{ on: theme === 'light' }"
-                @click="setAppearance('light')"
-              >
-                <TablerIcon name="sun" />
-                {{ $t('profile.light') }}
-              </button>
-              <button
-                type="button"
-                role="radio"
-                :aria-checked="theme === 'dark'"
-                :class="{ on: theme === 'dark' }"
-                @click="setAppearance('dark')"
-              >
-                <TablerIcon name="moon" />
-                {{ $t('profile.dark') }}
-              </button>
-            </div>
-          </section>
-          <section class="appearance">
-            <h3>{{ $t('profile.language') }}</h3>
-            <LanguagePicker @change="onLanguageChange" />
-          </section>
-          <section v-if="showDebugSettings" class="appearance">
-            <h3>Debug</h3>
-            <label class="debug-row">
-              <span>Unlimited study (debug)</span>
-              <input
-                type="checkbox"
-                :checked="unlimitedStudyOn"
-                @change="onUnlimitedStudyChange"
-              >
-            </label>
-          </section>
-          <section class="appearance">
-            <button
-              type="button"
-              class="danger-link"
-              :disabled="deletingAccount"
-              @click="deleteConfirmOpen = true"
-            >
-              {{ $t('profile.deleteAccount') }}
-            </button>
-            <p v-if="deleteError" class="error">{{ deleteError }}</p>
-          </section>
-        </div>
         <template v-else>
           <div class="hero">
             <div class="avatar-block">
@@ -162,70 +103,31 @@
               <div class="label">{{ $t('profile.experience') }}</div>
             </div>
           </div>
-
-          <div class="account">
-            <button type="button" class="menu-row" @click="settingsOpen = true">
-              <span>{{ $t('profile.settings') }}</span>
-              <TablerIcon class="chevron" name="chevronRight" />
-            </button>
-            <button type="button" class="mopiq-btn secondary" :disabled="loggingOut" @click="onLogout">
-              {{ loggingOut ? $t('profile.loggingOut') : $t('profile.logOut') }}
-            </button>
-            <p v-if="logoutError" class="error">{{ logoutError }}</p>
-            <div class="legal">
-              <a :href="helpUrl" target="_blank" rel="noopener">{{ $t('common.support') }}</a>
-              <router-link to="/privacy">{{ $t('common.privacy') }}</router-link>
-              <router-link to="/terms">{{ $t('common.terms') }}</router-link>
-              <router-link to="/refund">{{ $t('common.refund') }}</router-link>
-            </div>
-          </div>
         </template>
-    <StudyConfirmSheet
-      :open="deleteConfirmOpen"
-      :title="$t('profile.deleteAccountTitle')"
-      :message="$t('profile.deleteAccountBody')"
-      :confirm-label="$t('profile.deleteAccount')"
-      :busy="deletingAccount"
-      :error="deleteError"
-      @dismiss="closeDeleteConfirm"
-      @confirm="onDeleteAccount"
-    />
+        </div>
   </div>
 </template>
 
 <script>
-import LanguagePicker from './LanguagePicker.vue';
+import ProfileSettings from './ProfileSettings.vue';
 import TablerIcon from './TablerIcon.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
-import StudyConfirmSheet from './StudyConfirmSheet.vue';
-import { deleteCurrentAccount, fetchUserProfile, updateUserProfileLocale } from '../api/mopiq';
-import { logout } from '../auth/session';
+import { fetchUserProfile } from '../api/mopiq';
 import { getAvatarImageName } from '../utils';
 import { formatJoinedDate, formatStudiedTime, getLevelAndPercentage } from '../profile/experience';
-import { adoptFromProfileIfNeeded, localeForProfileSync, localeTag } from '../i18n';
-import { getThemePreference, setThemePreference } from '../theme/theme';
-import { HELP_CENTER_URL } from '../constants';
-import { isDebugUnlimitedStudy, setDebugUnlimitedStudy } from '../debug/flags';
+import { adoptFromProfileIfNeeded, localeTag } from '../i18n';
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 60;
 
 export default {
   name: 'ProfilePage',
-  components: { LanguagePicker, SkeletonBlock, StudyConfirmSheet, TablerIcon },
+  components: { ProfileSettings, SkeletonBlock, TablerIcon },
   data() {
     return {
       loading: true,
-      loggingOut: false,
-      deletingAccount: false,
-      deleteConfirmOpen: false,
-      helpUrl: HELP_CENTER_URL,
       error: '',
-      logoutError: '',
-      deleteError: '',
       avatarFailed: false,
       settingsOpen: false,
-      theme: getThemePreference(),
-      unlimitedStudyOn: isDebugUnlimitedStudy(),
       profile: {
         name: '',
         email: '',
@@ -267,11 +169,24 @@ export default {
       if (this.avatarFailed) return getAvatarImageName(this.profile.avatarNumber || 0);
       return this.profile.avatarUrl || getAvatarImageName(this.profile.avatarNumber || 0);
     },
-    showDebugSettings() {
-      return import.meta.env.DEV;
-    },
   },
   async created() {
+    if (this.$route.meta.preview) {
+      this.profile = {
+        name: 'Ada Lovelace',
+        email: 'ada@example.com',
+        experience: 4200,
+        secondsStudied: 5400,
+        daysUsingApp: 12,
+        cardsStudied: 80,
+        avatarNumber: 3,
+        joinedDate: '2024-03-01T00:00:00Z',
+        avatarUrl: getAvatarImageName(3),
+        isPremium: false,
+      };
+      this.loading = false;
+      return;
+    }
     try {
       this.profile = await fetchUserProfile();
       adoptFromProfileIfNeeded(this.profile.locale);
@@ -285,66 +200,52 @@ export default {
     onAvatarError() {
       this.avatarFailed = true;
     },
-    setAppearance(theme) {
-      this.theme = theme;
-      setThemePreference(theme);
-    },
-    onUnlimitedStudyChange(event) {
-      const enabled = event.target.checked;
-      this.unlimitedStudyOn = enabled;
-      setDebugUnlimitedStudy(enabled);
-    },
-    async onLanguageChange() {
-      try {
-        await updateUserProfileLocale(localeForProfileSync());
-      } catch (error) {
-        console.warn('Could not save language', error);
-      }
-    },
-    async onLogout() {
-      this.loggingOut = true;
-      this.logoutError = '';
-      try {
-        await logout();
-        this.$router.push('/');
-      } catch (error) {
-        this.logoutError = error.message || this.$t('profile.logoutError');
-        this.loggingOut = false;
-      }
-    },
-    closeDeleteConfirm() {
-      if (this.deletingAccount) return;
-      this.deleteConfirmOpen = false;
-      this.deleteError = '';
-    },
-    async onDeleteAccount() {
-      if (this.deletingAccount) return;
-      this.deletingAccount = true;
-      this.deleteError = '';
-      try {
-        await deleteCurrentAccount();
-        this.$router.push('/');
-      } catch (error) {
-        this.deleteError = error.code === 'requires-recent-login'
-          ? this.$t('profile.deleteAccountRelogin')
-          : (error.message || this.$t('profile.deleteAccountError'));
-        this.deletingAccount = false;
-      }
+    onProfileUpdated(patch) {
+      this.profile = { ...this.profile, ...patch };
     },
   },
 };
 </script>
 
 <style scoped>
-.page { padding: 12px 28px 56px; max-width: 760px; margin: 0 auto; }
+.page { padding: 12px 28px 56px; }
+.profile-body { max-width: 760px; margin: 0 auto; }
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 8px;
+}
 .pane-back {
   display: none;
   align-items: center;
   gap: 2px;
-  margin: 0 0 8px;
+  margin-right: auto;
   color: var(--blue-button);
   text-decoration: none;
   font-weight: 600;
+}
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--card-bg);
+  color: var(--title);
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--card-list-border);
+}
+.tool svg { width: 18px; height: 18px; display: block; }
+.tool-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 .pane-back :deep(.tabler-icon) { width: 18px; height: 18px; display: block; }
 .hero {
@@ -441,155 +342,22 @@ h1 {
 .s-meta { margin-top: 10px; }
 .s-stat-icon { margin-bottom: 16px; }
 .s-stat-value { margin-bottom: 12px; }
-.s-row { margin-bottom: 12px; }
-.menu-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 12px;
-  border: 0;
-  background: var(--card-bg);
-  box-shadow: var(--card-shadow);
-  color: var(--title);
-  border-radius: 18px;
-  padding: 16px 18px;
-  font: inherit;
-  font-size: 1.05rem;
-  font-weight: 650;
-  cursor: pointer;
-}
-.chevron { color: var(--text-secondary); }
-.menu-row :deep(.chevron) { width: 22px; height: 22px; }
-.settings { max-width: 480px; margin: 8px auto 0; text-align: left; }
-.back {
-  border: 0;
-  background: transparent;
-  color: var(--blue-button);
-  padding: 0;
-  margin-bottom: 12px;
-  font: inherit;
-  cursor: pointer;
-}
-.settings-title {
-  font-size: 1.6rem;
-  font-weight: 750;
-  color: var(--title);
-  margin: 0 0 22px;
-}
-.appearance {
-  max-width: 480px;
-  margin: 0 auto 28px;
-}
-.appearance h3 {
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  margin: 0 0 12px;
-}
-.debug-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: var(--card-bg);
-  box-shadow: var(--card-shadow);
-  border-radius: 18px;
-  padding: 16px 18px;
-  color: var(--title);
-  font-size: 1.05rem;
-  font-weight: 650;
-}
-.debug-row input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--blue-button);
-}
-.theme-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
-  background: var(--inset-bg);
-  border-radius: 18px;
-  padding: 6px;
-}
-.theme-toggle button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: none;
-  appearance: none;
-  background: transparent;
-  color: var(--text-secondary);
-  border-radius: 14px;
-  padding: 12px 10px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-}
-.theme-toggle button :deep(.tabler-icon) {
-  width: 18px;
-  height: 18px;
-}
-.theme-toggle button.on {
-  background: var(--card-bg);
-  color: var(--title);
-  box-shadow: var(--card-shadow);
-}
-.danger-link {
-  border: 0;
-  background: transparent;
-  color: #dc2626;
-  font: inherit;
-  font-size: 1.05rem;
-  font-weight: 650;
-  padding: 8px 0;
-  cursor: pointer;
-}
-.danger-link:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-.account {
-  max-width: 480px;
-  margin: 0 auto;
-}
-.mopiq-btn.secondary {
-  width: 100%;
-  background: var(--secondary-btn-bg) !important;
-  color: var(--secondary-btn-text) !important;
-  border: none !important;
-  font-size: 1.05rem !important;
-  font-weight: 600 !important;
-  letter-spacing: 0 !important;
-  padding: 14px 24px !important;
-  border-radius: 50px !important;
-}
-.mopiq-btn.secondary:hover { background: var(--secondary-btn-hover) !important; }
-.legal {
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  flex-wrap: wrap;
-  margin-top: 24px;
-}
-.legal a {
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 0.95rem;
-}
-.legal a:hover { color: var(--blue-button); }
 .error { color: var(--error); margin-top: 12px; text-align: center; }
 @media (max-width: 899px) {
   .pane-back { display: inline-flex; }
   .page { padding: 8px 16px 48px; }
 }
+@media (max-width: 599px) {
+  .tool-label { display: none; }
+  .tool { padding: 0; }
+}
 @media (max-width: 520px) {
   .stats { gap: 12px; }
   .value { font-size: 1.6rem; }
   .stat { padding: 16px; }
+}
+.page.is-settings {
+  max-width: none;
+  padding: 0;
 }
 </style>

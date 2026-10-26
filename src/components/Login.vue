@@ -23,7 +23,7 @@
           <span>{{ $t('common.mopiq') }}</span>
         </div>
         <h1 :id="titleId">{{ mode === 'register' ? $t('login.createAccount') : $t('login.logIn') }}</h1>
-        <p class="lede">{{ $t('login.lede') }}</p>
+        <p class="lede">{{ lede || $t('login.lede') }}</p>
 
         <p v-if="error" class="banner error" role="alert">{{ error }}</p>
         <p v-if="info" class="banner info" role="status">{{ info }}</p>
@@ -96,8 +96,10 @@ export default {
   props: {
     open: { type: Boolean, default: false },
     next: { type: String, default: '' },
+    lede: { type: String, default: '' },
+    inline: { type: Boolean, default: false },
   },
-  emits: ['dismiss'],
+  emits: ['dismiss', 'signed-in'],
   data() {
     return {
       mode: 'login',
@@ -205,6 +207,10 @@ export default {
       }
     },
     goToApp() {
+      if (this.inline) {
+        this.$emit('signed-in');
+        return;
+      }
       const next = this.next || this.$route.query.next;
       const safe = typeof next === 'string' && (next.startsWith('/decks') || next === '/profile' || next === '/library')
         ? next

@@ -21,7 +21,7 @@ export function mapDisplayProfileRow(row = {}, extras = {}) {
     avatarNumber: statNumber(row.avatar_number, row.avatarNumber),
     joinedDate: row.joined_date || row.joinedDate || null,
     imageStoragePath: row.image_storage_path || row.imageStoragePath || '',
-    isPremium: row.is_premium === true || row.isPremium === true,
+    isPremium: extras.hasPaidAccess === true || row.is_premium === true || row.isPremium === true,
     locale: row.locale || extras.locale || '',
     answerFeedbackPosition: row.answer_feedback_position || row.answerFeedbackPosition || '',
   };

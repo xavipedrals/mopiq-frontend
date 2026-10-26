@@ -1,3 +1,5 @@
+import { personalFlagChipColors } from './personalFlags.js';
+import { darkCardColors } from './cardColors.js';
 import { containsClozeMarkup, WEB_CLOZE_NOTE_MODEL_ID } from './sanitizeCardHtml.js';
 import { cardHasImageOcclusion, renderOcclusionStudyHtml } from './imageOcclusion.js';
 
@@ -151,11 +153,24 @@ export function backHtml(card, mediaMap, { dark = false, ...options } = {}) {
   return back;
 }
 
-function cardCss(theme, { browse = false } = {}) {
+// Tabler Icons (MIT), matching the filled flag used by iOS CardFlagTilesHTML.
+const FLAG_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 5a1 1 0 0 1 .3 -.714a6 6 0 0 1 8.213 -.176l.351 .328a4 4 0 0 0 5.272 0l.249 -.227c.61 -.483 1.527 -.097 1.61 .676l.005 .113v9a1 1 0 0 1 -.3 .714a6 6 0 0 1 -8.213 .176l-.351 -.328a4 4 0 0 0 -5.136 -.114v6.552a1 1 0 0 1 -1.993 .117l-.007 -.117v-16z"/></svg>';
+
+function cardFlagsHtml(flags, dark) {
+  const chips = flags.filter(flag => !flag.deleted).map(flag => {
+    const colors = personalFlagChipColors(flag, dark);
+    const name = escapeHtml(flag.name);
+    const mark = flag.emoji ? `<span class="mopiq-emoji" aria-hidden="true">${escapeHtml(flag.emoji)}</span>` : FLAG_ICON;
+    return `<span class="mopiq-flag" title="${name}" style="color:${colors.foreground};background-color:${colors.background};border-color:${colors.border}">${mark}<span>${name}</span></span>`;
+  }).join('');
+  return chips ? `<div class="mopiq-flags">${chips}</div>` : '';
+}
+
+function cardCss(theme, { browse = false, viewer = false } = {}) {
   const t = CARD_THEME[theme];
   const darkOverrides = theme === 'dark'
     ? `
-    html, body, .card, body, div {
+    html, body, .card {
       background-color: ${t.background};
       background: ${t.background};
     }
@@ -280,11 +295,52 @@ function cardCss(theme, { browse = false } = {}) {
     .io-check:checked ~ .io-toggle .io-hide { display: none; }
     .io-check:not(:checked) ~ .io-toggle .io-show { display: none; }
     .io-check:not(:checked) ~ .io-frame .io-masks { display: none; }
+    .mopiq-flags {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 18px;
+      padding: 0;
+      text-align: start;
+    }
+    .mopiq-flag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font: 600 16px/1.2 -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .mopiq-flag svg { width: 18px; height: 18px; flex: none; }
+    .mopiq-emoji { flex: none; font-size: 18px; line-height: 24px; height: 24px; }
+    .mopiq-flag > span:not(.mopiq-emoji) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     ${darkOverrides}
+    ${viewer ? `
+    html { height: 100%; }
+    body {
+      min-height: 100%;
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 24px clamp(20px, 4vw, 40px);
+    }
+    .card {
+      flex: 0 0 auto;
+      width: 100%;
+      max-width: 100%;
+      min-height: 0 !important;
+      margin-top: auto !important;
+      margin-bottom: auto !important;
+    }` : ''}
   `;
 }
 
-export function cardDocument(bodyHtml, { dark = false, browse = false } = {}) {
+export function cardDocument(bodyHtml, { dark = false, browse = false, viewer = false, flags = [] } = {}) {
   const theme = dark ? 'dark' : 'light';
   const night = dark ? ' night_mode nightMode' : '';
   return `<!DOCTYPE html>
@@ -293,11 +349,12 @@ export function cardDocument(bodyHtml, { dark = false, browse = false } = {}) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="${theme}">
-  <style>${cardCss(theme, { browse })}</style>
+  <style>${cardCss(theme, { browse, viewer })}</style>
 </head>
 <body class="${night.trim()}">
 <div class="card${night}">
-${bodyHtml || `<p>${escapeHtml('')}</p>`}
+${cardFlagsHtml(flags, dark)}
+${(dark ? darkCardColors(bodyHtml) : bodyHtml) || `<p>${escapeHtml('')}</p>`}
 </div>
 </body>
 </html>`;

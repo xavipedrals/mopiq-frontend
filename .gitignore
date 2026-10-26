@@ -26,6 +26,9 @@ pnpm-debug.log*
 # Test / coverage
 coverage/
 .nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
 
 # Caches
 .eslintcache

@@ -12,3 +12,11 @@ export function sharedGenerationRequest({ requestId, source, deckId = '', name =
   };
 }
 export function isSharedJob(row) { return !!row?.recipe_version; }
+
+export function toggleGenerationIdea(instructions, example) {
+  const current = String(instructions || '');
+  if (current.includes(example)) return current.replace(example, '').replace(/\n{3,}/g, '\n\n').trim();
+  const next = current.trim() ? `${current.trim()}\n${example}` : example;
+  // Adding an example never silently truncates the user's existing guidance.
+  return trimGenerationInstructions(next) === next ? next : current;
+}

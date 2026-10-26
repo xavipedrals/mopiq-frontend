@@ -82,11 +82,12 @@
               <template v-else-if="monthQuote">Billed monthly · cancel anytime</template>
               <template v-else>Loading prices…</template>
             </p>
-            <button class="pp-btn pp-btn-grad" type="button" :disabled="!canSubscribe" @click="subscribe">
+            <router-link v-if="alreadyPlus" class="pp-btn pp-btn-grad" to="/decks">Plus is active</router-link>
+            <button v-else class="pp-btn pp-btn-grad" type="button" :disabled="!canSubscribe" @click="subscribe">
               {{ ctaLabel }}
               <Glyph d="M5 12h14M13 6l6 6-6 6" />
             </button>
-            <p class="pp-fine">{{ finePrint }}</p>
+            <p class="pp-fine">{{ alreadyPlus ? 'This account already has Plus, from the website or the iPhone app. You do not need to buy it again.' : finePrint }}</p>
             <ul class="pp-list">
               <li><Glyph d="M5 12.5l4.5 4.5L19 7" />Unlimited cards every day</li>
               <li><Glyph d="M5 12.5l4.5 4.5L19 7" />Unlimited AI quiz questions</li>
@@ -171,7 +172,8 @@
       <section class="pp-final">
         <h2>Your next exam will thank you.</h2>
         <p>{{ finalSub }}</p>
-        <button class="pp-btn pp-btn-grad" type="button" :disabled="!canSubscribe" @click="subscribe">
+        <router-link v-if="alreadyPlus" class="pp-btn pp-btn-grad" to="/decks">Plus is active</router-link>
+        <button v-else class="pp-btn pp-btn-grad" type="button" :disabled="!canSubscribe" @click="subscribe">
           {{ ctaLabel }}
           <Glyph d="M5 12h14M13 6l6 6-6 6" />
         </button>
@@ -189,8 +191,16 @@
 
     <div class="pp-sticky" :class="{ show: stickyVisible }">
       <div><small>{{ stickyPlan }}</small><strong>{{ stickyPrice }}</strong></div>
-      <button class="pp-btn pp-btn-grad" type="button" :disabled="!canSubscribe" @click="subscribe">{{ shortCta }}</button>
+      <router-link v-if="alreadyPlus" class="pp-btn pp-btn-grad" to="/decks">Open decks</router-link>
+      <button v-else class="pp-btn pp-btn-grad" type="button" :disabled="!canSubscribe" @click="subscribe">{{ shortCta }}</button>
     </div>
+    <Login
+      :open="loginOpen"
+      inline
+      :lede="$t('login.purchaseLede')"
+      @dismiss="loginOpen = false"
+      @signed-in="onSignedIn"
+    />
   </div>
 </template>
 
@@ -199,6 +209,8 @@ import { h } from 'vue';
 import { initializePaddle } from '@paddle/paddle-js';
 import { HELP_CENTER_URL } from '../constants';
 import { authReady, getCurrentUser, isLoggedIn } from '../auth/session';
+import { fetchUserProfile } from '../api/mopiq';
+import Login from './Login.vue';
 import { readPaddleConfig } from '../pricing/paddleConfig';
 import { plan } from '../pricing/plan';
 import { formatMoney, yearlyMonthlyEquivalent, yearlySavingsPercent } from '../pricing/money';
@@ -220,7 +232,7 @@ const Glyph = {
 
 export default {
   name: 'PricingPage',
-  components: { Glyph },
+  components: { Glyph, Login },
   props: {
     country: { type: String, default: '' },
   },
@@ -235,6 +247,8 @@ export default {
       errorMessage: '',
       customerEmail: '',
       loggedIn: false,
+      alreadyPlus: false,
+      loginOpen: false,
       stickyVisible: false,
       helpUrl: HELP_CENTER_URL,
       dailyLimit: FREE_CARD_DAILY_LIMIT,
@@ -325,8 +339,8 @@ export default {
   async mounted() {
     this.observePlusCard();
     await authReady;
-    this.loggedIn = isLoggedIn();
-    this.customerEmail = getCurrentUser()?.email || '';
+    this.refreshAccount();
+    await this.loadEntitlement();
     try {
       const { environment, token } = readPaddleConfig();
       const paddle = await initializePaddle({ environment, token });
@@ -394,12 +408,48 @@ export default {
       this.currency = preview.data.currencyCode;
       this.loadingPrices = false;
     },
-    subscribe() {
+    async loadEntitlement() {
+      if (!isLoggedIn()) {
+        this.alreadyPlus = false;
+        return;
+      }
+      try {
+        const profile = await fetchUserProfile();
+        this.alreadyPlus = profile?.isPremium === true;
+      } catch {
+        this.alreadyPlus = false;
+      }
+    },
+    refreshAccount() {
+      this.loggedIn = isLoggedIn();
+      this.customerEmail = getCurrentUser()?.email || '';
+    },
+    async subscribe() {
       if (!this.canSubscribe) return;
+      await authReady;
+      this.refreshAccount();
+      if (!this.loggedIn) {
+        this.loginOpen = true;
+        return;
+      }
+      await this.loadEntitlement();
+      if (this.alreadyPlus) return;
+      this.openCheckout();
+    },
+    async onSignedIn() {
+      this.loginOpen = false;
+      await authReady;
+      this.refreshAccount();
+      await this.loadEntitlement();
+      if (this.loggedIn && !this.alreadyPlus) this.openCheckout();
+    },
+    openCheckout() {
+      const user = getCurrentUser();
       const origin = window.location.origin;
       this.paddle.Checkout.open({
         items: [{ priceId: this.plan.priceId[this.frequency], quantity: 1 }],
-        ...(this.customerEmail ? { customer: { email: this.customerEmail } } : {}),
+        ...(user?.email ? { customer: { email: user.email } } : {}),
+        ...(user?.supabaseUid ? { customData: { user_id: user.supabaseUid } } : {}),
         settings: {
           displayMode: 'overlay',
           variant: 'one-page',

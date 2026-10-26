@@ -40,6 +40,11 @@ describe('mapDisplayProfileRow', () => {
     assert.equal(profile.answerFeedbackPosition, 'bottom');
   });
 
+  it('treats either store as Plus without replacing the Apple flag on the row', () => {
+    const profile = mapDisplayProfileRow({ is_premium: false }, { hasPaidAccess: true });
+    assert.equal(profile.isPremium, true);
+  });
+
   it('maps is_premium from get_user_profile', () => {
     const profile = mapDisplayProfileRow({ is_premium: true, name: 'Ada' });
     assert.equal(profile.isPremium, true);

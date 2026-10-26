@@ -1,0 +1,75 @@
+.filter-dialog {
+  --filter-canvas: #e2e8f0;
+  --filter-surface: #fff;
+  --filter-divider: #e2e8f0;
+  --filter-muted: #64748b;
+  --filter-selected: #f1f5f9;
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--title);
+  text-align: start;
+}
+.filter-dialog,.filter-dialog *,.filter-dialog *::before,.filter-dialog *::after { box-sizing: border-box; }
+html[data-theme="dark"] .filter-dialog {
+  --filter-canvas: #1e293c;
+  --filter-surface: #334155;
+  --filter-divider: #475569;
+  --filter-muted: #cbd5e1;
+  --filter-selected: #475569;
+}
+.filter-dialog .filter-backdrop { position: absolute; inset: 0; border: 0; padding: 0; background: #0f172a80; }
+.filter-dialog .filter-sheet { position: relative; display: flex; flex-direction: column; width: min(600px,100%); max-height: min(90dvh,920px); overflow: hidden; border-radius: 24px; background: var(--filter-canvas); box-shadow: 0 24px 80px #02061740; }
+.filter-dialog .filter-nav { flex-shrink: 0; min-height: 64px; display: grid; grid-template-columns: minmax(64px,1fr) minmax(0,3fr) minmax(64px,1fr); align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--filter-divider); }
+.filter-dialog .filter-nav h2 { margin: 0; text-align: center; color: var(--title); font-size: 17px; font-weight: 650; overflow-wrap: anywhere; }
+.filter-dialog .filter-nav-action { display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: fit-content; max-width: 100%; min-height: 44px; padding: 8px; border: 0; background: transparent; color: var(--blue-button); font: inherit; font-size: 16px; cursor: pointer; }
+.filter-dialog .filter-nav-action:last-child { justify-self: end; }
+.filter-dialog .filter-nav-action svg { width: 18px; height: 18px; }
+.filter-dialog .filter-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 24px; scrollbar-width: thin; }
+.filter-dialog .filter-section { border: 0; min-width: 0; margin: 0 0 24px; padding: 0; }
+.filter-dialog .filter-section:last-child { margin-bottom: 0; }
+.filter-dialog .filter-section>legend { float: none; width: auto; margin: 0 0 8px; padding: 0 16px; color: var(--filter-muted); font-size: 13px; font-weight: 400; letter-spacing: .02em; text-transform: uppercase; }
+.filter-dialog .filter-group { overflow: hidden; border-radius: 12px; background: var(--filter-surface); }
+.filter-dialog .filter-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; margin: 0; padding: 12px 16px; color: var(--title); font-size: 16px; font-weight: 400; line-height: 1.4; overflow-wrap: anywhere; }
+.filter-dialog .filter-row+.filter-row::before { content: ''; position: absolute; inset: 0 0 auto 16px; height: 1px; background: var(--filter-divider); }
+.filter-dialog .filter-row.is-selected { background: var(--filter-selected); }
+.filter-dialog .filter-row-label { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.filter-dialog .filter-row-label svg { width: 20px; height: 20px; flex-shrink: 0; }
+.filter-dialog .filter-face { fill: currentColor; }
+.filter-dialog .filter-switch { appearance: none; -webkit-appearance: none; flex: 0 0 51px; width: 51px; height: 31px; margin: 0; padding: 0; border: 0; border-radius: 20px; background: #cbd5e1; position: relative; cursor: pointer; transition: background .15s; }
+.filter-dialog .filter-switch::before { content: ''; position: absolute; left: 2px; top: 2px; width: 27px; height: 27px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px #0003; transition: transform .15s; }
+.filter-dialog .filter-switch:checked { background: #34c759; }
+.filter-dialog .filter-switch:checked::before { transform: translateX(20px); }
+html[data-theme="dark"] .filter-dialog .filter-switch:not(:checked) { background: #64748b; }
+.filter-dialog .filter-status-row { display: block; }
+.filter-dialog .filter-status-row>span { display: block; margin-bottom: 10px; }
+.filter-dialog .filter-segments { display: flex; gap: 2px; padding: 3px; border-radius: 9px; background: color-mix(in srgb,var(--filter-muted) 14%,transparent); }
+.filter-dialog .filter-segment { position: relative; flex: 1 1 0; display: grid; place-items: center; min-width: 0; margin: 0; text-align: center; cursor: pointer; }
+.filter-dialog .filter-segment input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.filter-dialog .filter-segment span { display: grid; place-items: center; width: 100%; min-height: 30px; padding: 5px 8px; border-radius: 7px; color: var(--title); font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
+.filter-dialog .filter-segment input:checked+span { background: var(--filter-surface); box-shadow: 0 1px 4px #02061725; font-weight: 650; }
+html[data-theme="dark"] .filter-dialog .filter-segment input:checked+span { background: #64748b; }
+.filter-dialog .filter-segment input:focus-visible+span { outline: 2px solid var(--blue-button); outline-offset: 1px; }
+.filter-dialog .filter-picker-row { cursor: pointer; }
+.filter-dialog .filter-picker-row select { min-width: 0; max-width: 65%; padding: 4px 0 4px 8px; border: 0; background: transparent; color: var(--blue-button); font: inherit; text-align: end; cursor: pointer; }
+.filter-dialog .filter-input-row { flex-direction: column; align-items: stretch; gap: 8px; }
+.filter-dialog .filter-input-row input { width: 100%; padding: 10px 12px; border: 1px solid var(--filter-divider); border-radius: 9px; color: var(--title); background: var(--filter-canvas); font: inherit; }
+.filter-dialog .filter-note { margin: 8px 16px 0; color: var(--filter-muted); font-size: 13px; line-height: 1.4; }
+.filter-dialog .filter-error { color: var(--error); }
+.filter-dialog .filter-inline-action { padding: 0; border: 0; background: transparent; color: var(--blue-button); font: inherit; cursor: pointer; }
+.filter-dialog .filter-reset { width: 100%; border: 0; background: var(--filter-surface); text-align: start; color: var(--blue-button); cursor: pointer; }
+.filter-dialog .filter-form { min-height: 0; display: flex; flex-direction: column; }
+.filter-dialog .filter-footer { flex-shrink: 0; padding: 16px 24px max(16px,env(safe-area-inset-bottom)); border-top: 1px solid var(--filter-divider); background: var(--filter-canvas); text-align: center; }
+.filter-dialog .filter-count { margin: 0 0 12px; font-size: 13px; color: var(--filter-muted); }
+.filter-dialog .filter-start { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; margin: 0; border: 0; border-radius: 28px; background: var(--blue-button); color: var(--button-text); font: inherit; font-size: 18px; font-weight: 650; cursor: pointer; }
+.filter-dialog .filter-start svg { width: 14px; height: 14px; fill: currentColor; }
+.filter-dialog .filter-footer .filter-note { margin: 12px 0 0; font-size: 12px; }
+.filter-dialog button:disabled,.filter-dialog input:disabled,.filter-dialog select:disabled { opacity: .5; cursor: default; }
+.filter-dialog button:focus-visible,.filter-dialog select:focus-visible,.filter-dialog input:focus-visible { outline: 2px solid var(--blue-button); outline-offset: 3px; }
+.filter-dialog input[type=radio]:focus-visible { outline: none; }
+@media(max-width:600px) { .filter-dialog { padding: 12px; }.filter-dialog .filter-sheet { max-height: calc(100dvh - 24px); border-radius: 20px; }.filter-dialog .filter-scroll { padding: 20px 16px; }.filter-dialog .filter-footer { padding-inline: 20px; }.filter-dialog .filter-nav { padding-inline: 8px; } }
+@media(max-height:520px) { .filter-dialog { padding-block: 8px; }.filter-dialog .filter-sheet { max-height: calc(100dvh - 16px); }.filter-dialog .filter-nav { min-height: 52px; padding-block: 0; }.filter-dialog .filter-footer { padding-block: 10px; }.filter-dialog .filter-footer .filter-note { margin-top: 6px; }.filter-dialog .filter-count { margin-bottom: 6px; } }
+@media(prefers-reduced-motion:reduce) { .filter-dialog .filter-switch,.filter-dialog .filter-switch::before { transition: none; } }

@@ -21,7 +21,7 @@ function supabaseFunctionsProxy(): ProxyOptions {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [vue(), visitorCountryPlugin()],
   resolve: {
     alias: {
@@ -30,6 +30,8 @@ export default defineConfig({
   },
   server: {
     port: 8080,
+    // Sandbox checkout has to be opened from an approved https host.
+    allowedHosts: mode === 'sandbox' ? true : undefined,
     proxy: {
       '/functions/v1': supabaseFunctionsProxy(),
     },
@@ -40,4 +42,4 @@ export default defineConfig({
       '/functions/v1': supabaseFunctionsProxy(),
     },
   },
-});
+}));

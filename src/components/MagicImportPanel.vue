@@ -6,11 +6,7 @@
     </div>
     <template v-else-if="pdfPhase === 'pages'">
       <p v-if="formError" class="form-error">{{ formError }}</p>
-      <label v-if="sharedGenerationEnabled" class="field">
-        <span>{{ $t('generation.instructions') }}</span>
-        <textarea v-model="generationInstructions" rows="3" :placeholder="$t('generation.instructionsPlaceholder')" @input="generationInstructions = trimInstructions(generationInstructions)"></textarea>
-        <small>{{ $t('generation.instructionsHelp') }}</small>
-      </label>
+      <GenerationFocusControl v-if="sharedGenerationEnabled" v-model="generationInstructions" />
       <PdfPageSelector
         :pages="pdfPages"
         :selected="pdfPageSelection"
@@ -146,6 +142,7 @@ import { trimGenerationInstructions } from '../study/sharedGeneration';
 import { fetchDeck, fetchMagicImportJob, startMagicImport } from '../api/mopiq';
 import DeckTopicsPicker from './DeckTopicsPicker.vue';
 import PdfPageSelector from './PdfPageSelector.vue';
+import GenerationFocusControl from './GenerationFocusControl.vue';
 import { getLocale } from '../i18n';
 import { extractNotePhotoText, MAX_NOTE_PHOTOS } from '../study/notePhotoOcr';
 import { loadPdfPreviews } from '../study/pdfDocument';
@@ -204,7 +201,7 @@ const ERROR_KEYS = {
 
 export default {
   name: 'MagicImportPanel',
-  components: { DeckTopicsPicker, PdfPageSelector },
+  components: { DeckTopicsPicker, PdfPageSelector, GenerationFocusControl },
   props: {
     source: { type: String, required: true },
     deckId: { type: String, default: '' },

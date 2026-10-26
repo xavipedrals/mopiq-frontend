@@ -2,6 +2,7 @@
   <Teleport to="body">
     <div
       v-if="open"
+      v-dialog-focus
       class="sheet-root"
       role="dialog"
       aria-modal="true"
@@ -38,6 +39,7 @@
               <img src="/study/start-quiz.png" alt="">
             </span>
           </button>
+          <button v-if="customEnabled" type="button" class="option-wrap" :disabled="busy" @click="$emit('custom')"><span class="option custom"><span class="copy"><strong>{{ $t('customStudy.title') }}</strong><small>{{ $t('customStudy.buttonBody') }}</small></span><img src="/study/study-custom.png" srcset="/study/study-custom@2x.png 2x, /study/study-custom@3x.png 3x" alt=""></span></button>
         </div>
       </section>
     </div>
@@ -45,14 +47,18 @@
 </template>
 
 <script>
+import { dialogFocus } from '../dialogFocus';
+
 export default {
+  directives: { dialogFocus },
   name: 'StudyModeSheet',
   props: {
     open: { type: Boolean, default: false },
     title: { type: String, default: '' },
     busy: { type: Boolean, default: false },
+    customEnabled: { type: Boolean, default: import.meta.env.VITE_CUSTOM_STUDY_ENABLED !== 'false' },
   },
-  emits: ['dismiss', 'study', 'quiz'],
+  emits: ['dismiss', 'study', 'quiz', 'custom'],
   methods: {
     onCancel() {
       if (this.busy) return;
@@ -84,9 +90,11 @@ export default {
   position: relative;
   width: min(520px, 100%);
   background: var(--card-bg);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   border-radius: 28px;
   box-shadow: 0 16px 48px rgba(15, 23, 42, 0.28);
-  text-align: left;
+  text-align: start;
   padding-bottom: 12px;
 }
 .sheet-header {
@@ -129,7 +137,7 @@ export default {
   padding: 0;
   border: 0;
   background: transparent;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   font: inherit;
 }
@@ -159,7 +167,7 @@ export default {
   flex: 1 1 auto;
   min-width: 0;
   padding: 28px 24px;
-  padding-right: 8px;
+  padding-inline-end: 8px;
 }
 .copy strong {
   font-size: 1.5rem;
@@ -186,7 +194,7 @@ export default {
 .banner {
   position: absolute;
   top: 0;
-  left: 40px;
+  inset-inline-start: 40px;
   z-index: 1;
   padding: 8px 10px;
   border-radius: 12px;
@@ -213,5 +221,22 @@ html[data-theme="dark"] .option.quiz .copy small { color: #BEF264; }
 
 @media (min-width: 560px) {
   .sheet-root { align-items: center; }
+}
+</style>
+
+<style scoped>
+.option.custom { background:#FFFBEB; border-color:#FDE68A; }
+.option.custom .copy strong { color:#78350F; }
+.option.custom .copy small { color:#B45309; }
+html[data-theme="dark"] .option.custom { background:#30240F; border-color:#854D0E; }
+html[data-theme="dark"] .option.custom .copy strong { color:#FEF3C7; }
+html[data-theme="dark"] .option.custom .copy small { color:#FCD34D; }
+.option-wrap:focus-visible,.sheet-close:focus-visible { outline:3px solid var(--blue-button); outline-offset:4px; }
+@media(max-width:420px) {
+  .options { padding-inline:16px; }
+  .copy { padding:22px 16px; padding-inline-end:4px; }
+  .copy strong { font-size:1.25rem; }
+  .copy small { font-size:.9rem; }
+  .option img { width:108px; height:108px; }
 }
 </style>

@@ -13,7 +13,7 @@
       @keydown.up.prevent="openMenu(true)"
       @keydown.esc.prevent="closeMenu()"
     >
-      <img class="language-flag" :src="currentLanguage.flag" alt="">
+      <img v-if="currentLanguage.flag" class="language-flag" :src="currentLanguage.flag" alt=""><span v-else class="language-emoji" aria-hidden="true">{{ currentLanguage.emoji }}</span>
       <span :lang="currentLanguage.code">{{ currentLanguage.nativeName }}</span>
       <svg class="chevron" :class="{ open }" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
         <path d="M4.2 6.2 8 10l3.8-3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
@@ -39,8 +39,8 @@
         :tabindex="compact ? -1 : 0"
         @click="onSelect(language.code)"
       >
-        <img class="language-flag" :src="language.flag" alt="">
-        <span class="language-name" :lang="language.code">{{ language.nativeName }}</span>
+        <img v-if="language.flag" class="language-flag" :src="language.flag" alt=""><span v-else class="language-emoji" aria-hidden="true">{{ language.emoji }}</span>
+        <span class="language-name" dir="auto" :lang="language.code">{{ language.nativeName }}</span>
         <svg v-if="locale === language.code" class="check" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
           <path d="m4 10 4 4 8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
@@ -254,4 +254,8 @@ html[data-theme="dark"] .language-menu {
   outline: none;
 }
 .language-menu .check { color: var(--menu-text); }
+</style>
+
+<style scoped>
+.language-emoji{font-size:20px;line-height:1;width:24px;flex:0 0 24px;text-align:center}.language-list{max-height:min(70dvh,560px);overflow:auto}.language-row{text-align:start}
 </style>

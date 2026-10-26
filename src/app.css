@@ -110,8 +110,15 @@
 }
 
 html.card-editor-open,
-html.card-editor-open body {
+html.card-editor-open body,
+html.card-viewer-open,
+html.card-viewer-open body {
   overflow: hidden;
+}
+
+html.card-viewer-open .cookie-notice {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 html[data-theme="dark"] body.app-shell {
@@ -343,3 +350,10 @@ html, body {
   max-width: 100%;
   overflow-x: clip;
 }
+
+/* Interface direction follows the selected language; flashcard documents keep
+   their own authored direction inside the iframe. */
+html[dir="rtl"] body.app-shell .shell,
+html[dir="rtl"] body.app-shell .sheet,
+html[dir="rtl"] body.app-shell .menu-panel { text-align: start; }
+html[dir="rtl"] .language-trigger .chevron { margin-inline-start: auto; margin-inline-end: 0; }

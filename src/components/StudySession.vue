@@ -1,13 +1,13 @@
 <template>
-  <div class="shell study-shell">
+  <div class="shell study-shell" :class="{ 'custom-results-shell': customMode && done }">
     <div class="container-xl">
-      <div class="top">
+      <div v-if="!(customMode && done)" class="top">
         <button
           type="button"
           class="study-close"
           :disabled="leaving"
           :aria-label="leaving ? $t('study.savingSession') : $t('study.closeStudy')"
-          @click="leave"
+          @click="requestLeave"
         >
           <span class="study-close-disc"></span>
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -35,6 +35,8 @@
           </div>
         </div>
         <StudyMenu
+          :deck-id="deck?.id"
+          :card-id="current?.id"
           :show-timer="showTimer"
           :show-keycaps="showKeycaps"
           :can-toggle-keyboard="keyboardAvailable"
@@ -42,6 +44,7 @@
           :toast-position="toastPosition"
           :can-report="canReport"
           :disabled="leaving || loading || !current"
+          @flags-change="cardFlagState = $event"
           @toggle-timer="toggleTimer"
           @toggle-keycaps="toggleKeycaps"
           @set-appearance="setAppearance"
@@ -52,6 +55,7 @@
           @report="openReport"
           @delete="openDelete"
           @open-change="menuOpen = $event"
+          @tutorial="tutorialOpen = true"
         />
         <div v-if="showTimer" class="timer-pill" aria-live="polite">{{ timerLabel }}</div>
       </div>
@@ -63,10 +67,25 @@
 
       <RobotLoader v-if="loading" :title="$t('study.preparing')" />
       <p v-else-if="loadError" class="error">{{ loadError }}</p>
+      <CustomStudyResults
+        v-else-if="done && customMode"
+        :results="customResults"
+        :deck="deck"
+        :elapsed-seconds="elapsedSeconds"
+        :skipped="skippedCustomCards"
+        :retrying="retryingCustom"
+        :leaving="leaving"
+        :error="customRetryError"
+        :flush-reviews="flushCustomReviews"
+        @retry="retryCustomCards"
+        @done="leave"
+        @edit="onCustomResultEdited"
+        @remove="customResults = customResults.filter(result => result.id !== $event)"
+      />
       <div v-else-if="done" class="done">
         <h1>{{ $t('study.doneTitle') }}</h1>
         <p>{{ $t('study.doneBody') }}</p>
-        <button type="button" class="mopiq-btn" :disabled="leaving" @click="leave">{{ leaving ? $t('study.saving') : $t('study.backToDeck') }}</button>
+        <button type="button" class="mopiq-btn" :disabled="leaving" @click="requestLeave">{{ leaving ? $t('study.saving') : $t('study.backToDeck') }}</button>
       </div>
       <div v-else-if="current" class="board">
         <div class="card-stage" :class="{ 'with-timer': showTimer }">
@@ -84,6 +103,7 @@
           ></iframe>
         </div>
         <div class="controls">
+          <aside v-if="activeTip && !tutorialOpen" class="study-tip" role="status"><span><strong>{{ $t(`tutorial.${activeTip}Title`) }}</strong> {{ $t(`tutorial.${activeTip}Body`) }}</span><button :aria-label="$t('common.close')" @click="finishStudyTips">×</button></aside>
           <StudyKeyboardToast v-if="keyboardHintKind" :kind="keyboardHintKind" @dismiss="dismissKeyboardHint" />
           <template v-if="!showAnswer">
             <div v-if="writing" class="write-box">
@@ -237,6 +257,8 @@
         @dismiss="deleteOpen = false"
         @confirm="confirmDelete"
       />
+      <StudyTutorial :open="tutorialOpen" @done="finishTutorial" />
+      <EnjoyPrompt :open="enjoyOpen" @done="finishEnjoy" />
       <CardEditor
         :open="editorOpen"
         :deck="deck"
@@ -251,6 +273,13 @@
 
 <script>
 import { fetchAllStudyCards, fetchDeck, fetchDeckList, fetchFreeStudyQuota, fetchMediaMap, fetchUserProfile, incrementFreeStudyQuota, deleteDeckCard, moveCardToAnotherDeck, moveCardToSubdeck, submitReview, updateUserProfileAnswerFeedback } from '../api/mopiq';
+import { fetchCustomStudyCards } from '../api/customStudy';
+import { createCustomStudyQueue, readCustomStudySnapshot } from '../study/customStudy';
+import { applyFilteredAnswer, filteredPreviewIntervals } from '../study/filteredScheduling';
+import { readStudyTips, writeStudyTips, tutorialCompleted, completeTutorial } from '../study/studyTips';
+import StudyTutorial from './StudyTutorial.vue';
+import EnjoyPrompt from './EnjoyPrompt.vue';
+import { isDebugAlwaysShowFeedback, isDebugAlwaysShowStudyTutorial } from '../debug/flags';
 import { reportStudyCard } from '../api/reportCard';
 import { fetchKeyboardHintHistory, saveKeyboardHintHistory } from '../api/keyboardHints';
 import { cachedDeckList } from '../api/deckCache';
@@ -297,40 +326,16 @@ import StudyMenu from './StudyMenu.vue';
 import StudyPickerSheet from './StudyPickerSheet.vue';
 import StudyReportSheet from './StudyReportSheet.vue';
 
-const FACE_RING = 'M 10 20 C 4.486 20 0 15.514 0 10 C 0 4.486 4.486 0 10 0 C 15.514 0 20 4.486 20 10 C 20 15.514 15.514 20 10 20 Z M 10 1.25 C 5.175 1.25 1.25 5.175 1.25 10 C 1.25 14.825 5.175 18.75 10 18.75 C 14.825 18.75 18.75 14.825 18.75 10 C 18.75 5.175 14.825 1.25 10 1.25 Z';
-const FACE_EYES = 'M 13.125 8.75 C 12.436 8.75 11.875 8.189 11.875 7.5 C 11.875 6.811 12.436 6.25 13.125 6.25 C 13.814 6.25 14.375 6.811 14.375 7.5 C 14.375 8.189 13.814 8.75 13.125 8.75 Z M 6.875 8.75 C 6.186 8.75 5.625 8.189 5.625 7.5 C 5.625 6.811 6.186 6.25 6.875 6.25 C 7.564 6.25 8.125 6.811 8.125 7.5 C 8.125 8.189 7.564 8.75 6.875 8.75 Z';
-
-const GRADE_BUTTONS = [
-  {
-    ease: 'AGAIN',
-    digit: '1',
-    className: 'again',
-    icon: `${FACE_RING} M 14.934 13.471 C 14.876 13.354 13.472 10.625 10 10.625 C 6.529 10.625 5.124 13.354 5.066 13.47 C 4.912 13.778 5.037 14.151 5.343 14.306 C 5.651 14.461 6.026 14.338 6.183 14.032 C 6.228 13.944 7.319 11.875 10 11.875 C 12.681 11.875 13.772 13.944 13.816 14.03 C 13.925 14.249 14.146 14.375 14.376 14.375 C 14.469 14.375 14.565 14.354 14.655 14.309 C 14.963 14.155 15.089 13.779 14.934 13.471 Z ${FACE_EYES}`,
-  },
-  {
-    ease: 'HARD',
-    digit: '2',
-    className: 'hard',
-    icon: `${FACE_RING} ${FACE_EYES} M 14.375 13.125 C 14.375 12.78 14.095 12.5 13.75 12.5 L 6.25 12.5 C 5.905 12.5 5.625 12.78 5.625 13.125 C 5.625 13.47 5.905 13.75 6.25 13.75 L 13.75 13.75 C 14.095 13.75 14.375 13.47 14.375 13.125 Z`,
-  },
-  {
-    ease: 'GOOD',
-    digit: '3',
-    className: 'good',
-    icon: `${FACE_RING} M 15.559 12.155 C 15.713 11.847 15.589 11.476 15.283 11.32 C 14.976 11.165 14.601 11.287 14.443 11.592 C 14.397 11.68 13.287 13.75 10 13.75 C 6.721 13.75 5.608 11.69 5.557 11.593 C 5.403 11.285 5.028 11.161 4.72 11.316 C 4.412 11.47 4.287 11.846 4.441 12.155 C 4.499 12.271 5.911 15 10 15 C 14.089 15 15.501 12.271 15.559 12.155 Z ${FACE_EYES}`,
-  },
-  {
-    ease: 'EASY',
-    digit: '4',
-    className: 'easy',
-    icon: `${FACE_RING} M 15.559 12.155 C 15.713 11.847 15.589 11.476 15.283 11.32 C 14.976 11.165 13.287 11.32 10 11.32 C 6.721 11.32 5.028 11.161 4.72 11.316 C 4.412 11.47 4.287 11.846 4.441 12.155 C 4.499 12.271 5.911 16.45 10 16.45 C 14.089 16.45 15.501 12.271 15.559 12.155 Z ${FACE_EYES}`,
-  },
-];
+import { GRADE_BUTTONS } from '../study/gradeIcons';
+import CustomStudyResults from './CustomStudyResults.vue';
 
 export default {
   name: 'StudySessionPage',
   components: {
     CardEditor,
+    CustomStudyResults,
+    StudyTutorial,
+    EnjoyPrompt,
     StudyKeyboardToast,
     AskAISheet,
     RobotLoader,
@@ -344,6 +349,16 @@ export default {
   },
   data() {
     return {
+      customMode: false,
+      customResults: [],
+      skippedCustomCards: 0,
+      retryingCustom: false,
+      customRetryError: '',
+      sessionOwner: null,
+      tutorialOpen: false,
+      enjoyOpen: false,
+      enjoyHandled: false,
+      tipStage: 'complete',
       keyboardAvailable: false,
       keyboardTyping: false,
       keyboardPageActive: false,
@@ -364,6 +379,7 @@ export default {
       deck: null,
       queue: null,
       current: null,
+      cardFlagState: { deckId: null, cardId: null, flags: [] },
       showAnswer: false,
       writing: false,
       draftAnswer: '',
@@ -412,6 +428,10 @@ export default {
     };
   },
   computed: {
+    activeTip() {
+      if (this.customMode || this.tipStage === 'complete') return '';
+      return (this.tipStage === 'rating') === this.showAnswer ? this.tipStage : '';
+    },
     keyboardHintKind() {
       return visibleKeyboardHint({
         ready: this.keyboardHintState.ready,
@@ -447,7 +467,7 @@ export default {
     },
     mixPercents() {
       const counts = gradeCounts(this.sessionAnswers);
-      const total = this.sessionAnswers.length + this.remaining;
+      const total = this.customMode ? this.uniqueTotal : this.sessionAnswers.length + this.remaining;
       if (total <= 0) {
         return { again: '0%', hard: '0%', good: '0%', easy: '0%' };
       }
@@ -460,7 +480,11 @@ export default {
     },
     estimates() {
       if (!this.current || !this.deck) return { AGAIN: 0, HARD: 0, GOOD: 0, EASY: 0 };
-      return previewIntervals(this.current, this.deck.config);
+      return this.customMode ? filteredPreviewIntervals(this.current, this.deck.config) : previewIntervals(this.current, this.deck.config);
+    },
+    currentFlags() {
+      if (this.cardFlagState.deckId !== this.deck?.id || this.cardFlagState.cardId !== this.current?.id) return [];
+      return this.cardFlagState.flags.map(flag => ({ ...flag, name: flag.labelKey ? this.$t(flag.labelKey) : flag.name }));
     },
     shownHtml() {
       if (!this.current) return '';
@@ -472,7 +496,7 @@ export default {
       const html = this.showAnswer
         ? backHtml(this.current, this.mediaMap, { dark, ...labels })
         : frontHtml(this.current, this.mediaMap, labels);
-      return cardDocument(html, { dark });
+      return cardDocument(html, { dark, flags: this.currentFlags });
     },
     formatInterval() {
       return formatInterval;
@@ -497,7 +521,7 @@ export default {
     },
     sheetOpen() {
       return this.folderPickerOpen || this.deckPickerOpen || this.targetFolderOpen
-        || this.reportOpen || this.deleteOpen || this.editorOpen;
+        || this.reportOpen || this.deleteOpen || this.editorOpen || this.tutorialOpen;
     },
     folderItems() {
       return this.folders;
@@ -538,7 +562,16 @@ export default {
       finePointer: window.matchMedia('(hover: hover) and (pointer: fine)').matches,
     });
     this.updateKeyboardFocus();
-    this.unsubKeyboardSession = onSessionChange(this.resetKeyboardHintHistory);
+    this.sessionOwner = getCurrentUser()?.supabaseUid;
+    this.tipStage = readStudyTips(this.tipStorage(), this.sessionOwner);
+    this.customMode = typeof this.$route.query.custom === 'string';
+    this.unsubKeyboardSession = onSessionChange(user => {
+      if (user?.supabaseUid !== this.sessionOwner) {
+        this.current = null; this.queue = null; this.tutorialOpen = false;
+        this.$router.replace('/decks');
+      }
+      this.resetKeyboardHintHistory(user);
+    });
     document.addEventListener('focusin', this.updateKeyboardFocus);
     document.addEventListener('focusout', this.onKeyboardFocusOut);
     document.addEventListener('visibilitychange', this.updateKeyboardFocus);
@@ -579,16 +612,21 @@ export default {
         this.limitReached = true;
         return;
       }
+      const ids = this.customMode ? readCustomStudySnapshot(sessionStorage, this.$route.query.custom, this.sessionOwner, deckId) : null;
+      if (this.customMode && !ids) throw new Error(this.$t('customStudy.expired'));
       const [cards, mediaMap] = await Promise.all([
-        fetchAllStudyCards(deckId),
+        this.customMode ? fetchCustomStudyCards(deckId, ids) : fetchAllStudyCards(deckId),
         fetchMediaMap(deckId).catch(() => ({})),
       ]);
+      if (this.sessionOwner !== getCurrentUser()?.supabaseUid) return;
       this.mediaMap = mediaMap;
-      const built = buildStudyQueues(cards, deck.config);
-      this.queue = createStudyQueue(built);
+      this.skippedCustomCards = this.customMode ? Math.max(0, ids.length - cards.length) : 0;
+      const built = this.customMode ? { uniqueCount: cards.length } : buildStudyQueues(cards, deck.config);
+      this.queue = this.customMode ? createCustomStudyQueue(cards) : createStudyQueue(built);
       for (const card of cards) this.queue.recordCard(card);
       this.uniqueTotal = built.uniqueCount || 0;
-      this.showCheckpoints = deck.config.showCheckpoints !== false;
+      this.showCheckpoints = !this.customMode && deck.config.showCheckpoints !== false;
+      this.tutorialOpen = !this.customMode && (isDebugAlwaysShowStudyTutorial() || !tutorialCompleted(this.tipStorage(), this.sessionOwner));
       this.folders = parseDeckFolders(deck.decks, deck.name);
       this.nextCard();
       this.resumeTimer();
@@ -622,6 +660,47 @@ export default {
     }
   },
   methods: {
+    tipStorage() { try { return window.localStorage; } catch { return null; } },
+    finishTutorial() {
+      this.tutorialOpen = false;
+      completeTutorial(this.tipStorage(), this.sessionOwner);
+      this.tipStage = 'recall';
+      writeStudyTips(this.tipStorage(), this.sessionOwner, this.tipStage);
+    },
+    finishStudyTips() {
+      this.tipStage = 'complete';
+      writeStudyTips(this.tipStorage(), this.sessionOwner, 'complete');
+    },
+    async flushCustomReviews() {
+      await this.reviewSync?.flush();
+      if (this.reviewSync?.pendingCount()) throw new Error(this.$t('study.retrySave'));
+    },
+    onCustomResultEdited(card) {
+      this.customResults = this.customResults.map(result => result.id === card.id ? { ...result, card: { ...result.card, ...card } } : result);
+      this.queue?.recordCard?.(card);
+    },
+    async retryCustomCards() {
+      if (this.retryingCustom || this.leaving) return;
+      this.retryingCustom = true;
+      this.customRetryError = '';
+      try {
+        await this.reviewSync?.flush();
+        if (this.reviewSync?.pendingCount()) {
+          this.customRetryError = this.$t('study.retrySave');
+          return;
+        }
+        const ids = this.customResults.filter(result => ['AGAIN','HARD'].includes(result.answer)).map(result => result.id);
+        const cards = await fetchCustomStudyCards(this.deck.id, ids);
+        this.customResults = []; this.sessionAnswers = []; this.studiedUnique = 0;
+        this.skippedCustomCards = Math.max(0, ids.length - cards.length);
+        this.uniqueTotal = cards.length; this.sessionElapsedMs = 0; this.done = false;
+        this.queue = createCustomStudyQueue(cards); this.nextCard(); this.resumeTimer();
+      } catch {
+        this.customRetryError = this.$t('customStudy.error');
+      } finally {
+        this.retryingCustom = false;
+      }
+    },
     hydratePrefs() {
       let storage;
       try { storage = window.localStorage; } catch { /* Private browsing may disable storage. */ }
@@ -900,6 +979,19 @@ export default {
       if (this.showAnswer) this.answerHintVisible = false;
       else this.questionHintDismissed = true;
     },
+    requestLeave() {
+      if (this.leaving || this.enjoyOpen) return;
+      if (!this.enjoyHandled && !this.loadError && this.deck && isDebugAlwaysShowFeedback()) {
+        this.enjoyOpen = true;
+        return;
+      }
+      void this.leave();
+    },
+    finishEnjoy() {
+      this.enjoyOpen = false;
+      this.enjoyHandled = true;
+      void this.leave();
+    },
     async leave() {
       if (this.leaving) return;
       this.leaving = true;
@@ -923,6 +1015,7 @@ export default {
       const card = this.queue.pop();
       this.remaining = this.queue.remaining();
       if (!card) {
+        if (this.customMode) this.pauseTimer();
         this.done = true;
         this.current = null;
         return;
@@ -946,6 +1039,11 @@ export default {
       const previous = this.queue.cardById(previousId);
       if (!previous) return;
       this.queue.restoreLastPopped();
+      if (this.customMode) {
+        this.customResults = this.customResults.filter(result => result.id !== previous.id);
+        this.sessionAnswers.pop();
+        this.studiedUnique = this.queue.uniqueStudiedCount();
+      }
       this.current = previous;
       this.resetCardUi();
       this.shownAt = Date.now();
@@ -965,9 +1063,13 @@ export default {
       if (!text) return;
       this.typedAnswer = text;
       this.writing = false;
-      this.showAnswer = true;
+      this.reveal();
     },
     reveal() {
+      if (this.tipStage === 'recall') {
+        this.tipStage = 'rating';
+        writeStudyTips(this.tipStorage(), this.sessionOwner, this.tipStage);
+      } else if (this.tipStage === 'scheduled') this.finishStudyTips();
       if (this.keyboardHintKind === 'question') this.questionHintDismissed = true;
       this.showAnswer = true;
       this.writing = false;
@@ -977,7 +1079,14 @@ export default {
       const previous = this.current;
       const durationMs = Date.now() - this.shownAt;
       const reviewedAt = new Date();
-      const updated = applyAnswer(previous, ease, this.deck.config);
+      const updated = this.customMode ? applyFilteredAnswer(previous, ease, this.deck.config) : applyAnswer(previous, ease, this.deck.config);
+      if (this.customMode) {
+        this.customResults = [...this.customResults.filter(result => result.id !== previous.id), {id: previous.id, answer: ease, card: updated}];
+      }
+      if (this.tipStage === 'rating') {
+        this.tipStage = 'scheduled';
+        writeStudyTips(this.tipStorage(), this.sessionOwner, this.tipStage);
+      }
       this.queue.afterAnswer(previous, updated);
       this.recordSessionAnswer(ease);
       this.showFeedback(ease);
@@ -1024,7 +1133,7 @@ export default {
       this.sessionStartedAt = 0;
     },
     resumeTimer() {
-      if (this.sessionStartedAt) return;
+      if (this.done || this.sessionStartedAt) return;
       this.sessionStartedAt = Date.now();
     },
     onKey(event) {
@@ -1533,4 +1642,14 @@ export default {
   .grade { transition: none; }
   .slot.current .slot-halo { animation: none; transform: scale(1, 1); }
 }
+</style>
+
+<style scoped>
+.study-tip{display:flex;align-items:center;gap:14px;background:var(--inset-bg);border:1px solid var(--separator);padding:14px 18px;border-radius:16px;color:var(--text);font-size:.9rem}.study-tip strong{color:var(--title)}.study-tip button{border:0;background:transparent;color:var(--text-secondary);font-size:24px}
+</style>
+
+<style scoped>
+.custom-results-shell { background:#e2e8f0; }
+html[data-theme="dark"] .custom-results-shell { background:#1e293c; }
+.custom-results-shell>.container-xl { padding:0; }
 </style>

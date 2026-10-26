@@ -6,6 +6,14 @@ export const APP_LANGUAGES = [
   { code: 'it', nativeName: 'Italiano', flag: '/flags/it.png' },
   { code: 'ja', nativeName: '日本語', flag: '/flags/ja.png' },
   { code: 'de', nativeName: 'Deutsch', flag: '/flags/de.png' },
+  { code: 'nb', nativeName: 'Norsk bokmål', emoji: '🇳🇴' },
+  { code: 'nl', nativeName: 'Nederlands', emoji: '🇳🇱' },
+  { code: 'sv', nativeName: 'Svenska', emoji: '🇸🇪' },
+  { code: 'he', nativeName: 'עברית', emoji: '🇮🇱' },
+  { code: 'fi', nativeName: 'Suomi', emoji: '🇫🇮' },
+  { code: 'da', nativeName: 'Dansk', emoji: '🇩🇰' },
+  { code: 'zh-Hans', nativeName: '简体中文', emoji: '🇨🇳' },
+
 ];
 
 const BY_CODE = Object.fromEntries(APP_LANGUAGES.map((language) => [language.code, language]));
@@ -19,6 +27,15 @@ export function matchAppLanguage(locale) {
   if (!trimmed) return null;
   if (BY_CODE[trimmed]) return trimmed;
   switch (trimmed) {
+    case 'no':
+    case 'no-NO':
+      return 'nb';
+    case 'zh':
+    case 'zh-CN':
+    case 'zh-SG':
+      return 'zh-Hans';
+    case 'iw':
+      return 'he';
     case 'es-419':
       return 'es';
     case 'pt-PT':
@@ -30,6 +47,9 @@ export function matchAppLanguage(locale) {
       break;
   }
   const base = trimmed.split(/[-_]/)[0].toLowerCase();
+  if (base === 'zh' && !/hant|tw|hk|mo/i.test(trimmed)) return 'zh-Hans';
+  if (base === 'no') return 'nb';
+  if (base === 'iw') return 'he';
   if (BY_CODE[base]) return base;
   return null;
 }

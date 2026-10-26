@@ -109,7 +109,7 @@
       </div>
     </aside>
     <main class="detail-pane">
-      <router-view />
+      <router-view v-if="showDetailPane" />
     </main>
     <aside
       id="browse-inspector"
@@ -147,12 +147,15 @@ import { getAvatarImageName, sidebarTablerIconUrl } from '../utils';
 import { getLevelAndPercentage } from '../profile/experience';
 import { APP_STORE_URL } from '../constants';
 
+const WIDE_SPLIT_QUERY = '(min-width: 900px)';
+
 export default {
   name: 'AppSplit',
   components: { CreateDeckSheet, SkeletonBlock },
   provide() {
     return {
       refreshAppSplit: () => this.refreshDecks(),
+      refreshAppProfile: () => this.loadProfile(),
       setInspectorOpen: (open) => { this.inspectorOpen = Boolean(open); },
     };
   },
@@ -168,6 +171,7 @@ export default {
       storeUrl: APP_STORE_URL,
       inspectorOpen: false,
       generationJobs: [],
+      wideSplit: window.matchMedia(WIDE_SPLIT_QUERY).matches,
     };
   },
   computed: {
@@ -209,13 +213,27 @@ export default {
       if (this.avatarFailed) return getAvatarImageName(this.profile?.avatarNumber || 0);
       return this.profile?.avatarUrl || getAvatarImageName(this.profile?.avatarNumber || 0);
     },
+    showDetailPane() {
+      if (!this.isListRoute) return true;
+      if (!this.wideSplit) return false;
+      if (this.pending && this.decks.length === 0) return false;
+      return this.visibleDecks.length === 0;
+    },
   },
   watch: {
     selectedDeckId() {
       this.inspectorOpen = false;
     },
     isListRoute(isList) {
-      if (isList) this.inspectorOpen = false;
+      if (!isList) return;
+      this.inspectorOpen = false;
+      this.openFirstDeck();
+    },
+    decks() {
+      this.openFirstDeck();
+    },
+    wideSplit(wide) {
+      if (wide) this.openFirstDeck();
     },
   },
   async created() {
@@ -227,11 +245,27 @@ export default {
     this.loadProfile();
     await this.refreshDecks();
   },
+  mounted() {
+    this.wideMedia = window.matchMedia(WIDE_SPLIT_QUERY);
+    this.onWideChange = (event) => {
+      this.wideSplit = event.matches;
+    };
+    this.wideMedia.addEventListener('change', this.onWideChange);
+    this.openFirstDeck();
+  },
   beforeUnmount() {
+    this.wideMedia?.removeEventListener('change', this.onWideChange);
     this.unsubscribeGenerations?.();
     this.stopGenerationPolling?.();
   },
   methods: {
+    openFirstDeck() {
+      if (!this.wideSplit || !this.isListRoute) return;
+      const first = this.visibleDecks[0];
+      if (!first?.id) return;
+      if (String(this.$route.params.deckId || '') === String(first.id)) return;
+      this.$router.replace(this.deckTo(first.id)).catch(() => {});
+    },
     topicIconStyle(deck) {
       return {
         background: deck.topic?.backgroundColor,

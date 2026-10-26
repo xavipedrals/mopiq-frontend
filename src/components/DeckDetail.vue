@@ -351,15 +351,32 @@
     <CardBrowseFilters
       :open="filtersOpen"
       :query="browseQuery"
+      :folders="deckFolders"
+      :folder-id="activeFolder?.id ?? null"
+      :deck-name="deck?.name || ''"
+      :preview="Boolean($route.meta.preview)"
+      @folder-change="onBrowseFolderChange"
       @dismiss="filtersOpen = false"
       @update="onBrowseFiltersUpdate"
     />
     <CardViewer
       :open="viewerOpen"
-      :embedded="paneEmbedded"
+      :embedded="viewerEmbedded"
+      :can-expand="paneEmbedded && !viewerExpanded"
       :deck="deck"
+      :title="viewerTitle"
       :card="inspectedCard"
+      :cards="visibleCards"
+      :total="viewerPositionTotal"
+      :has-more="viewerHasMore"
+      :paging="viewerPaging"
       @dismiss="closeInspector"
+      @step="showViewerOffset"
+      @expand="viewerExpanded = true"
+      @edit="editListedCard(inspectedCard)"
+      @move="openFolderPicker(inspectedCard)"
+      @move-to-deck="openDeckPicker(inspectedCard)"
+      @delete="openDelete(inspectedCard)"
     />
     <CardEditor
       :open="editorOpen"
@@ -371,6 +388,7 @@
       @saved="onCardSaved"
       @magic-imported="onMagicImported"
     />
+    <CustomStudySetup :open="customStudyOpen" :deck="deck" @dismiss="customStudyOpen = false" @start="startCustomStudy" />
     <StudyModeSheet
       :open="studySheetOpen"
       :title="deck?.name || $t('deck.study')"
@@ -378,6 +396,7 @@
       @dismiss="studySheetOpen = false"
       @study="onStudyChosen"
       @quiz="onQuizChosen"
+      @custom="studySheetOpen = false; customStudyOpen = true"
     />
     <QuizSetup
       :open="quizOpen"
@@ -519,6 +538,7 @@ import DeckSettings from './DeckSettings.vue';
 import CardBrowseFilters from './CardBrowseFilters.vue';
 import CardEditor from './CardEditor.vue';
 import CardViewer from './CardViewer.vue';
+import CustomStudySetup from './CustomStudySetup.vue';
 import QuizSetup from './QuizSetup.vue';
 import StudyModeSheet from './StudyModeSheet.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
@@ -553,11 +573,13 @@ import {
 import {
   cardBrowsePageLimit,
   defaultCardBrowseQuery,
+  filterPreviewBrowseCards,
   hasActiveCardBrowseFilters,
   isDefaultCardBrowseQuery,
   normalizeCardBrowseQuery,
 } from '../study/cardBrowse';
 import { canShowInspectorColumn } from '../study/splitInspector';
+import { replacementAfterRemoval } from '../study/cardViewer';
 import { cardEditableOnWeb, reversedCardFields } from '../study/cardFields';
 import { containsClozeMarkup } from '../study/sanitizeCardHtml';
 import {
@@ -601,6 +623,7 @@ export default {
     CardBrowseFilters,
     CardEditor,
     CardViewer,
+    CustomStudySetup,
     QuizSetup,
     StudyModeSheet,
     SkeletonBlock,
@@ -648,10 +671,13 @@ export default {
       filtersOpen: false,
       addingCard: false,
       inspectedCard: null,
+      viewerExpanded: false,
+      viewerPaging: false,
       inspectorMode: 'view',
       inspectorCanShow: false,
       quizOpen: false,
       studySheetOpen: false,
+      customStudyOpen: false,
       menuCardId: null,
       actionCard: null,
       actionBusy: false,
@@ -702,7 +728,7 @@ export default {
       if (open) this.$nextTick(this.positionSelectionBar);
     },
     '$route.query.folder'() {
-      if (this.needsMoreFolderCards()) this.loadMoreCards();
+      this.resetAndLoadCards();
     },
   },
   created() {
@@ -772,8 +798,14 @@ export default {
       const app = `<a href="${this.storeUrl}" target="_blank" rel="noopener">${escapeHtml(this.$t('common.app'))}</a>`;
       return this.$t('deck.cta', { app });
     },
+    effectiveBrowseQuery() {
+      return normalizeCardBrowseQuery({
+        ...this.browseQuery,
+        subdeckIDs: this.activeFolder ? folderScopeIds(this.deckFolders, this.activeFolder) : null,
+      });
+    },
     hasActiveFilters() {
-      return hasActiveCardBrowseFilters(this.browseQuery);
+      return hasActiveCardBrowseFilters(this.effectiveBrowseQuery);
     },
     browseEmptyKey() {
       return this.hasActiveFilters || this.browseQuery.query
@@ -812,9 +844,7 @@ export default {
         const ids = new Set(folderScopeIds(this.deckFolders, folder));
         cards = cards.filter((card) => ids.has(Number(card.subdeckId) || 0));
       }
-      const query = this.$route.meta.preview ? this.browseQuery.query.trim().toLowerCase() : '';
-      if (!query) return cards;
-      return cards.filter((card) => `${card.question || ''} ${card.answer || ''}`.toLowerCase().includes(query));
+      return this.$route.meta.preview ? filterPreviewBrowseCards(cards, this.browseQuery) : cards;
     },
     cardRows() {
       return this.visibleCards.map((card) => {
@@ -835,6 +865,27 @@ export default {
     },
     paneEmbedded() {
       return Boolean(this.inspectedCard && this.inspectorCanShow && this.setInspectorOpen);
+    },
+    viewerEmbedded() {
+      return this.paneEmbedded && !this.viewerExpanded;
+    },
+    viewerTitle() {
+      const folder = folderById(this.deckFolders, this.inspectedCard?.subdeckId);
+      if (folder && folder.depth > 0) return folder.title;
+      return this.deck?.name || '';
+    },
+    viewerHasMore() {
+      return !this.$route.meta.preview && this.cards.length < this.cardTotal;
+    },
+    viewerPositionTotal() {
+      if (this.hasActiveFilters || this.browseQuery.query) return this.$route.meta.preview ? this.visibleCards.length : this.cardTotal;
+      if (this.activeFolder) {
+        const count = folderScopeIds(this.deckFolders, this.activeFolder)
+          .reduce((sum, id) => sum + (Number(this.subdeckCounts[id]) || 0), 0);
+        return Math.max(count, this.visibleCards.length);
+      }
+      if (this.viewerHasMore) return Math.max(this.cardTotal || 0, this.visibleCards.length);
+      return this.visibleCards.length;
     },
     showInspectorColumn() {
       return this.paneEmbedded;
@@ -858,6 +909,9 @@ export default {
     },
     cardsHeading() {
       if (this.selectionCount) return this.$t('deck.nSelected', { count: this.selectionCount });
+      if (this.hasActiveFilters || this.browseQuery.query) {
+        return this.$t('deck.allCards', { count: this.$route.meta.preview ? this.visibleCards.length : this.cardTotal });
+      }
       const folder = this.activeFolder;
       if (folder && folder.depth > 0) {
         const count = folderScopeIds(this.deckFolders, folder)
@@ -947,6 +1001,8 @@ export default {
       this.browseQuery = defaultCardBrowseQuery();
       this.addingCard = false;
       this.inspectedCard = null;
+      this.viewerExpanded = false;
+      this.viewerPaging = false;
       this.settingsOpen = false;
       this.filtersOpen = false;
       this.quizOpen = false;
@@ -1015,15 +1071,20 @@ export default {
         ['Who became Prime Minister in 2022 after Liz Truss?', 'Rishi Sunak'],
         ['Who was the first Labour Prime Minister?', 'Ramsay MacDonald'],
       ];
+      const grades = ['GOOD', 'EASY', 'HARD', 'AGAIN', 'GOOD', '', 'GOOD', 'EASY', 'HARD', 'GOOD'];
       this.cards = samples.map(([question, answer], index) => ({
         id: String(index + 1),
+        position: index + 1,
         question,
         answer,
         noteFields: [question, answer],
         subdeckId: [2, 2, 2, 3, 3, 3, 4, 4, 1, 1][index],
         dueDate: new Date(now + index * 86400000).toISOString(),
-        reviewCount: index + 1,
-        state: 'REVIEW',
+        reviewCount: grades[index] ? index + 1 : 0,
+        state: grades[index] ? 'REVIEW' : 'NEW',
+        lastAnswerGiven: grades[index] || null,
+        flagIDs: index % 3 === 0 ? ['starter-important'] : index % 3 === 1 ? ['starter-confusing'] : [],
+        lastReviewedAt: grades[index] ? new Date(now - (index + 1) * 86400000).toISOString() : null,
         updatedAt: now - index * 3600000,
         hasImage: index === 1,
         hasAudio: index === 2,
@@ -1117,6 +1178,10 @@ export default {
       if (isImageOcclusionMarkup(text)) return this.$t('deck.occlusionLabel');
       return String(text || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     },
+    startCustomStudy(id) {
+      this.customStudyOpen = false;
+      this.$router.push({ path: `/decks/${this.deck.id}/study`, query: { custom: id } });
+    },
     openStudySheet() {
       if (!this.deck?.canStudy || this.startingStudy) return;
       this.studySheetOpen = true;
@@ -1148,6 +1213,10 @@ export default {
     },
     async resetAndLoadCards() {
       if (this.$route.meta.preview) return;
+      ++this.cardsRequestId;
+      this.cardsLoading = false;
+      this.exitCheckboxMode();
+      this.closeInspector();
       this.cards = [];
       this.cardTotal = 0;
       await this.loadMoreCards();
@@ -1156,7 +1225,7 @@ export default {
       if (!deckId || this.sharedRefreshing || this.cardsLoading || stamp === this.sharedRefreshStamp) return;
       this.sharedRefreshing = true;
       const gen = this.loadGen;
-      const query = { ...this.browseQuery };
+      const query = { ...this.effectiveBrowseQuery };
       try {
         const deck = await fetchDeck(deckId);
         const cards = [];
@@ -1168,7 +1237,7 @@ export default {
           cards.push(...page.cards);
           if (!page.cards.length) break;
         } while (cards.length < Math.min(wanted, total));
-        if (gen !== this.loadGen || JSON.stringify(query) !== JSON.stringify(this.browseQuery)) return;
+        if (gen !== this.loadGen || JSON.stringify(query) !== JSON.stringify(this.effectiveBrowseQuery)) return;
         this.deck = deck;
         this.cards = cards;
         this.cardTotal = total;
@@ -1182,10 +1251,13 @@ export default {
     onGenerationCommitted(job) {
       this.refreshCommittedGeneration(this.$route.params.deckId, `${job.id}:${job.revision}`);
     },
+    onBrowseFolderChange(folderId) {
+      this.$router.replace({ query: { ...this.$route.query, folder: folderId || undefined } });
+    },
     onBrowseFiltersUpdate(query) {
       this.browseQuery = normalizeCardBrowseQuery({
         ...query,
-        query: this.browseQuery.query,
+        query: this.searchText.trim(),
       });
       this.resetAndLoadCards();
     },
@@ -1206,7 +1278,7 @@ export default {
             this.deck.id,
             offset,
             cardBrowsePageLimit(offset),
-            this.browseQuery,
+            this.effectiveBrowseQuery,
           );
           if (requestId !== this.cardsRequestId) return;
           if (page.cards.length || offset === 0) {
@@ -1228,10 +1300,12 @@ export default {
     },
     setInspectorMode(mode) {
       this.inspectorMode = mode === 'edit' && this.deck?.canEdit ? 'edit' : 'view';
+      if (this.inspectorMode === 'edit') this.viewerExpanded = false;
     },
     openCard(card) {
       if (!card) return;
       this.addingCard = false;
+      this.menuCardId = null;
       this.inspectedCard = card;
       if (this.inspectorMode === 'edit' && !this.deck?.canEdit) {
         this.inspectorMode = 'view';
@@ -1239,6 +1313,39 @@ export default {
     },
     closeInspector() {
       this.inspectedCard = null;
+      this.viewerExpanded = false;
+    },
+    async showViewerOffset(offset) {
+      if (!this.inspectedCard || this.viewerPaging) return;
+      const move = () => {
+        const list = this.visibleCards;
+        const index = list.findIndex((card) => card.id === this.inspectedCard?.id);
+        if (index < 0) return 'missing';
+        const target = index + offset;
+        if (target >= 0 && target < list.length) {
+          this.inspectedCard = list[target];
+          this.$nextTick(this.scrollInspectedRow);
+          return 'moved';
+        }
+        return 'edge';
+      };
+      if (move() !== 'edge' || offset < 0 || !this.viewerHasMore) return;
+      this.viewerPaging = true;
+      try {
+        let guard = 0;
+        while (guard < 8 && this.viewerHasMore) {
+          const before = this.cards.length;
+          await this.loadMoreCards();
+          if (this.cards.length <= before) break;
+          if (move() === 'moved') break;
+          guard += 1;
+        }
+      } finally {
+        this.viewerPaging = false;
+      }
+    },
+    scrollInspectedRow() {
+      this.$el?.querySelector?.('.card-row.selected')?.scrollIntoView?.({ block: 'nearest' });
     },
     openAddCard() {
       this.closeInspector();
@@ -1473,6 +1580,7 @@ export default {
         return;
       }
       this.addingCard = false;
+      this.viewerExpanded = false;
       this.inspectedCard = card;
       this.inspectorMode = 'edit';
     },
@@ -1699,7 +1807,7 @@ export default {
       const add = created.length;
       if (!add || !this.deck) return;
       this.deck = cacheDeck({ ...this.deck, cardCount: (this.deck.cardCount || 0) + add });
-      if (isDefaultCardBrowseQuery(this.browseQuery)) {
+      if (isDefaultCardBrowseQuery(this.effectiveBrowseQuery)) {
         this.cards = created.concat(this.cards);
         this.cardTotal += add;
       } else {
@@ -1714,6 +1822,7 @@ export default {
     },
     removeListedCards(cardIds) {
       const ids = new Set(cardIds);
+      const replacement = replacementAfterRemoval(this.visibleCards, ids, this.inspectedCard?.id);
       const removed = this.cards.filter((row) => ids.has(row.id)).length;
       this.cards = this.cards.filter((row) => !ids.has(row.id));
       if (removed && this.deck) {
@@ -1723,7 +1832,8 @@ export default {
           cardCount: Math.max(0, (this.deck.cardCount || 0) - removed),
         });
       }
-      if (this.inspectedCard && ids.has(this.inspectedCard.id)) this.closeInspector();
+      if (replacement === null) this.closeInspector();
+      else if (replacement) this.inspectedCard = replacement;
       if (Object.keys(this.selectedIds).some((id) => ids.has(id))) {
         const next = { ...this.selectedIds };
         for (const id of ids) delete next[id];
@@ -1737,7 +1847,7 @@ export default {
       if (imported?.length) {
         const add = imported.length;
         this.deck = cacheDeck({ ...this.deck, cardCount: (this.deck.cardCount || 0) + add });
-        if (isDefaultCardBrowseQuery(this.browseQuery)) {
+        if (isDefaultCardBrowseQuery(this.effectiveBrowseQuery)) {
           this.cards = imported.concat(this.cards);
           this.cardTotal += add;
         } else {
@@ -1751,7 +1861,7 @@ export default {
       if (created) {
         const add = extra ? 2 : 1;
         this.deck = cacheDeck({ ...this.deck, cardCount: (this.deck.cardCount || 0) + add });
-        if (isDefaultCardBrowseQuery(this.browseQuery)) {
+        if (isDefaultCardBrowseQuery(this.effectiveBrowseQuery)) {
           const prepend = extra ? [extra, card] : [card];
           this.cards = prepend.concat(this.cards);
           this.cardTotal += add;

@@ -9,6 +9,7 @@ import PrivacyPolicy from './components/PrivacyPolicy.vue';
 import AppSplit from './components/AppSplit.vue';
 import DeckPlaceholder from './components/DeckPlaceholder.vue';
 import DeckDetailPage from './components/DeckDetail.vue';
+import SettingsPreview from './components/SettingsPreview.vue';
 import StudySessionPage from './components/StudySession.vue';
 import QuizSessionPage from './components/QuizSession.vue';
 import ProfilePage from './components/Profile.vue';
@@ -69,6 +70,8 @@ const routes: RouteRecordRaw[] = [
       children: [
         { path: '', component: DeckPlaceholder },
         { path: 'library', component: DeckPlaceholder },
+        { path: 'settings', component: SettingsPreview },
+        { path: 'profile', component: ProfilePage, meta: { preview: true } },
         { path: ':deckId', component: DeckDetailPage, meta: { preview: true } },
       ],
     },

@@ -6,6 +6,7 @@ import {
   deleteUser,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  signInWithCustomToken,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
@@ -15,6 +16,7 @@ import { auth, functions } from '../firebaseInit';
 import { supabase } from '../supabaseInit';
 import { registerWebDevice } from '../api/userDevice';
 import { trackWebLogin } from '../analytics';
+import { isLocalDebugHost } from '../debug/flags';
 
 const getSupabaseTokens = httpsCallable(functions, 'getSupabaseTokensV1');
 
@@ -178,6 +180,29 @@ export async function loginWithApple() {
   notify();
   trackWebSession();
   void trackWebLogin();
+}
+
+export async function updateAccountDisplayName(name) {
+  const user = auth.currentUser;
+  const trimmed = String(name || '').trim();
+  if (!user || !trimmed) return;
+  await updateProfile(user, { displayName: trimmed });
+  if (currentUser) {
+    currentUser = { ...currentUser, name: trimmed };
+    notify();
+  }
+}
+
+export async function signInWithImpersonationToken(token) {
+  if (!isLocalDebugHost()) {
+    throw new Error('Impersonation is only available on localhost.');
+  }
+  const trimmed = String(token || '').trim();
+  if (!trimmed) throw new Error('Paste a custom token.');
+  await signInWithCustomToken(auth, trimmed);
+  await getAccessToken();
+  notify();
+  trackWebSession();
 }
 
 export async function resetPassword(email) {

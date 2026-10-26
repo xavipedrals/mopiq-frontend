@@ -15,7 +15,15 @@ import it from './messages/it';
 import ja from './messages/ja';
 import pt from './messages/pt';
 
-const CATALOGS = { en, es, pt, fr, it, ja, de };
+import nb from './messages/nb.js';
+import nl from './messages/nl.js';
+import sv from './messages/sv.js';
+import he from './messages/he.js';
+import fi from './messages/fi.js';
+import da from './messages/da.js';
+import zhHans from './messages/zh-Hans.js';
+
+const CATALOGS = { en, es, pt, fr, it, ja, de, nb, nl, sv, he, fi, da, 'zh-Hans': zhHans };
 
 const state = reactive({
   preference: readStoredPreference(),
@@ -50,6 +58,7 @@ function resolveLocale(preference) {
 function applyDocumentLang(locale) {
   if (typeof document === 'undefined') return;
   document.documentElement.lang = locale;
+  document.documentElement.dir = locale === 'he' ? 'rtl' : 'ltr';
 }
 
 applyDocumentLang(state.locale);

@@ -32,3 +32,11 @@ test('paused shared jobs keep their state without repeated deck reloads', () => 
   assert.equal(blocksDeckGeneration(paused.jobs[0]), false);
   assert.equal(reduceGenerationPoll(paused.jobs, 'job', { status: 'paused', revision: 1, insertedCards: 12 }).changed, false);
 });
+
+test('adding and removing guidance ideas preserves user text and never truncates it', async () => {
+  const { toggleGenerationIdea } = await import('./sharedGeneration.js');
+  assert.equal(toggleGenerationIdea('My instruction.', 'Keep answers short.'), 'My instruction.\nKeep answers short.');
+  assert.equal(toggleGenerationIdea('My instruction.\nKeep answers short.', 'Keep answers short.'), 'My instruction.');
+  const full='a'.repeat(995);
+  assert.equal(toggleGenerationIdea(full,'Too long to append'),full);
+});

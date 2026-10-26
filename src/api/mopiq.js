@@ -235,7 +235,7 @@ export async function fetchCardsPage(
   browse = defaultCardBrowseQuery(),
 ) {
   const { data, error } = await supabase.rpc(
-    'browse_deck_cards',
+    'browse_deck_cards_v2',
     toBrowseDeckCardsParams(deckId, browse, offset, limit),
   );
   throwIfError(error, 'Could not load cards');
@@ -1008,6 +1008,7 @@ async function fetchSupabaseDisplayProfile(sessionUser, token) {
     email: payload.email,
     firebaseId: payload.firebaseId,
     supabaseUserId: payload.userId,
+    hasPaidAccess: payload.has_paid_access === true,
   });
 }
 
@@ -1254,6 +1255,17 @@ export async function moveCardToAnotherDeck(sourceDeck, card, targetDeck, target
   } catch {
     // The card itself already moved; media can be recopied from the app.
   }
+}
+
+export async function updateUserProfileName(name) {
+  const trimmed = String(name || '').trim();
+  if (!trimmed) throw new Error('Enter a name');
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user?.id;
+  if (!userId) throw new Error('Not signed in');
+  await invokeBulkSync([
+    bulkOp(1, 'userProfile', 'update', userId, { name: trimmed }),
+  ], 'Could not save your name');
 }
 
 export async function updateUserProfileAnswerFeedback(position) {

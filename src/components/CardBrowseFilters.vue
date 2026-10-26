@@ -1,85 +1,22 @@
 <template>
   <Teleport to="body">
-    <div
-      v-if="open"
-      class="sheet-root"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="card-browse-title"
-      @keydown.esc="onCancel"
-    >
-      <button type="button" class="sheet-backdrop" :aria-label="$t('common.close')" @click="onCancel"></button>
-      <section class="sheet">
-        <header class="sheet-header">
-          <h2 id="card-browse-title">{{ $t('deck.filterSort') }}</h2>
-          <button type="button" class="sheet-close" :aria-label="$t('common.close')" @click="onCancel">×</button>
-        </header>
-
-        <div class="sheet-body">
-          <h3>{{ $t('deck.filters') }}</h3>
-          <div class="switch-row">
-            <span>{{ $t('deck.containsImage') }}</span>
-            <button
-              type="button"
-              class="ios-switch"
-              :class="{ on: hasImage }"
-              role="switch"
-              :aria-checked="hasImage"
-              :aria-label="$t('deck.containsImage')"
-              @click="toggle('hasImage')"
-            >
-              <i></i>
-            </button>
-          </div>
-          <div class="switch-row">
-            <span>{{ $t('deck.containsAudio') }}</span>
-            <button
-              type="button"
-              class="ios-switch"
-              :class="{ on: hasAudio }"
-              role="switch"
-              :aria-checked="hasAudio"
-              :aria-label="$t('deck.containsAudio')"
-              @click="toggle('hasAudio')"
-            >
-              <i></i>
-            </button>
-          </div>
-          <label class="field">
-            <span>{{ $t('deck.cardStatus') }}</span>
-            <select v-model="status" @change="emitChange">
-              <option value="">{{ $t('deck.statusAll') }}</option>
-              <option value="new">{{ $t('deck.statusNew') }}</option>
-              <option value="learning">{{ $t('deck.statusLearning') }}</option>
-              <option value="mastered">{{ $t('deck.statusMastered') }}</option>
-            </select>
-          </label>
-
-          <h3>{{ $t('deck.sort') }}</h3>
-          <label class="field">
-            <span>{{ $t('deck.sortBy') }}</span>
-            <select v-model="sort" @change="onSortChange">
-              <option value="lastModified">{{ $t('deck.sortLastModified') }}</option>
-              <option value="byPosition">{{ $t('deck.sortByPosition') }}</option>
-              <option value="reviewDate">{{ $t('deck.sortReviewDate') }}</option>
-            </select>
-          </label>
-          <label v-if="sort !== 'byPosition'" class="field">
-            <span>{{ $t('deck.sort') }}</span>
-            <select v-model="order" @change="emitChange">
-              <option value="newest">{{ $t('deck.newestFirst') }}</option>
-              <option value="oldest">{{ $t('deck.oldestFirst') }}</option>
-            </select>
-          </label>
-
-          <div class="sheet-actions">
-            <button type="button" class="mopiq-btn secondary" @click="reset">
-              {{ $t('deck.resetAll') }}
-            </button>
-            <button type="button" class="mopiq-btn" @click="onCancel">
-              {{ $t('common.ok') }}
-            </button>
-          </div>
+    <div v-if="open" v-dialog-focus class="filter-dialog browse-filter-dialog" role="dialog" aria-modal="true" aria-labelledby="card-browse-title" @keydown.esc.stop.prevent="onCancel">
+      <button type="button" class="filter-backdrop" :aria-label="$t('common.close')" @click="onCancel"></button>
+      <section class="filter-sheet">
+        <header class="filter-nav"><span></span><h2 id="card-browse-title">{{ $t('deck.filterSort') }}</h2><button type="button" class="filter-nav-action" @click="onCancel">{{ $t('customStudy.done') }}</button></header>
+        <div class="filter-scroll">
+          <FilterFolderField v-if="folders.length" :folders="folders" :model-value="folderId" :deck-name="deckName" @update:model-value="$emit('folder-change', $event)"/>
+          <CardFilterSections :model-value="currentQuery()" :flags="flags" :flags-loading="flagsLoading" :flags-error="flagsError" @update:model-value="applyFilters" @retry-flags="loadFlags"/>
+          <fieldset class="filter-section">
+            <legend>{{ $t('deck.sort') }}</legend>
+            <div class="filter-group">
+              <label class="filter-row filter-picker-row"><span>{{ $t('deck.sortBy') }}</span><select v-model="sort" :aria-label="$t('deck.sortBy')" @change="onSortChange"><option value="lastModified">{{ $t('deck.sortLastModified') }}</option><option value="byPosition">{{ $t('deck.sortByPosition') }}</option><option value="reviewDate">{{ $t('deck.sortReviewDate') }}</option></select></label>
+              <div v-if="sort !== 'byPosition'" class="filter-row filter-status-row">
+                <div class="filter-segments" role="radiogroup" :aria-label="$t('deck.sort')"><label v-for="item in orders" :key="item.value" class="filter-segment"><input v-model="order" type="radio" :name="`${id}-order`" :value="item.value" @change="emitChange"><span>{{ $t(item.label) }}</span></label></div>
+              </div>
+            </div>
+          </fieldset>
+          <div class="filter-group"><button type="button" class="filter-row filter-reset" @click="reset">{{ $t('filterUI.clearFilters') }}</button></div>
         </div>
       </section>
     </div>
@@ -87,17 +24,40 @@
 </template>
 
 <script>
+import { useId } from 'vue';
+import { dialogFocus } from '../dialogFocus';
+import { getCurrentUser } from '../auth/session';
 import { defaultCardBrowseQuery, normalizeCardBrowseQuery } from '../study/cardBrowse';
+import { fetchPersonalFlags } from '../api/personalFlags';
+import { visiblePersonalFlags } from '../study/personalFlags';
+import CardFilterSections from './CardFilterSections.vue';
+import FilterFolderField from './FilterFolderField.vue';
+import './cardFilterSheet.css';
 
 export default {
   name: 'CardBrowseFilters',
+  directives: { dialogFocus },
+  components: { CardFilterSections, FilterFolderField },
+  setup() { return { id: useId() }; },
   props: {
+    folders: { type: Array, default: () => [] },
+    folderId: { type: [String, Number], default: null },
+    deckName: { type: String, default: '' },
+    preview: { type: Boolean, default: false },
     open: { type: Boolean, default: false },
     query: { type: Object, default: () => defaultCardBrowseQuery() },
   },
-  emits: ['dismiss', 'update'],
+  emits: ['dismiss', 'update', 'folder-change'],
   data() {
     return {
+      orders: [{ value: 'newest', label: 'deck.newestFirst' }, { value: 'oldest', label: 'deck.oldestFirst' }],
+      lastAnswers: [],
+      anyFlag: false,
+      flagIDs: [],
+      flags: [],
+      flagsLoading: false,
+      flagsError: false,
+      flagsRequest: 0,
       hasImage: false,
       hasAudio: false,
       status: '',
@@ -109,16 +69,45 @@ export default {
     open: {
       immediate: true,
       handler(isOpen) {
-        if (isOpen) this.hydrate();
+        if (isOpen) {
+          this.hydrate();
+          this.loadFlags();
+        } else {
+          this.flagsRequest += 1;
+        }
       },
     },
   },
+  beforeUnmount() { this.flagsRequest++; },
   methods: {
+    applyFilters(query) {
+      this.hasImage = query.hasImage; this.hasAudio = query.hasAudio; this.status = query.status || '';
+      this.lastAnswers = query.lastAnswers; this.anyFlag = query.anyFlag; this.flagIDs = query.flagIDs;
+      this.emitChange();
+    },
+    async loadFlags() {
+      const request = ++this.flagsRequest;
+      const owner = getCurrentUser()?.supabaseUid;
+      this.flags = [];
+      this.flagsLoading = true;
+      this.flagsError = false;
+      try {
+        const flags = this.preview ? visiblePersonalFlags([]) : await fetchPersonalFlags();
+        if (request === this.flagsRequest && owner === getCurrentUser()?.supabaseUid) this.flags = flags;
+      } catch {
+        if (request === this.flagsRequest && owner === getCurrentUser()?.supabaseUid) this.flagsError = true;
+      } finally {
+        if (request === this.flagsRequest && owner === getCurrentUser()?.supabaseUid) this.flagsLoading = false;
+      }
+    },
     hydrate() {
       const query = normalizeCardBrowseQuery(this.query);
       this.hasImage = query.hasImage;
       this.hasAudio = query.hasAudio;
       this.status = query.status || '';
+      this.lastAnswers = [...query.lastAnswers];
+      this.anyFlag = query.anyFlag;
+      this.flagIDs = [...query.flagIDs];
       this.sort = query.sort;
       this.order = query.ascending ? 'oldest' : 'newest';
     },
@@ -128,6 +117,9 @@ export default {
         hasImage: this.hasImage,
         hasAudio: this.hasAudio,
         status: this.status,
+        lastAnswers: this.lastAnswers,
+        anyFlag: this.anyFlag,
+        flagIDs: this.flagIDs,
         sort: this.sort,
         ascending: this.sort !== 'byPosition' && this.order === 'oldest',
       });
@@ -151,9 +143,13 @@ export default {
       this.hasImage = next.hasImage;
       this.hasAudio = next.hasAudio;
       this.status = '';
+      this.lastAnswers = [];
+      this.anyFlag = false;
+      this.flagIDs = [];
       this.sort = next.sort;
       this.order = 'newest';
       this.$emit('update', next);
+      this.onCancel();
     },
     onCancel() {
       this.$emit('dismiss');
@@ -161,125 +157,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-.sheet-root {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.sheet-backdrop {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  padding: 0;
-  background: rgba(15, 23, 42, 0.5);
-  cursor: pointer;
-}
-.sheet {
-  position: relative;
-  width: min(560px, 100%);
-  max-height: min(92vh, 860px);
-  overflow: auto;
-  background: var(--card-bg);
-  border-radius: 24px;
-  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.28);
-  text-align: left;
-}
-.sheet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 22px 0;
-}
-.sheet-header h2 {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 750;
-  color: var(--title);
-}
-.sheet-close {
-  border: 0;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 1.8rem;
-  line-height: 1;
-  cursor: pointer;
-}
-.sheet-body {
-  padding: 16px 22px 22px;
-}
-h3 {
-  margin: 18px 0 10px;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-.field, .switch-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 10px 0;
-  color: var(--title);
-}
-.field { flex-direction: column; align-items: stretch; }
-.field span, .switch-row span { font-weight: 600; }
-.ios-switch {
-  width: 51px;
-  height: 31px;
-  border: 0;
-  border-radius: 16px;
-  background: #e5e7eb;
-  position: relative;
-  padding: 0;
-  cursor: pointer;
-  flex: 0 0 auto;
-}
-.ios-switch.on { background: #34c759; }
-.ios-switch i {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 27px;
-  height: 27px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  transition: transform 0.2s ease;
-}
-.ios-switch.on i { transform: translateX(20px); }
-.field select {
-  margin-top: 6px;
-  border: 1px solid var(--empty-bar);
-  background: var(--card-bg);
-  color: var(--title);
-  border-radius: 12px;
-  padding: 10px 12px;
-  font: inherit;
-}
-.sheet-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 18px;
-}
-.mopiq-btn {
-  background: var(--blue-button) !important;
-  color: var(--button-text) !important;
-  border: none !important;
-  font-weight: 600 !important;
-  padding: 10px 20px !important;
-}
-.mopiq-btn.secondary {
-  background: var(--secondary-btn-bg) !important;
-  color: var(--secondary-btn-text) !important;
-}
-html[data-theme="dark"] .ios-switch { background: #475569; }
-</style>

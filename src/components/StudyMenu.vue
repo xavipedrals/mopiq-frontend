@@ -1,6 +1,21 @@
 <template>
   <div class="study-menu">
     <button
+      ref="flagTrigger"
+      type="button"
+      class="menu-btn flag-btn"
+      :class="{ flagged: selectedFlags.length }"
+      :style="{ '--flag-color': selectedFlagColor }"
+      :disabled="disabled || !canFlag"
+      :aria-label="$t('study.cardFlags')"
+      :title="$t('study.cardFlags')"
+      :aria-expanded="open && panel === 'flags' ? 'true' : 'false'"
+      aria-haspopup="menu"
+      @click="toggleFlags"
+    >
+      <StudyMenuIcon name="flag" />
+    </button>
+    <button
       ref="trigger"
       type="button"
       class="menu-btn"
@@ -29,6 +44,21 @@
           </header>
 
           <template v-if="panel === 'root'">
+            <button
+              v-if="canFlag"
+              type="button"
+              class="menu-item mobile-flags"
+              role="menuitem"
+              aria-haspopup="menu"
+              @click="openFlags"
+            >
+              <span class="label">{{ $t('study.cardFlags') }}</span>
+              <span class="trailing">
+                <StudyMenuIcon name="flag" :class="{ 'selected-flag': selectedFlags.length }" :style="{ '--flag-color': selectedFlagColor }" />
+                <StudyMenuIcon name="chevronRight" class="chevron" />
+              </span>
+            </button>
+            <button type="button" class="menu-item" role="menuitem" @click="emitAndClose('tutorial')"><span class="label">{{ $t('tutorial.practice') }}</span><StudyMenuIcon name="selectBox" /></button>
             <button
               type="button"
               class="menu-item"
@@ -90,6 +120,26 @@
             </button>
           </template>
 
+          <template v-else-if="panel === 'flags'">
+            <p v-if="flagsLoading" class="menu-status" role="status">{{ $t('common.loading') }}</p>
+            <p v-if="flagsError" class="menu-status danger" role="alert">{{ flagsError }}</p>
+            <button
+              v-for="flag in flags"
+              :key="flag.flag_id"
+              type="button"
+              class="menu-item"
+              role="menuitemcheckbox"
+              :aria-checked="flagIDs.includes(flag.flag_id) ? 'true' : 'false'"
+              :disabled="disabled || flagsLoading || flagsBusy"
+              @click="changeFlag(flag)"
+            >
+              <span v-if="flag.emoji" class="flag-mark" aria-hidden="true">{{ flag.emoji }}</span>
+              <StudyMenuIcon v-else name="flag" :style="{ color: flagColor(flag.color) }" />
+              <span class="label">{{ flag.labelKey ? $t(flag.labelKey) : flag.name }}</span>
+              <StudyMenuIcon v-if="flagIDs.includes(flag.flag_id)" name="check" class="on" />
+            </button>
+          </template>
+
           <template v-else-if="panel === 'appearance'">
             <button
               v-for="option in appearanceOptions"
@@ -127,11 +177,16 @@
 
 <script>
 import StudyMenuIcon from './StudyMenuIcon.vue';
+import { fetchCardFlags, saveCardFlag } from '../api/personalFlags';
+import { personalFlagColor } from '../study/personalFlags';
+import { getTheme, subscribeTheme } from '../theme/theme';
 
 export default {
   name: 'StudyMenu',
   components: { StudyMenuIcon },
   props: {
+    deckId: { type: String, default: null },
+    cardId: { type: [String, Number], default: null },
     showTimer: { type: Boolean, default: false },
     showKeycaps: { type: Boolean, default: true },
     canToggleKeyboard: { type: Boolean, default: false },
@@ -151,10 +206,19 @@ export default {
     'report',
     'delete',
     'open-change',
+    'flags-change',
+    'tutorial',
   ],
   data() {
     return {
       open: false,
+      flags: [],
+      flagIDs: [],
+      flagsLoading: false,
+      flagsBusy: false,
+      flagsError: '',
+      flagsRequest: 0,
+      theme: getTheme(),
       panel: 'root',
       panelStyle: {},
       appearanceOptions: ['system', 'light', 'dark'],
@@ -162,13 +226,36 @@ export default {
     };
   },
   computed: {
+    canFlag() {
+      return Boolean(this.deckId) && this.cardId != null;
+    },
+    cardIdentity() {
+      return JSON.stringify([this.deckId, this.cardId]);
+    },
+    selectedFlags() {
+      return this.flags.filter(flag => this.flagIDs.includes(flag.flag_id));
+    },
+    selectedFlagColor() {
+      return this.selectedFlags[0] ? this.flagColor(this.selectedFlags[0].color) : undefined;
+    },
     panelTitle() {
+      if (this.panel === 'flags') return this.$t('study.cardFlags');
       if (this.panel === 'appearance') return this.$t('profile.appearance');
       if (this.panel === 'toast') return this.$t('study.answerToast');
       return this.$t('study.menu');
     },
   },
   watch: {
+    cardIdentity: {
+      immediate: true,
+      handler() {
+        this.close();
+        this.loadFlags();
+      },
+    },
+    panel() {
+      if (this.open) this.$nextTick(this.positionPanel);
+    },
     open(value) {
       this.$emit('open-change', value);
       if (!value) this.panel = 'root';
@@ -176,6 +263,7 @@ export default {
     },
   },
   mounted() {
+    this.unsubTheme = subscribeTheme(theme => { this.theme = theme; });
     this.onDocumentKey = (event) => {
       if (!this.open || event.key !== 'Escape') return;
       event.preventDefault();
@@ -189,11 +277,68 @@ export default {
     window.addEventListener('scroll', this.onReposition, true);
   },
   beforeUnmount() {
+    this.flagsRequest += 1;
+    this.unsubTheme?.();
     window.removeEventListener('keydown', this.onDocumentKey);
     window.removeEventListener('resize', this.onReposition);
     window.removeEventListener('scroll', this.onReposition, true);
   },
   methods: {
+    publishFlags() {
+      this.$emit('flags-change', { deckId: this.deckId, cardId: this.cardId, flags: this.selectedFlags });
+    },
+    flagColor(color) {
+      return personalFlagColor(color, this.theme === 'dark');
+    },
+    toggleFlags() {
+      if (this.disabled || !this.canFlag) return;
+      if (this.open && this.panel === 'flags') this.close();
+      else this.openFlags();
+    },
+    openFlags() {
+      if (this.disabled || !this.canFlag) return;
+      this.panel = 'flags';
+      this.open = true;
+      this.loadFlags();
+    },
+    async loadFlags() {
+      const request = ++this.flagsRequest;
+      const identity = this.cardIdentity;
+      this.flags = [];
+      this.flagIDs = [];
+      this.flagsError = '';
+      this.flagsLoading = false;
+      if (!this.canFlag) return;
+      this.flagsLoading = true;
+      try {
+        const result = await fetchCardFlags(this.deckId, this.cardId);
+        if (request !== this.flagsRequest || identity !== this.cardIdentity) return;
+        this.flags = result.flags;
+        this.flagIDs = result.flagIDs;
+        this.publishFlags();
+      } catch {
+        if (request === this.flagsRequest && identity === this.cardIdentity) this.flagsError = this.$t('study.flagsError');
+      } finally {
+        if (request === this.flagsRequest) this.flagsLoading = false;
+      }
+    },
+    async changeFlag(flag) {
+      if (this.disabled || !this.canFlag || this.flagsLoading || this.flagsBusy) return;
+      const identity = this.cardIdentity;
+      const enabled = !this.flagIDs.includes(flag.flag_id);
+      this.flagsBusy = true;
+      this.flagsError = '';
+      try {
+        await saveCardFlag(this.deckId, this.cardId, flag, enabled);
+        if (identity !== this.cardIdentity) return;
+        this.flagIDs = enabled ? [...this.flagIDs, flag.flag_id] : this.flagIDs.filter(id => id !== flag.flag_id);
+        this.publishFlags();
+      } catch {
+        if (identity === this.cardIdentity) this.flagsError = this.$t('study.flagsError');
+      } finally {
+        this.flagsBusy = false;
+      }
+    },
     toggle() {
       if (this.disabled) return;
       this.open = !this.open;
@@ -218,7 +363,9 @@ export default {
       return value.charAt(0).toUpperCase() + value.slice(1);
     },
     positionPanel() {
-      const trigger = this.$refs.trigger;
+      const flagTrigger = this.$refs.flagTrigger;
+      const trigger = this.panel === 'flags' && flagTrigger?.getBoundingClientRect().width
+        ? flagTrigger : this.$refs.trigger;
       if (!trigger) return;
       const rect = trigger.getBoundingClientRect();
       const margin = 10;
@@ -239,8 +386,8 @@ export default {
 <style scoped>
 .study-menu {
   position: relative;
-  flex: 0 0 44px;
-  width: 44px;
+  display: flex;
+  flex: 0 0 auto;
   height: 44px;
 }
 .menu-btn {
@@ -260,6 +407,18 @@ export default {
 .menu-btn :deep(.tabler-icon) {
   width: 24px;
   height: 24px;
+}
+.flag-btn.flagged { color: var(--flag-color); }
+.flag-btn.flagged :deep(.tabler-icon),
+.menu-item :deep(.tabler-icon.selected-flag) { fill: currentColor; color: var(--flag-color); }
+.menu-item.mobile-flags { display: none !important; }
+.menu-status { margin: 8px 12px; color: var(--text-secondary); }
+.menu-status.danger { color: var(--error); }
+.menu-item:disabled { opacity: 0.55; cursor: default; }
+.flag-mark { width: 22px; text-align: center; font-size: 22px; }
+@media (max-width: 640px) {
+  .flag-btn { display: none; }
+  .menu-item.mobile-flags { display: flex !important; }
 }
 .menu-btn:hover:not(:disabled) { color: var(--text); }
 .menu-btn:disabled { opacity: 0.55; cursor: default; }
