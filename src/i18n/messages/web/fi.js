@@ -1,0 +1,318 @@
+// Website-specific copy, supplementing the translations shared with iOS.
+export default {
+  "common": {
+    "downloadApp": "Lataa sovellus",
+    "downloadAppStore": "Lataa App Storesta",
+    "getTheApp": "Hanki sovellus",
+    "getMopiqStore": "Hanki Mopiq App Storesta",
+    "cookieBody": "Käytämme analytiikkaevästettä käyntien ja kirjautumisten laskemiseen. Se on pois käytöstä, kunnes annat luvan.",
+    "cookieRefuse": "Hylkää",
+    "refund": "Hyvityskäytäntö",
+    "copyright": "© {year} Mopiq. Kaikki oikeudet pidätetään.",
+    "iosApp": "iOS-sovelluksessa",
+    "app": "sovelluksessa"
+  },
+  "home": {
+    "eyebrow": "Muistikortit ja aikavälikertaus",
+    "titleBefore": "Opi kaikki",
+    "titleMark": "nopeammin",
+    "lede": "Luo korttipakkoja, opiskele älykkään aikataulun avulla ja muista oppimasi pitkään. Kokeisiin, kieliin ja kaikkeen siltä väliltä.",
+    "signInWeb": "Kirjaudu opiskelemaan verkossa",
+    "heroStudyAlt": "Mopiqin opiskelunäkymä iPhonessa",
+    "stripSpaced": "Aikavälikertaus",
+    "stripSpacedSub": "Kertaa juuri ennen kuin unohdat",
+    "stripDevices": "iPhone, iPad, Mac ja verkko",
+    "stripDevicesSub": "Yksi tili kaikilla laitteilla",
+    "stripAi": "Tekoäly ja valmiit korttipakat",
+    "stripAiSub": "Aloita opiskelu muutamassa minuutissa",
+    "featuresTitle": "Opiskele fiksusti Mopiqilla",
+    "featuresLede": "Kaikki, mitä tarvitset muuttaaksesi muistiinpanot pysyväksi tiedoksi.",
+    "featureCreateTitle": "Luo muistikortteja omalla tavallasi",
+    "featureCreateBody": "Luo kortteja muistiinpanoista, PDF-tiedostoista tai tekoälyllä. Pidä pakat järjestyksessä ja aloita opiskelu heti niiden valmistuttua.",
+    "featurePremadeTitle": "Valitse valmiista korttipakoista",
+    "featurePremadeBody": "Tutustu lääketieteeseen, kieliin, kokeisiin ja muihin aiheisiin. Tuo tarvitsemasi ja aloita kertaus jo tänään.",
+    "featureSrsTitle": "Opi aikavälikertauksella",
+    "featureSrsBody": "Uudelleen, vaikea, hyvä, helppo. Mopiq ajoittaa seuraavan kertauksen, jotta käytät aikasi asioihin, jotka tarvitsevat vielä harjoitusta.",
+    "topicsTitle": "Opiskele omia oppiaineitasi",
+    "goalsTitle": "Opiskele sinulle tärkeitä asioita",
+    "goalsLede": "Aikavälikertaus mukautuu sinuun riippumatta siitä, mitä yrität muistaa.",
+    "goalExamMark": "Kokeisiin valmistautuminen",
+    "goalExamTitle": "Mene kokeeseen valmiina",
+    "goalExamBody": "Käy päivittäin läpi uudet kortit ja kertaukset, jotta koeviikolla palautat tiedot mieleen viime hetken pänttäämisen sijaan.",
+    "goalLangTitle": "Saa sanat jäämään mieleen",
+    "goalLangBody": "Lisää uusia sanoja kohdatessasi niitä ja kertaa oikeaan aikaan sen sijaan, että lukisit sanalistoja uudelleen.",
+    "goalTeachMark": "Opetus",
+    "goalTeachTitle": "Jaa korttipakkoja luokan kanssa",
+    "goalTeachBody": "Luo kerran, jaa linkki ja anna opiskelijoiden opiskella iPhonella tai selaimessa.",
+    "goalMemoryMark": "Elinikäinen muisti",
+    "goalMemoryTitle": "Säilytä tieto, älä vain muistiinpanoja",
+    "goalMemoryBody": "Aikavälikertaus tuo kortit takaisin juuri ennen kuin unohdat, jotta tieto pysyy käytettävissä.",
+    "proofTitle": "Ahkerien opiskelijoiden suosikki",
+    "proofLede": "Tyytyväisten käyttäjien App Store -arvosteluja.",
+    "reviewStars": "5 tähteä",
+    "reviews": {
+      "lucy": {
+        "role": "Lääketieteen opiskelija",
+        "quote": "Käytän tätä säännöllisesti lääketieteen opinnoissa. Paljon mukavampi kuin perinteinen Anki, ja opiskelu on oikeasti hauskaa."
+      },
+      "tootrey": {
+        "role": "CSP-koe",
+        "quote": "Olen käyttänyt tätä pari viikkoa CSP-kokeeseen valmistautumiseen. Kaikista kokeilemistani sovelluksista tämä on ainoa, joka tekee juuri sen mitä tarvitsen."
+      },
+      "anakolll": {
+        "role": "Opiskelija",
+        "quote": "Ei mainoksia, ilmainen ja älykäs järjestelmä, joka auttaa oppimaan nopeammin. Mitä muuta voisi toivoa?"
+      },
+      "rolando": {
+        "quote": "Käytän tätä sovellusta MCAT-kokeeseen. Tekoälytoiminto on tehokas, kiitos siitä!"
+      },
+      "valihovk": {
+        "role": "Päivittäinen opiskelu",
+        "quote": "Tekoälyllä luodut muistikortit säästävät paljon aikaa ja auttavat keskittymään olennaiseen. Selkeä, helppokäyttöinen ja auttaa oikeasti muistamaan paremmin."
+      },
+      "sam": {
+        "role": "Espanjan sanasto",
+        "quote": "Olen oppinut tällä yli 1 000 espanjan sanaa muutamassa kuukaudessa. Todella tehokasta."
+      },
+      "swobat": {
+        "role": "Kokeisiin valmistautuminen",
+        "quote": "Kun en osaa jotain, painan Uudelleen, ja kortit palaavat, kunnes ne tuntuvat helpoilta. Tykkään kovasti, näin saan parhaat arvosanani."
+      },
+      "lerni": {
+        "role": "Kuvasta korteiksi",
+        "quote": "Pitkän muistikorttisovellusten etsinnän jälkeen olen täysin vakuuttunut. Skannaa kuva ja sovellus tekee kortit puolestasi. Voit harjoitella niin paljon kuin haluat, ilmaiseksi."
+      },
+      "joy": {
+        "role": "Sairaanhoitajaopinnot",
+        "quote": "Tämä sovellus auttoi minua todella muistamaan sairaanhoitajaopintojen sisällöt. Ota kuva siitä, mitä haluat opiskella, ja kortit syntyvät automaattisesti."
+      },
+      "marcus": {
+        "quote": "Näillä muistikorteilla oppii uskomattoman tehokkaasti, tuskin unohdan opiskelemaani. Käytän niitä kieliin ja luon kortteja oppikirjojen kuvista sekunneissa."
+      },
+      "zso": {
+        "role": "Lääketieteen opiskelija",
+        "quote": "Yksinkertainen ja helppokäyttöinen. Käytän tätä lääketieteen opinnoissa ja se toimii loistavasti. Suosittelen."
+      },
+      "clinsch": {
+        "role": "Opiskelija",
+        "quote": "Aikavälikertaus on erinomainen, voit luoda kaikenlaisia kortteja ja käyttää valmiita pakkoja. Parasta on, että se on ilmainen ja mainokseton."
+      }
+    },
+    "ctaTitle": "Kehity opiskelussa",
+    "ctaBody": "Lataa Mopiq iPhonelle, iPadille tai Macille tai kirjaudu tässä opiskelemaan pakkojasi verkossa.",
+    "devicesAlt": "Mopiq iPhonessa, iPadissa, Macissa ja verkossa",
+    "featureQuizAlt": "Mopiqin tietovisa",
+    "featurePremadeAlt": "Valmiit korttipakat Mopiqissa",
+    "featureSrsAlt": "Opiskelutulokset Mopiqissa",
+    "faqTitle": "Kysymyksiä ja vastauksia",
+    "faqFreeQ": "Voinko käyttää Mopiqia ilmaiseksi?",
+    "faqFreeA": "Kyllä. Ilmaisella tilillä voit luoda pakkoja, opiskella aikavälikertauksella ja käyttää verkkoversiota. iOS-sovellus tarjoaa kaikki korttien luomisen ja kirjaston toiminnot.",
+    "faqSrsQ": "Mitä aikavälikertaus on?",
+    "faqSrsA": "Se on tapa kerrata kortteja yhä pitenevin aikavälein. Mopiq näyttää kortin uudelleen, kun olet todennäköisesti unohtamassa sen, jotta muistat enemmän vähemmällä pänttäämisellä.",
+    "faqWebQ": "Voinko opiskella verkossa?",
+    "faqWebA": "Kyllä. Kirjaudu samalla Apple-, Google- tai sähköpostitilillä kuin iOS-sovelluksessa ja avaa pakkasi selaimessa.",
+    "faqEditQ": "Voinko luoda pakkoja verkossa?",
+    "faqEditA": "Kyllä. Voit luoda tyhjiä pakkoja, generoida kortteja kuvauksesta, PDF-tiedostoista, dioista, Wordista, äänestä, kuvista, muistiinpanoista tai YouTubesta, liittää tai tuoda laskentataulukon, tuoda Anki-paketin sekä lisätä tai muokata tekstiä, kuvia ja aukkokortteja. Valmiit pakat ovat iOS-sovelluksessa.",
+    "language": "Kieli"
+  },
+  "seo": {
+    "homeTitle": "Mopiq Flashcards — Opi nopeammin aikavälikertauksella",
+    "homeDescription": "Luo muistikortteja ja opiskele sinuun mukautuvalla aikavälikertauksella. Ilmaiseksi iPhonessa, iPadissa, Macissa ja verkossa.",
+    "privacyTitle": "Tietosuojakäytäntö — Mopiq Flashcards",
+    "privacyDescription": "Miten Mopiq kerää, käyttää ja suojaa tietojasi.",
+    "termsTitle": "Käyttöehdot — Mopiq Flashcards",
+    "termsDescription": "Mopiq Flashcardsin käyttöä koskevat ehdot.",
+    "refundTitle": "Hyvityskäytäntö — Mopiq Flashcards",
+    "refundDescription": "Miten Mopiq Flashcards -tilausten peruutukset ja hyvitykset toimivat."
+  },
+  "login": {
+    "lede": "Käytä samaa tiliä kuin iOS-sovelluksessa opiskellaksesi pakkojasi selaimessa.",
+    "purchaseLede": "Kirjaudu, jotta Plus yhdistetään Mopiq-tiliisi.",
+    "orEmail": "tai sähköposti",
+    "passwordLong": "Salasana (vähintään 6 merkkiä)",
+    "wait": "Odota hetki…",
+    "haveAccount": "Onko sinulla jo tili? Kirjaudu",
+    "needAccount": "Tarvitsetko tilin? Rekisteröidy",
+    "forgotNeedEmail": "Syötä ensin sähköpostiosoitteesi ja valitse sitten Unohtunut salasana.",
+    "resetSent": "Salasanan palautusviesti lähetetty.",
+    "badCredentials": "Sähköpostiosoite tai salasana on väärä.",
+    "emailInUse": "Tämä sähköpostiosoite on jo rekisteröity.",
+    "weakPassword": "Salasanan on oltava vähintään 6 merkkiä pitkä.",
+    "cancelled": "Kirjautuminen peruutettiin.",
+    "providerOff": "Apple-kirjautuminen ei ole vielä saatavilla verkossa. Käytä Googlea tai sähköpostia tai kirjaudu sovelluksessa.",
+    "generic": "Kirjautuminen epäonnistui."
+  },
+  "decks": {
+    "empty": "Ei vielä pakkoja. Luo pakka aloittaaksesi opiskelun.",
+    "addBody": "Anna nimi ja valitse aihe. Voit lisätä kortit seuraavaksi.",
+    "modeEmpty": "Tyhjä pakka",
+    "modeSpreadsheet": "Liitä tai CSV",
+    "addSpreadsheetBody": "Liitä Excelistä, Google Sheetsistä tai CSV-tiedostosta. Yksi rivi korttia kohti: ensin termi, sitten määritelmä.",
+    "spreadsheetNoCards": "Tästä ei voitu luoda muistikortteja. Tarkista, että jokaisella rivillä on termi ja määritelmä.",
+    "spreadsheetPreviewCount": "{count} korttia löytyi",
+    "spreadsheetImport": "Tuo {count} korttia",
+    "spreadsheetTooMany": "Tuonti on liian suuri. Pidä korttimäärä alle 2 000:ssa.",
+    "spreadsheetTooLarge": "Tiedosto tai liitetty sisältö on liian suuri.",
+    "nameOptional": "Nimi (valinnainen)",
+    "studyInApp": "Opiskele sovelluksessa",
+    "webStudy": "Verkko-opiskelu",
+    "premadeBody": "Tutustu lääketieteeseen, kieliin, kokeisiin ja muihin aiheisiin iOS-sovelluksessa.",
+    "noSearchMatches": "Hakua vastaavia pakkoja ei löytynyt.",
+    "magicUploadPowerpoint": "Lataa PowerPoint",
+    "magicDropHintPhoto": "JPEG, PNG, GIF tai WebP",
+    "magicDropHintAudio": "MP3, M4A, WAV tai WebM",
+    "magicAnkiBody": "Tuo .apkg-tiedosto uuteen pakkaan. Ankin opiskeluedistymistä ei kopioida.",
+    "appOnlyTitle": "Saatavilla iOS-sovelluksessa",
+    "appOnlyBody": "{name} on saatavilla Mopiqin iOS-sovelluksessa."
+  },
+  "deck": {
+    "gradeUnavailable": "Arvosana ei ole saatavilla",
+    "answersCount": "{count} vastausta",
+    "infoToday": "Tänään opiskeltavat kortit = uudet + kerrattavat",
+    "appOnlyTitle": "Tätä pakkaa voi opiskella vain sovelluksessa",
+    "appOnlyBody": "Tuodut Anki-tiedostot ja jotkin jaetut pakat käyttävät edelleen sovelluksen tiedostomuotoa. Avaa Mopiq iPhonessa, iPadissa tai Macissa opiskellaksesi niitä.",
+    "downloadApp": "Lataa sovellus",
+    "cta": "Haluatko lisätä pakkoja tai muokata kortteja? Tee se {app}.",
+    "filters": "Suodattimet",
+    "tagRecent": "VIIMEISIMMÄT",
+    "cardMenu": "Kortin toiminnot",
+    "copyCard": "Monista",
+    "copied": "Kortti monistettu",
+    "reversed": "Kortti käännetty",
+    "reverseTitle": "Luo käänteinen kortti",
+    "reverseMessage": "Tämä luo kortista kopion, jossa kysymys ja vastaus vaihtavat paikkaa. Alkuperäinen säilyy ennallaan.",
+    "reverseUnavailable": "Tätä korttia ei voi kääntää.",
+    "selectionBar": "Valitut kortit",
+    "copiedMany": "Kortit monistettu",
+    "movedMany": "Kortit siirretty",
+    "copyLimit": "Voit monistaa enintään 100 korttia kerralla. Olet valinnut {count}.",
+    "folderActions": "Kansion toiminnot",
+    "folderNameEmpty": "Anna kansion nimi.",
+    "folderNameInvalid": "Kansion nimi ei saa sisältää merkkejä ::.",
+    "folderTooDeep": "Kansioita voi sijoittaa sisäkkäin vain kahteen tasoon."
+  },
+  "settings": {
+    "generalBody": "Uudet ja vaikeammat muistikortit näytetään useammin, vanhemmat ja helpommat harvemmin.",
+    "medicalBody": "Pidemmät oppimisvaiheet, jotka on sovitettu laajoihin lääketieteellisiin aineistoihin.",
+    "languagesBody": "Näyttää aluksi paljon uusia sanoja ja auttaa sitten muistamaan ne. Sovitettu sanastoon, kielioppiin ja oikeinkirjoitukseen.",
+    "nameRequired": "Anna pakan nimi.",
+    "resetBody": "Tämä nollaa tämän pakan opiskeluedistymisesi. Muistikorttejasi ei poisteta. Toimintoa ei voi kumota.",
+    "sectionAccount": "Tili",
+    "sectionGeneral": "Yleiset",
+    "sectionLegal": "Oikeudelliset tiedot",
+    "sectionAdvanced": "Lisäasetukset",
+    "subscription": "Tilaus",
+    "howItWorks": "Näin se toimii",
+    "profileName": "Nimi",
+    "profileEmail": "Sähköposti",
+    "editNameTitle": "Anna nimesi",
+    "editNameBody": "Tätä nimeä käytetään profiilissasi",
+    "nameError": "Nimeäsi ei voitu tallentaa",
+    "noResults": "Tuloksia ei löytynyt",
+    "enjoyTitle": "Pidätkö sovelluksesta?",
+    "enjoyBody": "Haluamme aina parantaa. Kerro mielipiteesi!",
+    "enjoyMeh": "Ihan ok",
+    "enjoyYes": "Kyllä",
+    "enjoyLove": "Tykkään kovasti!",
+    "debugUnlimited": "Rajaton opiskelu (virheenkorjaus)",
+    "debugTutorial": "Näytä opiskeluohje aina (virheenkorjaus)",
+    "debugTutorialBody": "Toista harjoituskertaus aina, kun aloitat aikavälikertauksen.",
+    "debugFeedback": "Näytä palaute aina (virheenkorjaus)",
+    "debugFeedbackBody": "Kysy käyttökokemuksesta aina, kun suljet opiskelukerran.",
+    "debugImpersonate": "Esiinny käyttäjänä",
+    "debugImpersonateHelp": "Liitä mukautettu Firebase-tunniste työkalusta mopiq_support_tools:",
+    "debugImpersonateAction": "Kirjaudu käyttäjänä",
+    "debugImpersonateBusy": "Kirjaudutaan…",
+    "debugImpersonateWarning": "Tilin vaihtaminen korvaa tämän selaimen istunnon. Etätiedot muuttuvat vasta, kun muokkaat niitä. Vältä ostoksia esiintyessäsi toisena käyttäjänä.",
+    "debugImpersonateError": "Kirjautuminen tällä tunnisteella epäonnistui."
+  },
+  "editor": {
+    "mediaNote": "Tämän kortin ääntä voi muuttaa vain sovelluksessa.",
+    "imageLocked": "Kuvapeittokortteja ei voi muokata.",
+    "richNote": "Tämä kortti käyttää edistynyttä muotoilua.",
+    "lockedAudio": "Ääntä sisältäviä kortteja voi muokata vain sovelluksessa.",
+    "lockedOcclusion": "Kuvapeittokortteja ei voi muokata.",
+    "saved": "Tallennettu. Lisää toinen kortti tai sulje, kun olet valmis.",
+    "more": "Lisää",
+    "heading": "Tekstin koko",
+    "hideKeyboard": "Piilota näppäimistö",
+    "formatting": "Muotoilu",
+    "bold": "Lihavointi",
+    "italic": "Kursivointi",
+    "underline": "Alleviivaus",
+    "strike": "Yliviivaus",
+    "bullets": "Luettelomerkit",
+    "numbers": "Numeroitu luettelo",
+    "alignLeft": "Tasaa vasemmalle",
+    "alignCenter": "Keskitä",
+    "alignRight": "Tasaa oikealle",
+    "subscript": "Alaindeksi",
+    "superscript": "Yläindeksi",
+    "highlight": "Korosta",
+    "link": "Linkki",
+    "linkPrompt": "Linkin osoite",
+    "cloze": "Aukko",
+    "clozeFrontOnly": "Aukkoja voi lisätä vain etupuolelle.",
+    "image": "Kuva",
+    "imageTooBig": "Kuvan koko saa olla enintään 2 Mt.",
+    "occlusionHint": "Luo suorakulmioita vetämällä kuvan päällä",
+    "occlusionDelete": "Poista suorakulmio",
+    "occlusionNone": "Piirrä vähintään yksi suorakulmio.",
+    "occlusionTooMany": "Voit lisätä enintään 100 suorakulmiota.",
+    "undo": "Kumoa",
+    "redo": "Tee uudelleen",
+    "clearFormat": "Poista muotoilu",
+    "empty": "Lisää tekstiä etu- tai takapuolelle.",
+    "frontRequired": "Lisää kysymys etupuolelle.",
+    "backRequired": "Lisää vastaus takapuolelle tai aukko etupuolelle.",
+    "tooLong": "Kortin teksti on liian pitkä.",
+    "ttsInsert": "Lisää korttiin",
+    "ttsEmpty": "Kirjoita teksti, jonka tekoäly lukee.",
+    "ttsTooLong": "Tekstin on oltava alle 300 merkkiä.",
+    "ttsLanguage": "Kieli"
+  },
+  "quiz": {
+    "start": "Aloita tietovisa",
+    "multiple": "Monivalinta",
+    "check": "Tarkista",
+    "close": "Sulje tietovisa",
+    "notEnough": "Tietovisaan ei löytynyt tarpeeksi muistikortteja. Käytettävät kortit: {count}. Vinkki: pelkkiä kuvia sisältäviä kortteja ei voi käyttää.",
+    "notEnoughStudied": "Tietovisaan ei löytynyt tarpeeksi opiskeltuja muistikortteja. Opiskellut kortit: {count}. Vinkki: pelkkiä kuvia sisältäviä kortteja ei voi käyttää.",
+    "noQuestions": "Tietovisan kysymyksiä ei voitu luoda. Yritä uudelleen.",
+    "needType": "Valitse vähintään yksi kysymystyyppi."
+  },
+  "checkpoint": {
+    "gradeHelp": "Tietoa arvosanastasi"
+  },
+  "limit": {
+    "title": "Päivittäinen raja saavutettu",
+    "body": "Olet opiskellut tänään {limit} ilmaista korttia. Päivitä jatkaaksesi ilman rajoja.",
+    "upgrade": "Päivitä verkossa",
+    "note": "Voit päivittää myös iOS-sovelluksessa tai palata huomenna."
+  },
+  "askAi": {
+    "close": "Sulje Kysy tekoälyltä",
+    "unavailable": "Kysy tekoälyltä ei ole juuri nyt saatavilla.",
+    "noReply": "Tekoäly ei antanut vastausta.",
+    "stop": "Pysäytä"
+  },
+  "profile": {
+    "deleteAccountRelogin": "Kirjaudu uudelleen ja poista sitten tilisi."
+  },
+  "shared": {
+    "notShared": "Pakkaa ei enää jaeta",
+    "notFound": "Jaettua pakkaa ei löytynyt",
+    "invalidDate": "Virheellinen päivämäärä",
+    "sharedOn": "Jaettu {date}",
+    "noApp": "Jos et ole asentanut sovellusta, lataa se {here}.",
+    "here": "tästä"
+  },
+  "notFound": {
+    "title": "404 — Sivua ei löytynyt",
+    "body": "Etsimääsi sivua ei ole olemassa.",
+    "home": "Siirry etusivulle"
+  },
+  "supportPage": {
+    "body": "Onko sinulla kysyttävää, ehdotus tai haluatko ilmoittaa virheestä? Lähetä meille sähköpostia osoitteeseen:"
+  }
+};

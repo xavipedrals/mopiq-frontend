@@ -1,9 +1,10 @@
 import en from './en.js';
+import web from './web/fi.js';
 import { extendReleaseMessages } from '../releaseMessages.js';
 import { mergeCatalog } from '../mergeCatalog.js';
 
-// Uses the app's translations; website-only copy falls back to English.
-export default extendReleaseMessages("fi", mergeCatalog(mergeCatalog(mergeCatalog(en,{
+// Combine app translations with localized website copy.
+export default extendReleaseMessages("fi", mergeCatalog(mergeCatalog(mergeCatalog(mergeCatalog(en,{
   "decks": {
     "magicPromptBody": "Kuvaile, mitä haluat oppia. Kortit luodaan palvelimella.",
     "magicPromptPlaceholder": "Selitä fotosynteesi lukion biologian koetta varten",
@@ -551,4 +552,4 @@ export default extendReleaseMessages("fi", mergeCatalog(mergeCatalog(mergeCatalo
   "supportPage": {
     "title": "Tuki"
   }
-}));
+}), web));

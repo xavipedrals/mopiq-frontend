@@ -1008,7 +1008,10 @@ async function fetchSupabaseDisplayProfile(sessionUser, token) {
     email: payload.email,
     firebaseId: payload.firebaseId,
     supabaseUserId: payload.userId,
-    hasPaidAccess: payload.has_paid_access === true,
+    hasPaidAccess: Object.prototype.hasOwnProperty.call(payload, 'has_paid_access')
+      ? payload.has_paid_access === true
+      : undefined,
+    canManageSubscription: payload.can_manage_subscription === true,
   });
 }
 

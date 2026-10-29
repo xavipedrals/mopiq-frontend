@@ -36,6 +36,7 @@
         </div>
       </section>
 
+      <p v-if="subscriptionError" class="error">{{ subscriptionError }}</p>
       <p class="version">{{ $t('settings.version') }}</p>
     </div>
 
@@ -277,6 +278,8 @@ import {
   writeAnswerFeedbackPosition,
 } from '../study/answerFeedback';
 import { getThemePreference, setThemePreference } from '../theme/theme';
+import { loadWebPricingEnabled } from '../pricing/visibility';
+import { openPaddlePortal } from '../api/paddleBilling';
 import {
   isDebugAlwaysShowFeedback,
   isDebugAlwaysShowStudyTutorial,
@@ -327,7 +330,10 @@ export default {
       impersonateToken: '',
       impersonating: false,
       impersonateError: '',
+      managingSubscription: false,
+      subscriptionError: '',
       toastOptions: ['top', 'bottom', 'hide'],
+      pricingEnabled: isLocalDebugHost(),
     };
   },
   computed: {
@@ -374,7 +380,15 @@ export default {
     },
     sections() {
       const general = [];
-      if (!this.profile.isPremium) {
+      if (this.profile.canManageSubscription) {
+        general.push({
+          id: 'manageSubscription',
+          icon: 'creditCard',
+          label: this.managingSubscription
+            ? this.$t('profile.managingSubscription')
+            : this.$t('profile.manageSubscription'),
+        });
+      } else if (this.pricingEnabled && !this.profile.isPremium) {
         general.push({ id: 'subscription', icon: 'creditCard', label: this.$t('settings.subscription') });
       }
       general.push(
@@ -442,6 +456,9 @@ export default {
     this.unlimitedStudyOn = isDebugUnlimitedStudy();
     this.alwaysTutorialOn = isDebugAlwaysShowStudyTutorial();
     this.alwaysFeedbackOn = isDebugAlwaysShowFeedback();
+    loadWebPricingEnabled().then((enabled) => {
+      this.pricingEnabled = enabled;
+    });
   },
   mounted() {
     this.media = window.matchMedia('(min-width: 900px)');
@@ -472,6 +489,10 @@ export default {
       this.destination = this.destination === 'impersonate' ? 'advanced' : null;
     },
     onRow(id) {
+      if (id === 'manageSubscription') {
+        this.onManageSubscription();
+        return;
+      }
       if (id === 'subscription') {
         this.$router.push('/pricing');
         return;
@@ -489,6 +510,18 @@ export default {
         return;
       }
       if (DETAIL_IDS.has(id)) this.destination = id;
+    },
+    async onManageSubscription() {
+      if (this.managingSubscription) return;
+      this.managingSubscription = true;
+      this.subscriptionError = '';
+      try {
+        await openPaddlePortal();
+      } catch {
+        this.subscriptionError = this.$t('profile.manageSubscriptionError');
+      } finally {
+        this.managingSubscription = false;
+      }
     },
     chooseAppearance(theme) {
       this.theme = theme;

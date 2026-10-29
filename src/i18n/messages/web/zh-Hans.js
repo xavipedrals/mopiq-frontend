@@ -1,0 +1,318 @@
+// Website-specific copy, supplementing the translations shared with iOS.
+export default {
+  "common": {
+    "downloadApp": "下载应用",
+    "downloadAppStore": "从 App Store 下载",
+    "getTheApp": "获取应用",
+    "getMopiqStore": "在 App Store 获取 Mopiq",
+    "cookieBody": "我们使用分析 Cookie 统计访问和登录次数。在你同意之前，该 Cookie 始终保持关闭。",
+    "cookieRefuse": "拒绝",
+    "refund": "退款政策",
+    "copyright": "© {year} Mopiq。保留所有权利。",
+    "iosApp": "iOS 应用",
+    "app": "应用"
+  },
+  "home": {
+    "eyebrow": "间隔重复学习卡片",
+    "titleBefore": "学习各种知识",
+    "titleMark": "更快一步",
+    "lede": "创建牌组，按照智能计划学习，让知识长久留在记忆中。无论是备考、语言学习，还是其他知识，都能轻松掌握。",
+    "signInWeb": "登录并在网页上学习",
+    "heroStudyAlt": "iPhone 上的 Mopiq 学习概览",
+    "stripSpaced": "间隔重复",
+    "stripSpacedSub": "在即将遗忘时及时复习",
+    "stripDevices": "iPhone、iPad、Mac 和网页",
+    "stripDevicesSub": "一个账号，所有设备",
+    "stripAi": "AI 和现成牌组",
+    "stripAiSub": "几分钟内开始学习",
+    "featuresTitle": "用 Mopiq 高效学习",
+    "featuresLede": "将笔记转化为长久记忆所需的一切。",
+    "featureCreateTitle": "按你的方式创建学习卡片",
+    "featureCreateBody": "通过笔记、PDF 或 AI 创建卡片。整理好牌组，准备就绪即可开始学习。",
+    "featurePremadeTitle": "选择现成牌组",
+    "featurePremadeBody": "探索医学、语言、考试等主题。导入所需内容，今天就开始复习。",
+    "featureSrsTitle": "通过间隔重复学习",
+    "featureSrsBody": "重来、困难、良好、简单。Mopiq 会安排下一次复习，让你把时间花在仍需巩固的知识上。",
+    "topicsTitle": "涵盖你学习的各个学科",
+    "goalsTitle": "为重要的目标而学习",
+    "goalsLede": "无论你想记住什么，间隔重复都能根据你的情况调整。",
+    "goalExamMark": "考试准备",
+    "goalExamTitle": "胸有成竹地走进考场",
+    "goalExamBody": "每天学习新卡片并完成待复习卡片，让考试周成为回顾知识的时间，而不是临时抱佛脚。",
+    "goalLangTitle": "让词汇牢牢记住",
+    "goalLangBody": "遇到新词时就添加，在恰当的时机复习，无需一遍遍重读单词表。",
+    "goalTeachMark": "教学",
+    "goalTeachTitle": "与全班分享牌组",
+    "goalTeachBody": "创建一次，分享一个链接，学生就能在 iPhone 或浏览器中学习。",
+    "goalMemoryMark": "终身记忆",
+    "goalMemoryTitle": "留下知识，而不只是笔记",
+    "goalMemoryBody": "间隔重复会在即将遗忘时再次展示卡片，让知识随时可用。",
+    "proofTitle": "深受认真学习的人喜爱",
+    "proofLede": "来自满意用户的 App Store 评价。",
+    "reviewStars": "5 星",
+    "reviews": {
+      "lucy": {
+        "role": "医学生",
+        "quote": "我经常用它学习医学。比经典的 Anki 好用多了，而且真的让学习变得有趣。"
+      },
+      "tootrey": {
+        "role": "CSP 考试",
+        "quote": "我已经用它准备 CSP 考试好几个星期了。在我试过的所有应用中，只有它完全满足我的需求。"
+      },
+      "anakolll": {
+        "role": "学生",
+        "quote": "没有广告、免费，还有帮助你更快学习的智能系统。还能要求什么呢？"
+      },
+      "rolando": {
+        "quote": "我用这个应用准备 MCAT。AI 功能很强大，非常感谢！"
+      },
+      "valihovk": {
+        "role": "日常学习",
+        "quote": "AI 生成的学习卡片节省了大量时间，让我专注于真正重要的内容。界面简洁、容易上手，确实提高了记忆效果。"
+      },
+      "sam": {
+        "role": "西班牙语词汇",
+        "quote": "我用它在几个月内学会了 1,000 多个西班牙语单词。效率很高。"
+      },
+      "swobat": {
+        "role": "考试准备",
+        "quote": "遇到不会的内容，我就点“重来”，这些卡片会不断出现，直到我觉得简单为止。太喜欢了，我就是这样拿高分的。"
+      },
+      "lerni": {
+        "role": "照片转卡片",
+        "quote": "找了很久的学习卡片应用，终于被它征服了。扫描照片就能帮你生成卡片。想练习多少都可以，而且免费。"
+      },
+      "joy": {
+        "role": "护理学习",
+        "quote": "这个应用真的帮我记住了护理课程的内容。把想学的内容拍下来，它就会自动生成卡片。"
+      },
+      "marcus": {
+        "quote": "用这些学习卡片学习效率极高，学过的内容几乎不会忘。我用它学语言，拍下课本内容，几秒钟就能生成卡片。"
+      },
+      "zso": {
+        "role": "医学生",
+        "quote": "简单易用。我用它学习医学，效果非常好。强烈推荐。"
+      },
+      "clinsch": {
+        "role": "学生",
+        "quote": "间隔重复系统很出色，可以创建各种卡片，也能使用现成牌组。最棒的是：免费且没有广告。"
+      }
+    },
+    "ctaTitle": "让学习更有效",
+    "ctaBody": "在 iPhone、iPad 或 Mac 上下载 Mopiq，或在此登录，通过网页学习你的牌组。",
+    "devicesAlt": "iPhone、iPad、Mac 和网页上的 Mopiq",
+    "featureQuizAlt": "Mopiq 测验",
+    "featurePremadeAlt": "Mopiq 中的现成牌组",
+    "featureSrsAlt": "Mopiq 学习结果",
+    "faqTitle": "常见问题",
+    "faqFreeQ": "可以免费使用 Mopiq 吗？",
+    "faqFreeA": "可以。免费账号可以创建牌组、使用间隔重复学习，并在网页上学习。iOS 应用提供完整的创建功能和牌组库体验。",
+    "faqSrsQ": "什么是间隔重复？",
+    "faqSrsA": "这是一种以逐渐延长的时间间隔复习卡片的方法。Mopiq 会在你可能快要遗忘时再次展示卡片，让你记住更多，减少考前突击。",
+    "faqWebQ": "可以在网页上学习吗？",
+    "faqWebA": "可以。使用与 iOS 应用相同的 Apple、Google 或电子邮箱账号登录，然后在浏览器中打开你的牌组。",
+    "faqEditQ": "可以在网页上创建牌组吗？",
+    "faqEditA": "可以。你可以创建空牌组，通过提示词、PDF、幻灯片、Word、音频、照片、笔记或 YouTube 生成卡片，粘贴或导入电子表格，导入 Anki 文件包，以及添加或编辑文字、图片和填空卡片。现成牌组仍在 iOS 应用中提供。",
+    "language": "语言"
+  },
+  "seo": {
+    "homeTitle": "Mopiq Flashcards — 通过间隔重复更快学习",
+    "homeDescription": "创建学习卡片，使用适合你的间隔重复进行学习。在 iPhone、iPad、Mac 和网页上免费使用。",
+    "privacyTitle": "隐私政策 — Mopiq Flashcards",
+    "privacyDescription": "了解 Mopiq 如何收集、使用和保护你的信息。",
+    "termsTitle": "服务条款 — Mopiq Flashcards",
+    "termsDescription": "使用 Mopiq Flashcards 所适用的条款。",
+    "refundTitle": "退款政策 — Mopiq Flashcards",
+    "refundDescription": "了解 Mopiq Flashcards 订阅的取消和退款方式。"
+  },
+  "login": {
+    "lede": "使用与 iOS 应用相同的账号，在浏览器中学习你的牌组。",
+    "purchaseLede": "请登录，以便将 Plus 关联到你的 Mopiq 账号。",
+    "orEmail": "或使用电子邮箱",
+    "passwordLong": "密码（至少 6 个字符）",
+    "wait": "请稍候…",
+    "haveAccount": "已有账号？登录",
+    "needAccount": "还没有账号？注册",
+    "forgotNeedEmail": "请先输入电子邮箱地址，然后点击“忘记密码”。",
+    "resetSent": "密码重置邮件已发送。",
+    "badCredentials": "电子邮箱或密码不正确。",
+    "emailInUse": "该电子邮箱已注册。",
+    "weakPassword": "密码必须至少包含 6 个字符。",
+    "cancelled": "登录已取消。",
+    "providerOff": "网页端暂不支持 Apple 登录。请使用 Google 或电子邮箱，或从应用中登录。",
+    "generic": "无法登录。"
+  },
+  "decks": {
+    "empty": "还没有牌组。创建一个即可开始学习。",
+    "addBody": "填写名称并选择主题，之后即可添加卡片。",
+    "modeEmpty": "空牌组",
+    "modeSpreadsheet": "粘贴或 CSV",
+    "addSpreadsheetBody": "从 Excel、Google Sheets 或 CSV 粘贴内容。每行一张卡片：先填写术语，再填写定义。",
+    "spreadsheetNoCards": "无法将这些内容转换为学习卡片。请检查每行是否包含术语和定义。",
+    "spreadsheetPreviewCount": "找到 {count} 张卡片",
+    "spreadsheetImport": "导入 {count} 张卡片",
+    "spreadsheetTooMany": "本次导入过大。请保持在 2,000 张卡片以下。",
+    "spreadsheetTooLarge": "文件或粘贴内容过大。",
+    "nameOptional": "名称（可选）",
+    "studyInApp": "在应用中学习",
+    "webStudy": "网页学习",
+    "premadeBody": "在 iOS 应用中探索医学、语言、考试等主题。",
+    "noSearchMatches": "没有与搜索匹配的牌组。",
+    "magicUploadPowerpoint": "上传 PowerPoint",
+    "magicDropHintPhoto": "JPEG、PNG、GIF 或 WebP",
+    "magicDropHintAudio": "MP3、M4A、WAV 或 WebM",
+    "magicAnkiBody": "将 .apkg 文件导入新牌组。不会复制 Anki 中的学习进度。",
+    "appOnlyTitle": "在 iOS 应用中可用",
+    "appOnlyBody": "{name} 可在 Mopiq iOS 应用中使用。"
+  },
+  "deck": {
+    "gradeUnavailable": "暂无成绩",
+    "answersCount": "{count} 个回答",
+    "infoToday": "今天要学习的卡片 = 新卡片 + 待复习卡片",
+    "appOnlyTitle": "此牌组只能在应用中学习",
+    "appOnlyBody": "导入的 Anki 文件和部分共享牌组仍使用应用的文件格式。请在 iPhone、iPad 或 Mac 上打开 Mopiq 进行学习。",
+    "downloadApp": "下载应用",
+    "cta": "想添加牌组或编辑卡片？请在{app}中操作。",
+    "filters": "筛选条件",
+    "tagRecent": "最近",
+    "cardMenu": "卡片操作",
+    "copyCard": "克隆",
+    "copied": "卡片已克隆",
+    "reversed": "卡片已反转",
+    "reverseTitle": "创建反向卡片",
+    "reverseMessage": "这将创建一张副本，并交换问题和答案。原卡片保持不变。",
+    "reverseUnavailable": "无法反转此卡片。",
+    "selectionBar": "已选卡片",
+    "copiedMany": "卡片已克隆",
+    "movedMany": "卡片已移动",
+    "copyLimit": "一次最多克隆 100 张卡片。你已选择 {count} 张。",
+    "folderActions": "文件夹操作",
+    "folderNameEmpty": "请输入文件夹名称。",
+    "folderNameInvalid": "文件夹名称不能包含 ::。",
+    "folderTooDeep": "文件夹最多只能嵌套两层。"
+  },
+  "settings": {
+    "generalBody": "新卡片和较难的卡片出现得更频繁，较旧和较容易的卡片则间隔更久才会出现。",
+    "medicalBody": "更长的学习步骤，专为内容密集的医学材料优化。",
+    "languagesBody": "前期展示大量新词，随后帮助你巩固记忆。专为词汇、语法和拼写优化。",
+    "nameRequired": "请输入牌组名称。",
+    "resetBody": "这将重置此牌组的学习进度。不会删除学习卡片。此操作无法撤销。",
+    "sectionAccount": "账号",
+    "sectionGeneral": "通用",
+    "sectionLegal": "法律信息",
+    "sectionAdvanced": "高级",
+    "subscription": "订阅",
+    "howItWorks": "使用说明",
+    "profileName": "姓名",
+    "profileEmail": "电子邮箱",
+    "editNameTitle": "请输入你的姓名",
+    "editNameBody": "此姓名将用于你的个人资料",
+    "nameError": "无法保存你的姓名",
+    "noResults": "未找到结果",
+    "enjoyTitle": "喜欢这个应用吗？",
+    "enjoyBody": "我们一直在努力改进。欢迎告诉我们你的想法！",
+    "enjoyMeh": "一般",
+    "enjoyYes": "喜欢",
+    "enjoyLove": "非常喜欢！",
+    "debugUnlimited": "无限学习（调试）",
+    "debugTutorial": "始终显示学习教程（调试）",
+    "debugTutorialBody": "每次开始间隔重复时重新播放练习复习。",
+    "debugFeedback": "始终显示反馈（调试）",
+    "debugFeedbackBody": "每次关闭学习会话时显示体验反馈问题。",
+    "debugImpersonate": "以其他用户身份登录",
+    "debugImpersonateHelp": "粘贴来自 mopiq_support_tools 的 Firebase 自定义令牌：",
+    "debugImpersonateAction": "以该用户身份登录",
+    "debugImpersonateBusy": "正在登录…",
+    "debugImpersonateWarning": "切换账号会替换此浏览器中的会话。远程数据在你编辑之前保持不变。以其他用户身份登录时请勿购买。",
+    "debugImpersonateError": "无法使用此令牌登录。"
+  },
+  "editor": {
+    "mediaNote": "此卡片的音频只能在应用中修改。",
+    "imageLocked": "无法编辑图像遮挡卡片。",
+    "richNote": "此卡片使用了高级格式。",
+    "lockedAudio": "包含音频的卡片只能在应用中编辑。",
+    "lockedOcclusion": "无法编辑图像遮挡卡片。",
+    "saved": "已保存。可以继续添加卡片，或在完成后关闭。",
+    "more": "更多",
+    "heading": "文字大小",
+    "hideKeyboard": "隐藏键盘",
+    "formatting": "格式",
+    "bold": "加粗",
+    "italic": "斜体",
+    "underline": "下划线",
+    "strike": "删除线",
+    "bullets": "项目符号列表",
+    "numbers": "编号列表",
+    "alignLeft": "左对齐",
+    "alignCenter": "居中对齐",
+    "alignRight": "右对齐",
+    "subscript": "下标",
+    "superscript": "上标",
+    "highlight": "高亮",
+    "link": "链接",
+    "linkPrompt": "链接地址",
+    "cloze": "填空",
+    "clozeFrontOnly": "只能在正面添加填空。",
+    "image": "图片",
+    "imageTooBig": "图片大小不得超过 2 MB。",
+    "occlusionHint": "在图片上拖动以创建矩形",
+    "occlusionDelete": "删除矩形",
+    "occlusionNone": "请至少绘制一个矩形。",
+    "occlusionTooMany": "最多可以添加 100 个矩形。",
+    "undo": "撤销",
+    "redo": "重做",
+    "clearFormat": "清除格式",
+    "empty": "请在正面或背面添加文字。",
+    "frontRequired": "请在正面添加问题。",
+    "backRequired": "请在背面添加答案，或在正面添加填空。",
+    "tooLong": "卡片文字过长。",
+    "ttsInsert": "添加到卡片",
+    "ttsEmpty": "请输入供 AI 朗读的文字。",
+    "ttsTooLong": "文字必须少于 300 个字符。",
+    "ttsLanguage": "语言"
+  },
+  "quiz": {
+    "start": "开始测验",
+    "multiple": "选择题",
+    "check": "检查",
+    "close": "关闭测验",
+    "notEnough": "找不到足够的学习卡片来创建测验。可用卡片：{count}。提示：仅包含图片的卡片无法用于测验。",
+    "notEnoughStudied": "找不到足够的已学习卡片来创建测验。已学习卡片：{count}。提示：仅包含图片的卡片无法用于测验。",
+    "noQuestions": "无法生成测验题目。请重试。",
+    "needType": "请至少选择一种题型。"
+  },
+  "checkpoint": {
+    "gradeHelp": "关于你的成绩"
+  },
+  "limit": {
+    "title": "已达到每日上限",
+    "body": "你今天已学习 {limit} 张免费卡片。升级即可继续无限学习。",
+    "upgrade": "在网页上升级",
+    "note": "你也可以在 iOS 应用中升级，或明天再来。"
+  },
+  "askAi": {
+    "close": "关闭询问 AI",
+    "unavailable": "询问 AI 暂时不可用。",
+    "noReply": "询问 AI 未返回回复。",
+    "stop": "停止"
+  },
+  "profile": {
+    "deleteAccountRelogin": "请重新登录，然后删除账号。"
+  },
+  "shared": {
+    "notShared": "此牌组已停止共享",
+    "notFound": "未找到共享牌组",
+    "invalidDate": "无效日期",
+    "sharedOn": "共享于 {date}",
+    "noApp": "如果尚未安装应用，请在{here}下载。",
+    "here": "这里"
+  },
+  "notFound": {
+    "title": "404 — 找不到页面",
+    "body": "你要查找的页面不存在。",
+    "home": "返回首页"
+  },
+  "supportPage": {
+    "body": "如果你有任何疑问、建议或想报告错误，欢迎发送邮件至："
+  }
+};

@@ -1,9 +1,10 @@
 import en from './en.js';
+import web from './web/sv.js';
 import { extendReleaseMessages } from '../releaseMessages.js';
 import { mergeCatalog } from '../mergeCatalog.js';
 
-// Uses the app's translations; website-only copy falls back to English.
-export default extendReleaseMessages("sv", mergeCatalog(mergeCatalog(mergeCatalog(en,{
+// Combine app translations with localized website copy.
+export default extendReleaseMessages("sv", mergeCatalog(mergeCatalog(mergeCatalog(mergeCatalog(en,{
   "decks": {
     "magicPromptBody": "Beskriv vad du vill lära dig. Korten skapas på servern.",
     "magicPromptPlaceholder": "Förklara fotosyntes inför ett biologiprov på gymnasiet",
@@ -551,4 +552,4 @@ export default extendReleaseMessages("sv", mergeCatalog(mergeCatalog(mergeCatalo
   "supportPage": {
     "title": "Support"
   }
-}));
+}), web));

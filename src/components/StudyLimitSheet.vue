@@ -14,7 +14,7 @@
         <p>
           {{ $t('limit.body', { limit }) }}
         </p>
-        <router-link class="mopiq-btn" to="/pricing">{{ $t('limit.upgrade') }}</router-link>
+        <router-link v-if="pricingEnabled" class="mopiq-btn" to="/pricing">{{ $t('limit.upgrade') }}</router-link>
         <p class="limit-note">
           {{ $t('limit.note') }}
         </p>
@@ -27,6 +27,8 @@
 
 <script>
 import { APP_STORE_URL } from '../constants';
+import { isLocalDebugHost } from '../debug/flags';
+import { loadWebPricingEnabled } from '../pricing/visibility';
 import { FREE_CARD_DAILY_LIMIT } from '../study/freeStudyQuota';
 
 export default {
@@ -39,7 +41,12 @@ export default {
   },
   emits: ['dismiss'],
   data() {
-    return { storeUrl: APP_STORE_URL };
+    return { storeUrl: APP_STORE_URL, pricingEnabled: isLocalDebugHost() };
+  },
+  created() {
+    loadWebPricingEnabled().then((enabled) => {
+      this.pricingEnabled = enabled;
+    });
   },
   computed: {
     actionText() {

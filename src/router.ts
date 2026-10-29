@@ -20,6 +20,7 @@ import { HELP_CENTER_URL } from './constants';
 import { markArrivedViaShare } from './analytics';
 import { authReady, isLoggedIn } from './auth/session';
 import { hydrateLanguageFromProfile } from './api/mopiq';
+import { loadWebPricingEnabled } from './pricing/visibility';
 
 const routes: RouteRecordRaw[] = [
   { path: '/', component: HomePage },
@@ -107,6 +108,9 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
+  if (to.path === '/pricing' && !(await loadWebPricingEnabled())) {
+    return { path: '/' };
+  }
   if (to.path.startsWith('/shared/')) {
     markArrivedViaShare();
   }

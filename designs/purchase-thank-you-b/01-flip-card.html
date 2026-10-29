@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Thank you · Mopiq Plus</title>
+<link rel="icon" href="../../public/logo-small.svg">
+<script>
+  (() => {
+    const t = new URLSearchParams(location.search).get('theme');
+    document.documentElement.dataset.theme = t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  })();
+</script>
+<style>
+  :root {
+    --bg: #f7f8fc; --dot: #d6dbe3; --ink: #0d1324; --muted: #5b6478; --faint: #94a3b8;
+    --card: #ffffff; --card-edge: rgba(15, 23, 42, 0.06); --shadow: 0 24px 60px -20px rgba(30, 41, 61, 0.35);
+    --blue: #2f6bff; --violet: #8b5cf6; --mint: #14c8a8;
+    --grad: linear-gradient(120deg, #2f6bff 0%, #8b5cf6 55%, #e25ce0 100%);
+    --good-bg: #d9f99d; --good-edge: #a3e635; --good-ink: #4d7c0f;
+    --easy-bg: #a5f3fc; --easy-edge: #22d3ee; --easy-ink: #0e7490;
+    --ai-bg: #e0e7ff; --ai-edge: #a5b4fc; --ai-ink: #4338ca;
+  }
+  [data-theme="dark"] {
+    --bg: #0b1020; --dot: #1d2539; --ink: #f1f4fb; --muted: #a3acc2; --faint: #6b7590;
+    --card: #151c30; --card-edge: rgba(255, 255, 255, 0.08); --shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+    --good-bg: rgba(163, 230, 53, 0.14); --good-edge: rgba(163, 230, 53, 0.45); --good-ink: #bef264;
+    --easy-bg: rgba(34, 211, 238, 0.14); --easy-edge: rgba(34, 211, 238, 0.45); --easy-ink: #67e8f9;
+    --ai-bg: rgba(129, 140, 248, 0.16); --ai-edge: rgba(129, 140, 248, 0.45); --ai-ink: #c7d2fe;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh; color: var(--ink); background-color: var(--bg);
+    background-image: radial-gradient(var(--dot) 1.2px, transparent 1.2px); background-size: 22px 22px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(20px, 5vw, 48px); }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 20px; letter-spacing: -0.02em; text-decoration: none; }
+  .theme { border: 1px solid var(--card-edge); background: var(--card); color: var(--muted); width: 38px; height: 38px; border-radius: 12px; cursor: pointer; display: grid; place-items: center; }
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 12px 20px 48px; text-align: center; }
+
+  .scene { width: min(560px, 100%); aspect-ratio: 16 / 10; perspective: 1400px; margin-top: 8px; }
+  .flip { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; animation: flip 1.1s cubic-bezier(.6, -0.15, .3, 1.25) .9s forwards; }
+  .face {
+    position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    background: var(--card); border: 1px solid var(--card-edge); border-radius: 28px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px;
+  }
+  .face .tag { position: absolute; top: 20px; left: 24px; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--faint); }
+  .face .count { position: absolute; top: 20px; right: 24px; font-size: 12px; font-weight: 600; color: var(--faint); }
+  .front p { font-size: clamp(22px, 4vw, 30px); font-weight: 700; letter-spacing: -0.02em; margin: 0; max-width: 380px; line-height: 1.2; }
+  .front .tap { margin-top: 18px; color: var(--faint); font-size: 14px; }
+  .back { transform: rotateY(180deg); overflow: hidden; }
+  .back::before { content: ""; position: absolute; inset: 0; background: radial-gradient(420px 200px at 50% -10%, rgba(139, 92, 246, .22), transparent 70%); }
+  .back > * { position: relative; }
+  .check { width: 60px; height: 60px; border-radius: 50%; background: var(--grad); display: grid; place-items: center; color: #fff; box-shadow: 0 10px 30px -8px rgba(139, 92, 246, .7); margin-bottom: 16px; }
+  .check svg { stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw .5s ease-out 1.9s forwards; }
+  .back h1 { margin: 0; font-size: clamp(30px, 6vw, 46px); line-height: 1.02; letter-spacing: -0.035em; font-weight: 800; }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .back p { margin: 12px 0 0; color: var(--muted); font-size: 16px; }
+
+  .after { opacity: 0; transform: translateY(12px); animation: rise .6s ease-out 2.1s forwards; display: flex; flex-direction: column; align-items: center; width: 100%; }
+  .lead { margin: 34px 0 0; max-width: 460px; color: var(--muted); font-size: 17px; line-height: 1.5; }
+  .ctas { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 24px; border-radius: 16px; font-weight: 700; font-size: 16px; text-decoration: none; transition: transform .15s ease; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.primary { background: var(--ink); color: var(--bg); }
+  .btn.ghost { border: 1px solid var(--card-edge); background: var(--card); }
+
+  .grades { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: min(620px, 100%); margin-top: 40px; }
+  .grade { border-radius: 18px; padding: 16px 14px; border: 1.5px solid; border-bottom-width: 4px; text-align: left; }
+  .grade b { display: block; font-size: 15px; margin-bottom: 4px; }
+  .grade span { font-size: 13.5px; line-height: 1.4; opacity: .85; }
+  .g1 { background: var(--good-bg); border-color: var(--good-edge); color: var(--good-ink); }
+  .g2 { background: var(--ai-bg); border-color: var(--ai-edge); color: var(--ai-ink); }
+  .g3 { background: var(--easy-bg); border-color: var(--easy-edge); color: var(--easy-ink); }
+  .receipt { margin-top: 30px; font-size: 14px; color: var(--faint); }
+  footer { text-align: center; padding: 0 20px 28px; font-size: 14px; color: var(--faint); }
+  footer a { color: var(--muted); }
+
+  @keyframes flip { to { transform: rotateY(180deg); } }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @media (max-width: 560px) { .grades { grid-template-columns: 1fr; } .btn { width: 100%; justify-content: center; } .ctas { width: 100%; } }
+  @media (prefers-reduced-motion: reduce) {
+    .flip { animation: none; transform: rotateY(180deg); }
+    .check svg { animation: none; stroke-dashoffset: 0; }
+    .after { animation: none; opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="https://mopiq.app"><img src="../../public/logo-small.svg" width="34" height="25" alt="">mopiq</a>
+  <button class="theme" type="button" aria-label="Toggle dark mode">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  </button>
+</header>
+
+<main>
+  <div class="scene" aria-hidden="true">
+    <div class="flip">
+      <div class="face front">
+        <span class="tag">QUESTION</span><span class="count">1 / 1</span>
+        <p>What happens after you get Mopiq Plus?</p>
+        <span class="tap">Revealing answer…</span>
+      </div>
+      <div class="face back">
+        <span class="tag">ANSWER</span>
+        <div class="check"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></div>
+        <h1>Thank you.<br><span class="grad">You're Plus now.</span></h1>
+        <p>No daily cap. Starting right now.</p>
+      </div>
+    </div>
+  </div>
+
+  <h1 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Thank you. Mopiq Plus is active.</h1>
+
+  <div class="after">
+    <p class="lead">Your purchase went through and Plus is on your account. Pick up where you left off — this time, you decide when to stop.</p>
+    <div class="ctas">
+      <a class="btn primary" href="https://mopiq.app/decks">Start studying
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <a class="btn ghost" href="ankicards://">Open the iPhone app</a>
+    </div>
+
+    <section class="grades" aria-label="What's unlocked">
+      <div class="grade g1"><b>Unlimited cards</b><span>Study ten cards or five hundred. Every day.</span></div>
+      <div class="grade g2"><b>AI review schedule</b><span>Reviews land right before you'd forget.</span></div>
+      <div class="grade g3"><b>10,000+ premium decks</b><span>Medicine, languages, school and more.</span></div>
+    </section>
+
+    <p class="receipt">Your receipt is on its way from Paddle, our payment partner.</p>
+  </div>
+</main>
+
+<footer>Questions about your purchase? <a href="https://mopiq.app/support">We're here to help</a></footer>
+
+<script>
+  document.querySelector('.theme').addEventListener('click', () => {
+    const r = document.documentElement;
+    r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+  });
+</script>
+</body>
+</html>

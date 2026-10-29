@@ -1,9 +1,10 @@
 import en from './en.js';
+import web from './web/nl.js';
 import { extendReleaseMessages } from '../releaseMessages.js';
 import { mergeCatalog } from '../mergeCatalog.js';
 
-// Uses the app's translations; website-only copy falls back to English.
-export default extendReleaseMessages("nl", mergeCatalog(mergeCatalog(mergeCatalog(en,{
+// Combine app translations with localized website copy.
+export default extendReleaseMessages("nl", mergeCatalog(mergeCatalog(mergeCatalog(mergeCatalog(en,{
   "decks": {
     "magicPromptBody": "Beschrijf wat je wilt leren. Kaarten worden op de server gemaakt.",
     "magicPromptPlaceholder": "Leg fotosynthese uit voor een biologietoets op de middelbare school",
@@ -551,4 +552,4 @@ export default extendReleaseMessages("nl", mergeCatalog(mergeCatalog(mergeCatalo
   "supportPage": {
     "title": "Ondersteuning"
   }
-}));
+}), web));

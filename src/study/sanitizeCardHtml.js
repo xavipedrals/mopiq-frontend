@@ -25,6 +25,18 @@ const NAMED_ENTITIES = {
   nbsp: '\u00A0',
 };
 
+// WHATWG numeric-character-reference end state (C1 legacy replacements).
+// https://html.spec.whatwg.org/multipage/parsing.html#numeric-character-reference-end-state
+const NUMERIC_REFERENCE_REPLACEMENTS = {
+  0x80: 0x20AC, 0x82: 0x201A, 0x83: 0x0192, 0x84: 0x201E,
+  0x85: 0x2026, 0x86: 0x2020, 0x87: 0x2021, 0x88: 0x02C6,
+  0x89: 0x2030, 0x8A: 0x0160, 0x8B: 0x2039, 0x8C: 0x0152,
+  0x8E: 0x017D, 0x91: 0x2018, 0x92: 0x2019, 0x93: 0x201C,
+  0x94: 0x201D, 0x95: 0x2022, 0x96: 0x2013, 0x97: 0x2014,
+  0x98: 0x02DC, 0x99: 0x2122, 0x9A: 0x0161, 0x9B: 0x203A,
+  0x9C: 0x0153, 0x9E: 0x017E, 0x9F: 0x0178,
+};
+
 export class CardHtmlTooLargeError extends Error {
   constructor() {
     super('Card text is too long');
@@ -37,13 +49,13 @@ export function byteLength(value) {
 }
 
 export function decodeHtmlEntities(value) {
-  return String(value || '').replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (full, entity) => {
+  return String(value || '').replace(/&(#(?:x[0-9a-f]+|[0-9]+)|[a-z]+);/gi, (full, entity) => {
     const key = String(entity || '');
     if (key[0] === '#') {
       const hex = key[1] === 'x' || key[1] === 'X';
-      const num = Number.parseInt(hex ? key.slice(2) : key.slice(1), hex ? 16 : 10);
-      if (!Number.isFinite(num) || num < 0) return '';
-      if (num === 0 || (num >= 0xD800 && num <= 0xDFFF) || num > 0x10FFFF) return '';
+      let num = Number.parseInt(hex ? key.slice(2) : key.slice(1), hex ? 16 : 10);
+      if (!Number.isFinite(num) || num === 0 || (num >= 0xD800 && num <= 0xDFFF) || num > 0x10FFFF) return '\uFFFD';
+      num = NUMERIC_REFERENCE_REPLACEMENTS[num] ?? num;
       try {
         return String.fromCodePoint(num);
       } catch {
@@ -223,11 +235,13 @@ export function sanitizeCardHtml(input, { maxBytes = MAX_CARD_FIELD_HTML_BYTES }
 
   while (i < html.length) {
     const lt = html.indexOf('<', i);
+    // Text entities are HTML text, not markup. Decode once inside this text run
+    // before escaping so repeated sanitization preserves the same displayed text.
     if (lt === -1) {
-      out += escapeHtmlText(html.slice(i));
+      out += escapeHtmlText(decodeHtmlEntities(html.slice(i)));
       break;
     }
-    if (lt > i) out += escapeHtmlText(html.slice(i, lt));
+    if (lt > i) out += escapeHtmlText(decodeHtmlEntities(html.slice(i, lt)));
 
     const rest = html.slice(lt);
     const comment = /^<!--[\s\S]*?-->/.exec(rest);

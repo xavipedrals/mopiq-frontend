@@ -21,7 +21,9 @@ export function mapDisplayProfileRow(row = {}, extras = {}) {
     avatarNumber: statNumber(row.avatar_number, row.avatarNumber),
     joinedDate: row.joined_date || row.joinedDate || null,
     imageStoragePath: row.image_storage_path || row.imageStoragePath || '',
-    isPremium: extras.hasPaidAccess === true || row.is_premium === true || row.isPremium === true,
+    isPremium: extras.hasPaidAccess === true
+      || (extras.hasPaidAccess !== false && (row.is_premium === true || row.isPremium === true)),
+    canManageSubscription: extras.canManageSubscription === true,
     locale: row.locale || extras.locale || '',
     answerFeedbackPosition: row.answer_feedback_position || row.answerFeedbackPosition || '',
   };
@@ -44,6 +46,7 @@ export function mergeHighestStats(base, other) {
     joinedDate: base.joinedDate || other.joinedDate,
     imageStoragePath: other.imageStoragePath || base.imageStoragePath,
     isPremium: Boolean(other.isPremium || base.isPremium),
+    canManageSubscription: Boolean(other.canManageSubscription || base.canManageSubscription),
     locale: base.locale || other.locale || '',
     answerFeedbackPosition: base.answerFeedbackPosition || other.answerFeedbackPosition || '',
   };

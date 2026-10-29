@@ -1,9 +1,10 @@
 import en from './en.js';
+import web from './web/he.js';
 import { extendReleaseMessages } from '../releaseMessages.js';
 import { mergeCatalog } from '../mergeCatalog.js';
 
-// Uses the app's translations; website-only copy falls back to English.
-export default extendReleaseMessages("he", mergeCatalog(mergeCatalog(mergeCatalog(en,{
+// Combine app translations with localized website copy.
+export default extendReleaseMessages("he", mergeCatalog(mergeCatalog(mergeCatalog(mergeCatalog(en,{
   "decks": {
     "magicPromptBody": "תארו מה ברצונכם ללמוד. הכרטיסים נוצרים בשרת.",
     "magicPromptPlaceholder": "הסבר על פוטוסינתזה למבחן בביולוגיה בתיכון",
@@ -551,4 +552,4 @@ export default extendReleaseMessages("he", mergeCatalog(mergeCatalog(mergeCatalo
   "supportPage": {
     "title": "תמיכה"
   }
-}));
+}), web));

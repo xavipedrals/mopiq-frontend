@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Thank you · Mopiq Plus</title>
+<link rel="icon" href="../../public/logo-small.svg">
+<script>
+  (() => {
+    const t = new URLSearchParams(location.search).get('theme');
+    document.documentElement.dataset.theme = t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  })();
+</script>
+<style>
+  :root {
+    --bg: #f7f8fc; --ink: #0d1324; --muted: #5b6478; --faint: #94a3b8;
+    --tile: #ffffff; --edge: rgba(15, 23, 42, 0.07); --shadow: 0 6px 20px 0 rgba(203, 213, 225, .7);
+    --blue: #2f6bff; --violet: #8b5cf6; --mint: #14c8a8; --mint-soft: #d8f7ef; --mint-ink: #0c8a72;
+    --chip: #f1f5f9; --dim: #cbd5e1;
+    --grad: linear-gradient(120deg, #2f6bff 0%, #8b5cf6 55%, #e25ce0 100%);
+  }
+  [data-theme="dark"] {
+    --bg: #0b1020; --ink: #f1f4fb; --muted: #a3acc2; --faint: #6b7590;
+    --tile: #141b2e; --edge: rgba(255, 255, 255, 0.08); --shadow: 0 10px 30px -10px rgba(0, 0, 0, .7);
+    --mint-soft: rgba(20, 200, 168, .14); --mint-ink: #5eead4; --chip: #1c2540; --dim: #334063;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { min-height: 100vh; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; position: relative; overflow-x: hidden; }
+  .aurora { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .aurora span { position: absolute; border-radius: 50%; filter: blur(100px); opacity: .45; }
+  .aurora .a { width: 520px; height: 520px; background: #7aa2ff; top: -220px; left: -160px; }
+  .aurora .b { width: 480px; height: 480px; background: #c4a5ff; bottom: -200px; right: -120px; }
+  [data-theme="dark"] .aurora span { opacity: .18; }
+  .wrap { position: relative; z-index: 1; width: min(1120px, 100% - 32px); margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 20px; letter-spacing: -0.02em; color: inherit; text-decoration: none; }
+  .theme { border: 1px solid var(--edge); background: var(--tile); color: var(--muted); width: 38px; height: 38px; border-radius: 12px; cursor: pointer; display: grid; place-items: center; }
+
+  main { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(28px, 5vw, 64px); align-items: center; padding: clamp(16px, 5vh, 56px) 0 48px; }
+  .kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--mint-ink); background: var(--mint-soft); padding: 6px 11px; border-radius: 999px; }
+  h1 { font-size: clamp(38px, 5.6vw, 64px); line-height: .98; letter-spacing: -0.045em; margin: 18px 0 18px; font-weight: 800; }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { color: var(--muted); font-size: 18px; line-height: 1.55; margin: 0 0 30px; max-width: 440px; }
+  .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 24px; border-radius: 16px; font-weight: 700; font-size: 16px; text-decoration: none; color: inherit; }
+  .btn.primary { background: var(--ink); color: var(--bg); }
+  .btn.ghost { background: var(--tile); border: 1px solid var(--edge); }
+  .fine { margin-top: 26px; color: var(--faint); font-size: 14px; line-height: 1.5; max-width: 420px; }
+  .fine a { color: var(--muted); }
+
+  .bento { display: grid; grid-template-columns: 1.15fr 1fr; grid-template-rows: auto auto; gap: 14px; }
+  .tile { position: relative; background: var(--tile); border: 1px solid var(--edge); border-radius: 24px; padding: 58px 22px 22px; box-shadow: var(--shadow); min-height: 170px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+  .tile h3 { margin: 0 0 4px; font-size: 17px; letter-spacing: -0.01em; }
+  .tile p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.45; }
+  .tile.big { grid-row: span 2; background: #0d1324; color: #fff; border-color: transparent; }
+  .tile.big::before { content: ""; position: absolute; inset: 0; background: radial-gradient(380px 260px at 100% 0%, rgba(139, 92, 246, .55), transparent 60%), radial-gradient(320px 220px at 0% 100%, rgba(47, 107, 255, .4), transparent 60%); }
+  .tile.big > :not(.badge) { position: relative; }
+  .tile.big p { color: #aab3c8; }
+  .infinity { font-size: clamp(110px, 14vw, 170px); line-height: .8; font-weight: 300; margin: 0 0 6px -6px; background: linear-gradient(120deg, #8fb0ff, #c4a5ff 55%, #f4a5ef); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cap { align-self: flex-start; font-size: 13px; color: #aab3c8; margin-bottom: 14px; position: relative; }
+  .cap::after { content: ""; position: absolute; left: -2px; right: -2px; top: 50%; height: 2px; background: #e25ce0; transform: scaleX(0); transform-origin: left; animation: strike .5s ease-out 1s forwards; }
+
+  .badge { position: absolute; z-index: 1; top: 16px; left: 18px; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 10px 5px 8px; border-radius: 999px; background: var(--chip); color: var(--faint); }
+  .tile.big .badge { background: rgba(255, 255, 255, .1); color: #aab3c8; }
+  .badge .open { display: none; }
+  .tile.on .badge { background: var(--mint-soft); color: var(--mint-ink); }
+  .tile.big.on .badge { background: rgba(20, 200, 168, .2); color: #8ff0d9; }
+  .tile.on .badge .open { display: inline; } .tile.on .badge .shut { display: none; }
+  .tile.on .badge { animation: bump .4s ease-out; }
+
+  .sched { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 18px; }
+  .sched i { aspect-ratio: 1; border-radius: 7px; background: var(--chip); }
+  .sched i.r { background: var(--grad); }
+  .decks { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .decks span { font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 10px; background: var(--chip); }
+  .wide { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; min-height: 0; gap: 16px; }
+  .devices { display: flex; gap: 8px; color: var(--muted); }
+  .devices span { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--chip); }
+
+  @keyframes strike { to { transform: scaleX(1); } }
+  @keyframes bump { 50% { transform: scale(1.12); } }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { .bento { grid-template-columns: 1fr; } .tile.big { grid-row: auto; } .wide { flex-direction: column; align-items: flex-start; } }
+  @media (prefers-reduced-motion: reduce) { .cap::after { animation: none; transform: scaleX(1); } .tile.on .badge { animation: none; } }
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><span class="a"></span><span class="b"></span></div>
+<div class="wrap">
+  <header>
+    <a class="brand" href="https://mopiq.app"><img src="../../public/logo-small.svg" width="34" height="25" alt="">mopiq</a>
+    <button class="theme" type="button" aria-label="Toggle dark mode">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <section>
+      <span class="kicker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>
+        Payment received
+      </span>
+      <h1>Thank you.<br>Everything's <span class="grad">unlocked.</span></h1>
+      <p class="lead">Mopiq Plus is now active on your account. Every limit you used to hit is gone, on the web and on your iPhone.</p>
+      <div class="ctas">
+        <a class="btn primary" href="https://mopiq.app/decks">Go to my decks
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn ghost" href="https://mopiq.app/decks">Browse premium decks</a>
+      </div>
+      <p class="fine">Your receipt is on its way from Paddle, our payment partner. Questions? <a href="https://mopiq.app/support">Contact support</a>.</p>
+    </section>
+
+    <section class="bento" aria-label="Unlocked with Mopiq Plus">
+      <article class="tile big">
+        <span class="badge"><svg class="shut" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><svg class="open" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg><span class="label">Locked</span></span>
+        <div class="infinity" aria-hidden="true">∞</div>
+        <span class="cap">Daily card limit</span>
+        <h3>Unlimited cards, every day</h3>
+        <p>Ten on the bus or five hundred before an exam. Your call.</p>
+      </article>
+
+      <article class="tile">
+        <span class="badge"><svg class="shut" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><svg class="open" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg><span class="label">Locked</span></span>
+        <div class="sched" aria-hidden="true"><i class="r"></i><i></i><i class="r"></i><i></i><i></i><i class="r"></i><i></i></div>
+        <h3>AI review schedule</h3>
+        <p>Reviews land right before you'd forget.</p>
+      </article>
+
+      <article class="tile">
+        <span class="badge"><svg class="shut" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><svg class="open" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg><span class="label">Locked</span></span>
+        <div class="decks" aria-hidden="true"><span>🩺 Medicine</span><span>🌍 Languages</span><span>📚 School</span></div>
+        <h3>10,000+ premium decks</h3>
+        <p>Ready-made, so you can start in seconds.</p>
+      </article>
+
+      <article class="tile wide">
+        <span class="badge"><svg class="shut" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><svg class="open" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg><span class="label">Locked</span></span>
+        <div>
+          <h3>Unlimited AI quizzes</h3>
+          <p>Same Plus on the web and the iPhone app. Just sign in with this account.</p>
+        </div>
+        <div class="devices" aria-hidden="true">
+          <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg></span>
+          <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
+        </div>
+      </article>
+    </section>
+  </main>
+</div>
+<script>
+  document.querySelector('.theme').addEventListener('click', () => {
+    const r = document.documentElement;
+    r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+  });
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.tile').forEach((tile, i) => {
+    setTimeout(() => {
+      tile.classList.add('on');
+      tile.querySelector('.label').textContent = 'Unlocked';
+    }, reduce ? 0 : 500 + i * 320);
+  });
+</script>
+</body>
+</html>

@@ -1,9 +1,10 @@
 import en from './en.js';
+import web from './web/zh-Hans.js';
 import { extendReleaseMessages } from '../releaseMessages.js';
 import { mergeCatalog } from '../mergeCatalog.js';
 
-// Uses the app's translations; website-only copy falls back to English.
-export default extendReleaseMessages("zh-Hans", mergeCatalog(mergeCatalog(mergeCatalog(en,{
+// Combine app translations with localized website copy.
+export default extendReleaseMessages("zh-Hans", mergeCatalog(mergeCatalog(mergeCatalog(mergeCatalog(en,{
   "decks": {
     "magicPromptBody": "描述你想学习的内容。卡片会在服务器上生成。",
     "magicPromptPlaceholder": "为高中生物测验解释光合作用",
@@ -551,4 +552,4 @@ export default extendReleaseMessages("zh-Hans", mergeCatalog(mergeCatalog(mergeC
   "supportPage": {
     "title": "支持"
   }
-}));
+}), web));

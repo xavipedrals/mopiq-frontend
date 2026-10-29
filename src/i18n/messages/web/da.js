@@ -1,0 +1,318 @@
+// Website-specific copy, supplementing the translations shared with iOS.
+export default {
+  "common": {
+    "downloadApp": "Download appen",
+    "downloadAppStore": "Hent i App Store",
+    "getTheApp": "Hent appen",
+    "getMopiqStore": "Hent Mopiq i App Store",
+    "cookieBody": "Vi bruger en analysecookie til at tælle besøg og logins. Den er slået fra, indtil du giver samtykke.",
+    "cookieRefuse": "Afvis",
+    "refund": "Refusionspolitik",
+    "copyright": "© {year} Mopiq. Alle rettigheder forbeholdes.",
+    "iosApp": "iOS-appen",
+    "app": "appen"
+  },
+  "home": {
+    "eyebrow": "Huskekort med intervalrepetition",
+    "titleBefore": "Lær alt",
+    "titleMark": "hurtigere",
+    "lede": "Opret kortsæt, læs efter en smart plan, og bevar din viden på lang sigt. Til eksamener, sprog og alt derimellem.",
+    "signInWeb": "Log ind for at læse på nettet",
+    "heroStudyAlt": "Studieoversigt i Mopiq på iPhone",
+    "stripSpaced": "Intervalrepetition",
+    "stripSpacedSub": "Repetér lige før du glemmer",
+    "stripDevices": "iPhone, iPad, Mac og web",
+    "stripDevicesSub": "Én konto på alle enheder",
+    "stripAi": "AI og færdige kortsæt",
+    "stripAiSub": "Kom i gang på få minutter",
+    "featuresTitle": "Læs smartere med Mopiq",
+    "featuresLede": "Alt, du behøver for at gøre noter til varig viden.",
+    "featureCreateTitle": "Lav huskekort på din måde",
+    "featureCreateBody": "Lav kort fra noter, PDF'er eller med AI. Hold styr på dine kortsæt, og begynd at læse, så snart de er klar.",
+    "featurePremadeTitle": "Vælg mellem færdige kortsæt",
+    "featurePremadeBody": "Udforsk medicin, sprog, eksamener og meget mere. Importér det, du har brug for, og begynd at repetere i dag.",
+    "featureSrsTitle": "Lær med intervalrepetition",
+    "featureSrsBody": "Igen, svært, godt, let. Mopiq planlægger næste repetition, så du bruger tiden på det, du stadig skal øve.",
+    "topicsTitle": "Til de fag, du læser",
+    "goalsTitle": "Læs det, der betyder noget",
+    "goalsLede": "Intervalrepetition, der tilpasser sig dig, uanset hvad du prøver at huske.",
+    "goalExamMark": "Eksamensforberedelse",
+    "goalExamTitle": "Mød forberedt til eksamen",
+    "goalExamBody": "Gennemgå nye kort og repetition hver dag, så eksamensugen handler om at huske frem for at terpe.",
+    "goalLangTitle": "Få ordene til at hænge fast",
+    "goalLangBody": "Tilføj ord, når du møder dem, og repetér på det rigtige tidspunkt i stedet for at genlæse lister.",
+    "goalTeachMark": "Undervisning",
+    "goalTeachTitle": "Del kortsæt med en klasse",
+    "goalTeachBody": "Lav dem én gang, del et link, og lad eleverne læse på iPhone eller i browseren.",
+    "goalMemoryMark": "Livslang hukommelse",
+    "goalMemoryTitle": "Bevar viden, ikke kun noter",
+    "goalMemoryBody": "Intervalrepetition viser kortene igen, lige før du glemmer dem, så din viden forbliver brugbar.",
+    "proofTitle": "Elsket af folk, der faktisk læser",
+    "proofLede": "App Store-anmeldelser fra glade brugere.",
+    "reviewStars": "5 stjerner",
+    "reviews": {
+      "lucy": {
+        "role": "Medicinstuderende",
+        "quote": "Jeg bruger den jævnligt på medicinstudiet. Meget rarere end klassisk Anki, og den gør det faktisk sjovt at læse."
+      },
+      "tootrey": {
+        "role": "CSP-eksamen",
+        "quote": "Jeg har brugt den i et par uger til at forberede mig til min CSP-eksamen. Af alle de apps, jeg har prøvet, er det her den eneste, der gør præcis det, jeg har brug for."
+      },
+      "anakolll": {
+        "role": "Studerende",
+        "quote": "Ingen reklamer, gratis og et smart system, der hjælper dig med at lære hurtigere. Hvad mere kan man ønske sig?"
+      },
+      "rolando": {
+        "quote": "Jeg bruger appen til MCAT. AI-funktionen er stærk, det sætter jeg stor pris på!"
+      },
+      "valihovk": {
+        "role": "Daglig læsning",
+        "quote": "AI-genererede huskekort sparer meget tid og hjælper mig med at fokusere på det, der betyder noget. Overskuelig, nem at bruge, og jeg husker virkelig mere."
+      },
+      "sam": {
+        "role": "Spansk ordforråd",
+        "quote": "Jeg har lært over 1.000 spanske ord på få måneder med den. Virkelig effektivt."
+      },
+      "swobat": {
+        "role": "Eksamensforberedelse",
+        "quote": "Når jeg ikke ved noget, trykker jeg på Igen, og kortene kommer tilbage, indtil de føles lette. Elsker det, sådan får jeg mine topkarakterer."
+      },
+      "lerni": {
+        "role": "Fra foto til kort",
+        "quote": "Efter en lang søgen efter huskekortapps er jeg helt solgt. Scan et foto, så laver den kortene. Du kan øve dig så meget, du vil, gratis."
+      },
+      "joy": {
+        "role": "Sygeplejestudiet",
+        "quote": "Denne app hjalp mig virkelig med at huske stoffet på sygeplejestudiet. Tag et billede af det, du vil læse, så bliver kortene lavet automatisk."
+      },
+      "marcus": {
+        "quote": "Du lærer utroligt effektivt med disse huskekort, jeg glemmer næsten intet af det, jeg har læst. Jeg bruger dem til sprog og laver kort fra fotos af lærebøger på få sekunder."
+      },
+      "zso": {
+        "role": "Medicinstuderende",
+        "quote": "Enkel og nem at bruge. Jeg bruger den på medicinstudiet, og den virker fantastisk. Kan varmt anbefales."
+      },
+      "clinsch": {
+        "role": "Studerende",
+        "quote": "Intervalrepetitionen er fremragende, du kan lave alle slags kort og bruge færdige kortsæt. Det bedste: den er gratis og uden reklamer."
+      }
+    },
+    "ctaTitle": "Bliv bedre til at læse",
+    "ctaBody": "Download Mopiq på iPhone, iPad eller Mac, eller log ind her for at læse dine kortsæt på nettet.",
+    "devicesAlt": "Mopiq på iPhone, iPad, Mac og nettet",
+    "featureQuizAlt": "Quiz i Mopiq",
+    "featurePremadeAlt": "Færdige kortsæt i Mopiq",
+    "featureSrsAlt": "Studieresultater i Mopiq",
+    "faqTitle": "Spørgsmål og svar",
+    "faqFreeQ": "Kan jeg bruge Mopiq gratis?",
+    "faqFreeA": "Ja. Med en gratis konto kan du oprette kortsæt, læse med intervalrepetition og bruge webversionen. iOS-appen giver dig alle funktioner til at lave kort og bruge biblioteket.",
+    "faqSrsQ": "Hvad er intervalrepetition?",
+    "faqSrsA": "Det er en måde at repetere kort på med stadig længere intervaller. Mopiq viser et kort igen, når du sandsynligvis er ved at glemme det, så du husker mere med mindre terperi.",
+    "faqWebQ": "Kan jeg læse på nettet?",
+    "faqWebA": "Ja. Log ind med den samme Apple-, Google- eller e-mailkonto, som du bruger i iOS-appen, og åbn dine kortsæt i browseren.",
+    "faqEditQ": "Kan jeg oprette kortsæt på nettet?",
+    "faqEditA": "Ja. Du kan oprette tomme kortsæt, generere kort fra en beskrivelse, PDF, slides, Word, lyd, fotos, noter eller YouTube, indsætte eller importere et regneark, importere en Anki-pakke og tilføje eller redigere tekst, billeder og udfyldningskort. Færdige kortsæt findes i iOS-appen.",
+    "language": "Sprog"
+  },
+  "seo": {
+    "homeTitle": "Mopiq Flashcards — Lær hurtigere med intervalrepetition",
+    "homeDescription": "Lav huskekort, og læs med intervalrepetition, der tilpasser sig dig. Gratis på iPhone, iPad, Mac og nettet.",
+    "privacyTitle": "Privatlivspolitik — Mopiq Flashcards",
+    "privacyDescription": "Sådan indsamler, bruger og beskytter Mopiq dine oplysninger.",
+    "termsTitle": "Brugsvilkår — Mopiq Flashcards",
+    "termsDescription": "Vilkårene for din brug af Mopiq Flashcards.",
+    "refundTitle": "Refusionspolitik — Mopiq Flashcards",
+    "refundDescription": "Sådan fungerer opsigelser og refusioner for Mopiq Flashcards-abonnementer."
+  },
+  "login": {
+    "lede": "Brug samme konto som i iOS-appen til at læse dine kortsæt i browseren.",
+    "purchaseLede": "Log ind, så Plus bliver knyttet til din Mopiq-konto.",
+    "orEmail": "eller e-mail",
+    "passwordLong": "Adgangskode (mindst 6 tegn)",
+    "wait": "Vent venligst…",
+    "haveAccount": "Har du allerede en konto? Log ind",
+    "needAccount": "Mangler du en konto? Registrér dig",
+    "forgotNeedEmail": "Indtast først din e-mailadresse, og tryk derefter på Glemt adgangskode.",
+    "resetSent": "E-mail til nulstilling af adgangskode er sendt.",
+    "badCredentials": "E-mailadressen eller adgangskoden er forkert.",
+    "emailInUse": "Den e-mailadresse er allerede registreret.",
+    "weakPassword": "Adgangskoden skal være på mindst 6 tegn.",
+    "cancelled": "Login blev annulleret.",
+    "providerOff": "Login med Apple er endnu ikke tilgængeligt på nettet. Brug Google eller e-mail, eller log ind fra appen.",
+    "generic": "Kunne ikke logge ind."
+  },
+  "decks": {
+    "empty": "Ingen kortsæt endnu. Opret et for at begynde at læse.",
+    "addBody": "Giv det et navn, og vælg et emne. Du kan tilføje kort bagefter.",
+    "modeEmpty": "Tomt kortsæt",
+    "modeSpreadsheet": "Indsæt eller CSV",
+    "addSpreadsheetBody": "Indsæt fra Excel, Google Sheets eller en CSV. Én række pr. kort: først begreb, så definition.",
+    "spreadsheetNoCards": "Vi kunne ikke lave huskekort af dette. Kontrollér, at hver række har et begreb og en definition.",
+    "spreadsheetPreviewCount": "{count} kort fundet",
+    "spreadsheetImport": "Importér {count} kort",
+    "spreadsheetTooMany": "Denne import er for stor. Hold dig under 2.000 kort.",
+    "spreadsheetTooLarge": "Filen eller det indsatte indhold er for stort.",
+    "nameOptional": "Navn (valgfrit)",
+    "studyInApp": "Læs i appen",
+    "webStudy": "Læs på nettet",
+    "premadeBody": "Udforsk medicin, sprog, eksamener og mere i iOS-appen.",
+    "noSearchMatches": "Ingen kortsæt matcher søgningen.",
+    "magicUploadPowerpoint": "Upload PowerPoint",
+    "magicDropHintPhoto": "JPEG, PNG, GIF eller WebP",
+    "magicDropHintAudio": "MP3, M4A, WAV eller WebM",
+    "magicAnkiBody": "Importér en .apkg-fil til et nyt kortsæt. Læsefremskridt fra Anki kopieres ikke.",
+    "appOnlyTitle": "Tilgængeligt i iOS-appen",
+    "appOnlyBody": "{name} er tilgængeligt i Mopiq-appen til iOS."
+  },
+  "deck": {
+    "gradeUnavailable": "Karakter ikke tilgængelig",
+    "answersCount": "{count} svar",
+    "infoToday": "Kort til i dag = nye + til repetition",
+    "appOnlyTitle": "Dette kortsæt kan kun læses i appen",
+    "appOnlyBody": "Importerede Anki-filer og nogle delte kortsæt bruger stadig appens filformat. Åbn Mopiq på iPhone, iPad eller Mac for at læse dem.",
+    "downloadApp": "Download appen",
+    "cta": "Vil du tilføje kortsæt eller redigere kort? Gør det i {app}.",
+    "filters": "Filtre",
+    "tagRecent": "SENESTE",
+    "cardMenu": "Korthandlinger",
+    "copyCard": "Duplikér",
+    "copied": "Kort duplikeret",
+    "reversed": "Kort vendt",
+    "reverseTitle": "Opret omvendt kort",
+    "reverseMessage": "Dette laver en kopi af kortet med spørgsmål og svar byttet om. Originalen forbliver uændret.",
+    "reverseUnavailable": "Dette kort kan ikke vendes.",
+    "selectionBar": "Valgte kort",
+    "copiedMany": "Kort duplikeret",
+    "movedMany": "Kort flyttet",
+    "copyLimit": "Du kan duplikere op til 100 kort ad gangen. Du har valgt {count}.",
+    "folderActions": "Mappehandlinger",
+    "folderNameEmpty": "Indtast et mappenavn.",
+    "folderNameInvalid": "Et mappenavn må ikke indeholde ::.",
+    "folderTooDeep": "Mapper kan kun indlejres i to niveauer."
+  },
+  "settings": {
+    "generalBody": "Nye og sværere huskekort vises oftere, mens ældre og lettere kort kommer tilbage sjældnere.",
+    "medicalBody": "Længere indlæringstrin, tilpasset omfattende medicinsk stof.",
+    "languagesBody": "Viser mange nye ord tidligt og hjælper dig derefter med at huske dem. Tilpasset ordforråd, grammatik og stavning.",
+    "nameRequired": "Indtast et navn til kortsættet.",
+    "resetBody": "Dette nulstiller dine læsefremskridt for kortsættet. Dine huskekort bliver ikke slettet. Handlingen kan ikke fortrydes.",
+    "sectionAccount": "Konto",
+    "sectionGeneral": "Generelt",
+    "sectionLegal": "Juridisk",
+    "sectionAdvanced": "Avanceret",
+    "subscription": "Abonnement",
+    "howItWorks": "Sådan fungerer det",
+    "profileName": "Navn",
+    "profileEmail": "E-mail",
+    "editNameTitle": "Indtast dit navn",
+    "editNameBody": "Dette navn bruges på din profil",
+    "nameError": "Kunne ikke gemme dit navn",
+    "noResults": "Ingen resultater fundet",
+    "enjoyTitle": "Er du glad for appen?",
+    "enjoyBody": "Vi vil altid gerne blive bedre. Fortæl os, hvad du synes!",
+    "enjoyMeh": "Nogenlunde",
+    "enjoyYes": "Ja",
+    "enjoyLove": "Elsker den!",
+    "debugUnlimited": "Ubegrænset læsning (fejlfinding)",
+    "debugTutorial": "Vis altid læsevejledningen (fejlfinding)",
+    "debugTutorialBody": "Afspil øvelsesrepetitionen, hver gang du starter intervalrepetition.",
+    "debugFeedback": "Vis altid feedback (fejlfinding)",
+    "debugFeedbackBody": "Spørg om oplevelsen, hver gang du afslutter en læsesession.",
+    "debugImpersonate": "Optræd som bruger",
+    "debugImpersonateHelp": "Indsæt et tilpasset Firebase-token fra mopiq_support_tools:",
+    "debugImpersonateAction": "Log ind som bruger",
+    "debugImpersonateBusy": "Logger ind…",
+    "debugImpersonateWarning": "Kontoskift erstatter sessionen i denne browser. Eksterne data ændres først, når du redigerer dem. Undgå køb, når du er logget ind som en anden.",
+    "debugImpersonateError": "Kunne ikke logge ind med dette token."
+  },
+  "editor": {
+    "mediaNote": "Lyd på dette kort kan kun ændres i appen.",
+    "imageLocked": "Kort med billedafdækning kan ikke redigeres.",
+    "richNote": "Dette kort bruger avanceret formatering.",
+    "lockedAudio": "Kort med lyd kan kun redigeres i appen.",
+    "lockedOcclusion": "Kort med billedafdækning kan ikke redigeres.",
+    "saved": "Gemt. Tilføj et kort mere, eller luk, når du er færdig.",
+    "more": "Mere",
+    "heading": "Tekststørrelse",
+    "hideKeyboard": "Skjul tastatur",
+    "formatting": "Formatering",
+    "bold": "Fed",
+    "italic": "Kursiv",
+    "underline": "Understregning",
+    "strike": "Gennemstregning",
+    "bullets": "Punktopstilling",
+    "numbers": "Nummereret liste",
+    "alignLeft": "Venstrejustér",
+    "alignCenter": "Centrér",
+    "alignRight": "Højrejustér",
+    "subscript": "Sænket skrift",
+    "superscript": "Hævet skrift",
+    "highlight": "Fremhæv",
+    "link": "Link",
+    "linkPrompt": "Linkadresse",
+    "cloze": "Udfyldning",
+    "clozeFrontOnly": "Udfyldningsfelter kan kun tilføjes på forsiden.",
+    "image": "Billede",
+    "imageTooBig": "Billeder må højst være 2 MB.",
+    "occlusionHint": "Træk på billedet for at lave rektangler",
+    "occlusionDelete": "Slet rektangel",
+    "occlusionNone": "Tegn mindst ét rektangel.",
+    "occlusionTooMany": "Du kan tilføje op til 100 rektangler.",
+    "undo": "Fortryd",
+    "redo": "Gentag",
+    "clearFormat": "Ryd formatering",
+    "empty": "Tilføj tekst på forsiden eller bagsiden.",
+    "frontRequired": "Tilføj et spørgsmål på forsiden.",
+    "backRequired": "Tilføj et svar på bagsiden eller et udfyldningsfelt på forsiden.",
+    "tooLong": "Kortets tekst er for lang.",
+    "ttsInsert": "Tilføj til kort",
+    "ttsEmpty": "Indtast tekst, som AI skal læse op.",
+    "ttsTooLong": "Teksten skal være under 300 tegn.",
+    "ttsLanguage": "Sprog"
+  },
+  "quiz": {
+    "start": "Start quizzen",
+    "multiple": "Flervalg",
+    "check": "Kontrollér",
+    "close": "Luk quizzen",
+    "notEnough": "Kunne ikke finde nok huskekort til quizzen. Brugbare kort: {count}. Tip: kort, der kun indeholder billeder, kan ikke bruges.",
+    "notEnoughStudied": "Kunne ikke finde nok læste huskekort til quizzen. Læste kort: {count}. Tip: kort, der kun indeholder billeder, kan ikke bruges.",
+    "noQuestions": "Kunne ikke lave quizspørgsmål. Prøv igen.",
+    "needType": "Vælg mindst én spørgsmålstype."
+  },
+  "checkpoint": {
+    "gradeHelp": "Om din karakter"
+  },
+  "limit": {
+    "title": "Dagens grænse er nået",
+    "body": "Du har læst {limit} gratis kort i dag. Opgradér for at fortsætte uden grænser.",
+    "upgrade": "Opgradér på nettet",
+    "note": "Du kan også opgradere i iOS-appen eller komme tilbage i morgen."
+  },
+  "askAi": {
+    "close": "Luk Spørg AI",
+    "unavailable": "Spørg AI er ikke tilgængeligt lige nu.",
+    "noReply": "Spørg AI gav ikke noget svar.",
+    "stop": "Stop"
+  },
+  "profile": {
+    "deleteAccountRelogin": "Log ind igen, og slet derefter din konto."
+  },
+  "shared": {
+    "notShared": "Kortsættet deles ikke længere",
+    "notFound": "Det delte kortsæt blev ikke fundet",
+    "invalidDate": "Ugyldig dato",
+    "sharedOn": "Delt den {date}",
+    "noApp": "Hvis du ikke har installeret appen, kan du hente den {here}.",
+    "here": "her"
+  },
+  "notFound": {
+    "title": "404 — Siden blev ikke fundet",
+    "body": "Den side, du leder efter, findes ikke.",
+    "home": "Gå til forsiden"
+  },
+  "supportPage": {
+    "body": "Har du spørgsmål, forslag eller vil du rapportere en fejl? Send os gerne en e-mail på:"
+  }
+};

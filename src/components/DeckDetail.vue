@@ -209,13 +209,16 @@
               </label>
               <button
                 type="button"
-                class="view-all"
+                class="browse-filters"
                 :class="{ active: hasActiveFilters }"
                 :disabled="checkboxMode"
                 :aria-pressed="hasActiveFilters"
+                :aria-expanded="filtersOpen"
+                aria-haspopup="dialog"
                 @click="filtersOpen = true"
               >
-                {{ $t('deck.filterSort') }}
+                <StudyMenuIcon name="sliders" />
+                <span>{{ $t('deck.filters') }}</span>
               </button>
             </div>
           </div>
@@ -2101,19 +2104,35 @@ h1 {
   width: auto;
   min-width: 0;
 }
-.view-all {
+.browse-filters {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   flex: 0 0 auto;
-  border: 0;
-  background: transparent;
-  color: var(--blue-button);
+  height: 48px;
+  border: 1px solid var(--search-border);
+  border-radius: 999px;
+  background: var(--search-bg);
+  color: var(--title);
+  box-shadow: 0 2px 2px var(--search-shadow);
   font: inherit;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  padding: 8px 2px;
+  padding: 0 16px;
   white-space: nowrap;
 }
-.view-all.active { font-weight: 700; }
+.browse-filters.active {
+  border-color: var(--blue-button);
+  background: var(--blue-button);
+  color: var(--button-text);
+}
+.browse-filters:focus-visible {
+  outline: 2px solid var(--blue-button);
+  outline-offset: 3px;
+}
+.browse-filters:disabled { cursor: default; }
 .show-more {
   display: flex;
   align-items: center;

@@ -1,0 +1,318 @@
+// Website-specific copy, supplementing the translations shared with iOS.
+export default {
+  "common": {
+    "downloadApp": "Download de app",
+    "downloadAppStore": "Download in de App Store",
+    "getTheApp": "Download de app",
+    "getMopiqStore": "Download Mopiq in de App Store",
+    "cookieBody": "We gebruiken een analytische cookie om bezoeken en aanmeldingen te tellen. Die blijft uit totdat je toestemming geeft.",
+    "cookieRefuse": "Weigeren",
+    "refund": "Terugbetalingsbeleid",
+    "copyright": "© {year} Mopiq. Alle rechten voorbehouden.",
+    "iosApp": "iOS-app",
+    "app": "app"
+  },
+  "home": {
+    "eyebrow": "Flitskaarten met gespreide herhaling",
+    "titleBefore": "Leer alles",
+    "titleMark": "sneller",
+    "lede": "Maak kaartensets, studeer met een slim schema en onthoud kennis voor de lange termijn. Voor examens, talen en alles daartussenin.",
+    "signInWeb": "Log in om op het web te studeren",
+    "heroStudyAlt": "Mopiq-studieoverzicht op iPhone",
+    "stripSpaced": "Gespreide herhaling",
+    "stripSpacedSub": "Herhaal vlak voordat je het vergeet",
+    "stripDevices": "iPhone, iPad, Mac en web",
+    "stripDevicesSub": "Eén account, elk apparaat",
+    "stripAi": "AI en kant-en-klare kaartensets",
+    "stripAiSub": "Begin binnen enkele minuten met studeren",
+    "featuresTitle": "Studeer slim met Mopiq",
+    "featuresLede": "Alles wat je nodig hebt om notities om te zetten in blijvende kennis.",
+    "featureCreateTitle": "Maak flitskaarten op jouw manier",
+    "featureCreateBody": "Maak kaarten van notities, PDF's of met AI. Houd je kaartensets op orde en begin zodra ze klaar zijn.",
+    "featurePremadeTitle": "Kies uit kant-en-klare kaartensets",
+    "featurePremadeBody": "Ontdek geneeskunde, talen, examens en meer. Importeer wat je nodig hebt en begin vandaag met herhalen.",
+    "featureSrsTitle": "Leer met gespreide herhaling",
+    "featureSrsBody": "Opnieuw, moeilijk, goed, makkelijk. Mopiq plant de volgende herhaling zodat je tijd besteedt aan wat nog oefening nodig heeft.",
+    "topicsTitle": "Voor de vakken die je leert",
+    "goalsTitle": "Studeer voor wat ertoe doet",
+    "goalsLede": "Gespreide herhaling die zich aan jou aanpast, wat je ook wilt onthouden.",
+    "goalExamMark": "Examenvoorbereiding",
+    "goalExamTitle": "Ga goed voorbereid je examen in",
+    "goalExamBody": "Houd dagelijks nieuwe kaarten en herhalingen bij, zodat je in de examenweek kennis ophaalt in plaats van te blokken.",
+    "goalLangTitle": "Laat woordenschat beklijven",
+    "goalLangBody": "Voeg woorden toe zodra je ze tegenkomt en herhaal op het juiste moment, in plaats van lijsten opnieuw te lezen.",
+    "goalTeachMark": "Lesgeven",
+    "goalTeachTitle": "Deel kaartensets met een klas",
+    "goalTeachBody": "Maak ze één keer, deel een link en laat leerlingen studeren op iPhone of in de browser.",
+    "goalMemoryMark": "Een leven lang onthouden",
+    "goalMemoryTitle": "Bewaar kennis, niet alleen notities",
+    "goalMemoryBody": "Gespreide herhaling brengt kaarten terug vlak voordat je ze vergeet, zodat je kennis bruikbaar blijft.",
+    "proofTitle": "Geliefd bij mensen die echt studeren",
+    "proofLede": "App Store-recensies van tevreden gebruikers.",
+    "reviewStars": "5 sterren",
+    "reviews": {
+      "lucy": {
+        "role": "Geneeskundestudent",
+        "quote": "Ik gebruik het regelmatig voor mijn studie geneeskunde. Veel fijner dan de klassieke Anki, en studeren wordt er echt leuk van."
+      },
+      "tootrey": {
+        "role": "CSP-examen",
+        "quote": "Ik gebruik dit nu een paar weken voor mijn CSP-examen. Van alle apps die ik heb geprobeerd, doet alleen deze precies wat ik nodig heb."
+      },
+      "anakolll": {
+        "role": "Student",
+        "quote": "Geen advertenties, gratis en een slim systeem waarmee je sneller leert. Wat wil je nog meer?"
+      },
+      "rolando": {
+        "quote": "Ik gebruik deze app voor de MCAT. De AI-functie is krachtig, erg fijn!"
+      },
+      "valihovk": {
+        "role": "Dagelijks studeren",
+        "quote": "Flitskaarten die met AI worden gemaakt besparen veel tijd en helpen me focussen op wat echt belangrijk is. Overzichtelijk, makkelijk te gebruiken en ik onthoud er echt meer door."
+      },
+      "sam": {
+        "role": "Spaanse woordenschat",
+        "quote": "Ik heb hiermee in een paar maanden meer dan 1.000 Spaanse woorden geleerd. Heel efficiënt."
+      },
+      "swobat": {
+        "role": "Examenvoorbereiding",
+        "quote": "Als ik iets niet weet, tik ik op Opnieuw. Die kaarten blijven terugkomen tot ze makkelijk voelen. Geweldig, zo haal ik mijn hoge cijfers."
+      },
+      "lerni": {
+        "role": "Van foto naar kaarten",
+        "quote": "Na een lange zoektocht naar flitskaartapps ben ik helemaal overtuigd. Scan een foto en de app maakt de kaarten voor je. Je kunt gratis zoveel oefenen als je wilt."
+      },
+      "joy": {
+        "role": "Verpleegkunde",
+        "quote": "Deze app heeft me echt geholpen de stof voor verpleegkunde te onthouden. Maak een foto van wat je wilt leren en de kaarten worden automatisch gemaakt."
+      },
+      "marcus": {
+        "quote": "Met deze flitskaarten leer je ontzettend effectief, ik vergeet bijna niets. Ik gebruik ze voor talen en maak met foto's van studieboeken binnen seconden kaarten."
+      },
+      "zso": {
+        "role": "Geneeskundestudent",
+        "quote": "Simpel en makkelijk te gebruiken. Ik gebruik het voor geneeskunde en het werkt geweldig. Een aanrader."
+      },
+      "clinsch": {
+        "role": "Student",
+        "quote": "Het systeem met gespreide herhaling is uitstekend, je kunt allerlei kaarten maken en kant-en-klare kaartensets gebruiken. Het beste: het is gratis en zonder advertenties."
+      }
+    },
+    "ctaTitle": "Word beter in studeren",
+    "ctaBody": "Download Mopiq op iPhone, iPad of Mac, of log hier in om je kaartensets op het web te studeren.",
+    "devicesAlt": "Mopiq op iPhone, iPad, Mac en het web",
+    "featureQuizAlt": "Quiz in Mopiq",
+    "featurePremadeAlt": "Kant-en-klare kaartensets in Mopiq",
+    "featureSrsAlt": "Studieresultaten in Mopiq",
+    "faqTitle": "Vragen en antwoorden",
+    "faqFreeQ": "Kan ik Mopiq gratis gebruiken?",
+    "faqFreeA": "Ja. Met een gratis account kun je kaartensets maken, met gespreide herhaling studeren en op het web leren. De iOS-app biedt alle functies voor het maken van kaarten en de bibliotheek.",
+    "faqSrsQ": "Wat is gespreide herhaling?",
+    "faqSrsA": "Het is een manier om kaarten met steeds grotere tussenpozen te herhalen. Mopiq toont een kaart opnieuw wanneer je die waarschijnlijk gaat vergeten, zodat je meer onthoudt en minder hoeft te blokken.",
+    "faqWebQ": "Kan ik op het web studeren?",
+    "faqWebA": "Ja. Log in met hetzelfde Apple-, Google- of e-mailaccount dat je in de iOS-app gebruikt en open je kaartensets in de browser.",
+    "faqEditQ": "Kan ik kaartensets op het web maken?",
+    "faqEditA": "Ja. Maak lege kaartensets, genereer kaarten uit een beschrijving, PDF, dia's, Word, audio, foto's, notities of YouTube, plak of importeer een spreadsheet, importeer een Anki-pakket en voeg tekst, afbeeldingen en invulkaarten toe of bewerk ze. Kant-en-klare kaartensets vind je in de iOS-app.",
+    "language": "Taal"
+  },
+  "seo": {
+    "homeTitle": "Mopiq Flashcards — Leer sneller met gespreide herhaling",
+    "homeDescription": "Maak flitskaarten en studeer met gespreide herhaling die zich aan jou aanpast. Gratis op iPhone, iPad, Mac en het web.",
+    "privacyTitle": "Privacybeleid — Mopiq Flashcards",
+    "privacyDescription": "Hoe Mopiq je gegevens verzamelt, gebruikt en beschermt.",
+    "termsTitle": "Gebruiksvoorwaarden — Mopiq Flashcards",
+    "termsDescription": "De voorwaarden voor het gebruik van Mopiq Flashcards.",
+    "refundTitle": "Terugbetalingsbeleid — Mopiq Flashcards",
+    "refundDescription": "Hoe opzeggingen en terugbetalingen voor Mopiq Flashcards-abonnementen werken."
+  },
+  "login": {
+    "lede": "Gebruik hetzelfde account als in de iOS-app om je kaartensets in de browser te studeren.",
+    "purchaseLede": "Log in zodat Plus aan je Mopiq-account wordt gekoppeld.",
+    "orEmail": "of met e-mail",
+    "passwordLong": "Wachtwoord (minstens 6 tekens)",
+    "wait": "Even geduld…",
+    "haveAccount": "Heb je al een account? Log in",
+    "needAccount": "Nog geen account? Registreer",
+    "forgotNeedEmail": "Vul eerst je e-mailadres in en tik daarna op Wachtwoord vergeten.",
+    "resetSent": "E-mail om je wachtwoord opnieuw in te stellen verzonden.",
+    "badCredentials": "E-mailadres of wachtwoord is onjuist.",
+    "emailInUse": "Dit e-mailadres is al geregistreerd.",
+    "weakPassword": "Het wachtwoord moet minstens 6 tekens bevatten.",
+    "cancelled": "Inloggen geannuleerd.",
+    "providerOff": "Inloggen met Apple is nog niet beschikbaar op het web. Gebruik Google of e-mail, of log in via de app.",
+    "generic": "Inloggen mislukt."
+  },
+  "decks": {
+    "empty": "Nog geen kaartensets. Maak er een om te beginnen met studeren.",
+    "addBody": "Geef een naam en kies een onderwerp. Daarna kun je kaarten toevoegen.",
+    "modeEmpty": "Lege kaartenset",
+    "modeSpreadsheet": "Plakken of CSV",
+    "addSpreadsheetBody": "Plak vanuit Excel, Google Sheets of een CSV. Eén rij per kaart: eerst het begrip, dan de definitie.",
+    "spreadsheetNoCards": "We konden hier geen flitskaarten van maken. Controleer of elke rij een begrip en een definitie heeft.",
+    "spreadsheetPreviewCount": "{count} kaarten gevonden",
+    "spreadsheetImport": "Importeer {count} kaarten",
+    "spreadsheetTooMany": "Deze import is te groot. Gebruik minder dan 2.000 kaarten.",
+    "spreadsheetTooLarge": "Dit bestand of de geplakte inhoud is te groot.",
+    "nameOptional": "Naam (optioneel)",
+    "studyInApp": "Studeren in de app",
+    "webStudy": "Studeren op het web",
+    "premadeBody": "Ontdek geneeskunde, talen, examens en meer in de iOS-app.",
+    "noSearchMatches": "Geen kaartensets gevonden voor deze zoekopdracht.",
+    "magicUploadPowerpoint": "PowerPoint uploaden",
+    "magicDropHintPhoto": "JPEG, PNG, GIF of WebP",
+    "magicDropHintAudio": "MP3, M4A, WAV of WebM",
+    "magicAnkiBody": "Importeer een .apkg-bestand in een nieuwe kaartenset. Studievoortgang uit Anki wordt niet overgenomen.",
+    "appOnlyTitle": "Beschikbaar in de iOS-app",
+    "appOnlyBody": "{name} is beschikbaar in de Mopiq-app voor iOS."
+  },
+  "deck": {
+    "gradeUnavailable": "Cijfer niet beschikbaar",
+    "answersCount": "{count} antwoorden",
+    "infoToday": "Kaarten voor vandaag = nieuw + te herhalen",
+    "appOnlyTitle": "Deze kaartenset kun je alleen in de app studeren",
+    "appOnlyBody": "Geïmporteerde Anki-bestanden en sommige gedeelde kaartensets gebruiken nog het bestandsformaat van de app. Open Mopiq op iPhone, iPad of Mac om ermee te studeren.",
+    "downloadApp": "Download de app",
+    "cta": "Wil je kaartensets toevoegen of kaarten bewerken? Dat kan in de {app}.",
+    "filters": "Filters",
+    "tagRecent": "RECENT",
+    "cardMenu": "Kaartacties",
+    "copyCard": "Dupliceren",
+    "copied": "Kaart gedupliceerd",
+    "reversed": "Kaart omgekeerd",
+    "reverseTitle": "Omgekeerde kaart maken",
+    "reverseMessage": "Dit maakt een kopie van deze kaart met de vraag en het antwoord omgewisseld. Het origineel blijft hetzelfde.",
+    "reverseUnavailable": "Deze kaart kan niet worden omgekeerd.",
+    "selectionBar": "Geselecteerde kaarten",
+    "copiedMany": "Kaarten gedupliceerd",
+    "movedMany": "Kaarten verplaatst",
+    "copyLimit": "Je kunt maximaal 100 kaarten tegelijk dupliceren. Je hebt er {count} geselecteerd.",
+    "folderActions": "Mapacties",
+    "folderNameEmpty": "Vul een mapnaam in.",
+    "folderNameInvalid": "Een mapnaam mag geen :: bevatten.",
+    "folderTooDeep": "Mappen kunnen maximaal twee niveaus diep worden genest."
+  },
+  "settings": {
+    "generalBody": "Nieuwe en moeilijkere flitskaarten worden vaker getoond, oudere en makkelijkere kaarten minder vaak.",
+    "medicalBody": "Langere leerstappen, afgestemd op uitgebreide medische leerstof.",
+    "languagesBody": "Toont in het begin veel nieuwe woorden en helpt je ze te onthouden. Afgestemd op woordenschat, grammatica en spelling.",
+    "nameRequired": "Vul een naam voor de kaartenset in.",
+    "resetBody": "Dit wist je studievoortgang voor deze kaartenset. Je flitskaarten worden niet verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
+    "sectionAccount": "Account",
+    "sectionGeneral": "Algemeen",
+    "sectionLegal": "Juridisch",
+    "sectionAdvanced": "Geavanceerd",
+    "subscription": "Abonnement",
+    "howItWorks": "Hoe het werkt",
+    "profileName": "Naam",
+    "profileEmail": "E-mail",
+    "editNameTitle": "Vul je naam in",
+    "editNameBody": "Deze naam wordt gebruikt voor je profiel",
+    "nameError": "Je naam kon niet worden opgeslagen",
+    "noResults": "Geen resultaten gevonden",
+    "enjoyTitle": "Vind je de app leuk?",
+    "enjoyBody": "We willen de app blijven verbeteren. Laat weten wat je ervan vindt!",
+    "enjoyMeh": "Gaat wel",
+    "enjoyYes": "Ja",
+    "enjoyLove": "Geweldig!",
+    "debugUnlimited": "Onbeperkt studeren (debug)",
+    "debugTutorial": "Studie-uitleg altijd tonen (debug)",
+    "debugTutorialBody": "Speel de oefenherhaling af telkens wanneer je gespreide herhaling start.",
+    "debugFeedback": "Feedback altijd tonen (debug)",
+    "debugFeedbackBody": "Vraag naar je ervaring telkens wanneer je een studiesessie afsluit.",
+    "debugImpersonate": "Gebruiker overnemen",
+    "debugImpersonateHelp": "Plak een aangepast Firebase-token uit mopiq_support_tools:",
+    "debugImpersonateAction": "Inloggen als gebruiker",
+    "debugImpersonateBusy": "Bezig met inloggen…",
+    "debugImpersonateWarning": "Wisselen van account vervangt de sessie in deze browser. Externe gegevens veranderen pas als je ze bewerkt. Vermijd aankopen wanneer je als iemand anders bent ingelogd.",
+    "debugImpersonateError": "Inloggen met dit token mislukt."
+  },
+  "editor": {
+    "mediaNote": "Audio op deze kaart kan alleen in de app worden gewijzigd.",
+    "imageLocked": "Kaarten met afbeeldingsbedekking kunnen niet worden bewerkt.",
+    "richNote": "Deze kaart gebruikt geavanceerde opmaak.",
+    "lockedAudio": "Kaarten met audio kunnen alleen in de app worden bewerkt.",
+    "lockedOcclusion": "Kaarten met afbeeldingsbedekking kunnen niet worden bewerkt.",
+    "saved": "Opgeslagen. Voeg nog een kaart toe of sluit als je klaar bent.",
+    "more": "Meer",
+    "heading": "Tekstgrootte",
+    "hideKeyboard": "Toetsenbord verbergen",
+    "formatting": "Opmaak",
+    "bold": "Vet",
+    "italic": "Cursief",
+    "underline": "Onderstrepen",
+    "strike": "Doorhalen",
+    "bullets": "Opsomming",
+    "numbers": "Genummerde lijst",
+    "alignLeft": "Links uitlijnen",
+    "alignCenter": "Centreren",
+    "alignRight": "Rechts uitlijnen",
+    "subscript": "Subscript",
+    "superscript": "Superscript",
+    "highlight": "Markeren",
+    "link": "Koppeling",
+    "linkPrompt": "URL van de koppeling",
+    "cloze": "Invulveld",
+    "clozeFrontOnly": "Invulvelden kunnen alleen aan de voorkant worden toegevoegd.",
+    "image": "Afbeelding",
+    "imageTooBig": "Afbeeldingen mogen maximaal 2 MB groot zijn.",
+    "occlusionHint": "Sleep over de afbeelding om rechthoeken te maken",
+    "occlusionDelete": "Rechthoek verwijderen",
+    "occlusionNone": "Teken minstens één rechthoek.",
+    "occlusionTooMany": "Je kunt maximaal 100 rechthoeken toevoegen.",
+    "undo": "Ongedaan maken",
+    "redo": "Opnieuw uitvoeren",
+    "clearFormat": "Opmaak wissen",
+    "empty": "Voeg tekst toe aan de voor- of achterkant.",
+    "frontRequired": "Voeg een vraag toe aan de voorkant.",
+    "backRequired": "Voeg een antwoord toe aan de achterkant of een invulveld aan de voorkant.",
+    "tooLong": "De kaarttekst is te lang.",
+    "ttsInsert": "Toevoegen aan kaart",
+    "ttsEmpty": "Vul tekst in die de AI kan voorlezen.",
+    "ttsTooLong": "Tekst moet korter zijn dan 300 tekens.",
+    "ttsLanguage": "Taal"
+  },
+  "quiz": {
+    "start": "Quiz starten",
+    "multiple": "Meerkeuze",
+    "check": "Controleren",
+    "close": "Quiz sluiten",
+    "notEnough": "Er zijn niet genoeg flitskaarten om de quiz te maken. Bruikbare kaarten: {count}. Tip: kaarten met alleen afbeeldingen kunnen niet worden gebruikt.",
+    "notEnoughStudied": "Er zijn niet genoeg bestudeerde flitskaarten om de quiz te maken. Bestudeerde kaarten: {count}. Tip: kaarten met alleen afbeeldingen kunnen niet worden gebruikt.",
+    "noQuestions": "Quizvragen maken mislukt. Probeer het opnieuw.",
+    "needType": "Kies minstens één vraagtype."
+  },
+  "checkpoint": {
+    "gradeHelp": "Over je cijfer"
+  },
+  "limit": {
+    "title": "Daglimiet bereikt",
+    "body": "Je hebt vandaag {limit} gratis kaarten bestudeerd. Upgrade om onbeperkt door te gaan.",
+    "upgrade": "Upgraden op het web",
+    "note": "Je kunt ook upgraden in de iOS-app of morgen terugkomen."
+  },
+  "askAi": {
+    "close": "AI-vraag sluiten",
+    "unavailable": "AI-vragen zijn momenteel niet beschikbaar.",
+    "noReply": "De AI heeft geen antwoord gegeven.",
+    "stop": "Stoppen"
+  },
+  "profile": {
+    "deleteAccountRelogin": "Log opnieuw in en verwijder daarna je account."
+  },
+  "shared": {
+    "notShared": "De kaartenset wordt niet meer gedeeld",
+    "notFound": "Gedeelde kaartenset niet gevonden",
+    "invalidDate": "Ongeldige datum",
+    "sharedOn": "Gedeeld op {date}",
+    "noApp": "Als je de app nog niet hebt geïnstalleerd, download je die {here}.",
+    "here": "hier"
+  },
+  "notFound": {
+    "title": "404 — Pagina niet gevonden",
+    "body": "De pagina die je zoekt bestaat niet.",
+    "home": "Naar de startpagina"
+  },
+  "supportPage": {
+    "body": "Heb je een vraag, suggestie of wil je een fout melden? Mail ons gerust op:"
+  }
+};

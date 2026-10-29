@@ -23,6 +23,15 @@ function keys(obj, prefix = '') {
   });
 }
 
+const newCatalogs = { nb, nl, sv, he, fi, da, 'zh-Hans': zhHans };
+
+function entries(obj, prefix = '') {
+  return Object.entries(obj).flatMap(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    return value && typeof value === 'object' ? entries(value, path) : [[path, value]];
+  });
+}
+
 describe('matchAppLanguage', () => {
   it('maps exact picker codes and regional variants like iOS', () => {
     assert.equal(matchAppLanguage('en'), 'en');
@@ -47,6 +56,34 @@ describe('message catalogs', () => {
     const english = keys(en).sort();
     for (const [name, catalog] of Object.entries({ es, pt, fr, it: itMessages, ja, de, nb, nl, sv, he, fi, da, zhHans })) {
       assert.deepEqual(keys(catalog).sort(), english, `${name} is missing keys`);
+    }
+  });
+
+  it('localizes website copy instead of silently inheriting English sentences', () => {
+    const english = Object.fromEntries(entries(en));
+    const essentialKeys = new Set([
+      'home.titleBefore', 'home.titleMark', 'home.language',
+      'common.downloadApp', 'login.haveAccount', 'login.needAccount',
+      'settings.howItWorks', 'limit.title', 'notFound.home',
+    ]);
+    for (const [locale, catalog] of Object.entries(newCatalogs)) {
+      for (const [key, value] of entries(catalog)) {
+        // Commands, product names and short cognates can legitimately match English.
+        if (key === 'settings.debugImpersonateCommand' || /^https?:\/\//.test(value)) continue;
+        if (essentialKeys.has(key) || english[key].length >= 30) {
+          assert.notEqual(value, english[key], `${locale}: ${key} still uses English`);
+        }
+      }
+    }
+  });
+
+  it('preserves every interpolation placeholder in the new languages', () => {
+    const english = Object.fromEntries(entries(en));
+    const placeholders = (value) => (value.match(/\{\w+\}/g) || []).sort();
+    for (const [locale, catalog] of Object.entries(newCatalogs)) {
+      for (const [key, value] of entries(catalog)) {
+        assert.deepEqual(placeholders(value), placeholders(english[key]), `${locale}: ${key}`);
+      }
     }
   });
 });

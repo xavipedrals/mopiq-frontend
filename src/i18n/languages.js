@@ -6,13 +6,13 @@ export const APP_LANGUAGES = [
   { code: 'it', nativeName: 'Italiano', flag: '/flags/it.png' },
   { code: 'ja', nativeName: '日本語', flag: '/flags/ja.png' },
   { code: 'de', nativeName: 'Deutsch', flag: '/flags/de.png' },
-  { code: 'nb', nativeName: 'Norsk bokmål', emoji: '🇳🇴' },
-  { code: 'nl', nativeName: 'Nederlands', emoji: '🇳🇱' },
-  { code: 'sv', nativeName: 'Svenska', emoji: '🇸🇪' },
-  { code: 'he', nativeName: 'עברית', emoji: '🇮🇱' },
-  { code: 'fi', nativeName: 'Suomi', emoji: '🇫🇮' },
-  { code: 'da', nativeName: 'Dansk', emoji: '🇩🇰' },
-  { code: 'zh-Hans', nativeName: '简体中文', emoji: '🇨🇳' },
+  { code: 'nb', nativeName: 'Norsk bokmål', flag: '/flags/nb.png' },
+  { code: 'nl', nativeName: 'Nederlands', flag: '/flags/nl.png' },
+  { code: 'sv', nativeName: 'Svenska', flag: '/flags/sv.png' },
+  { code: 'he', nativeName: 'עברית', flag: '/flags/he.png' },
+  { code: 'fi', nativeName: 'Suomi', flag: '/flags/fi.png' },
+  { code: 'da', nativeName: 'Dansk', flag: '/flags/da.png' },
+  { code: 'zh-Hans', nativeName: '简体中文', flag: '/flags/zh-Hans.png' },
 
 ];
 

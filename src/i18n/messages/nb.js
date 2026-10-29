@@ -1,9 +1,10 @@
 import en from './en.js';
+import web from './web/nb.js';
 import { extendReleaseMessages } from '../releaseMessages.js';
 import { mergeCatalog } from '../mergeCatalog.js';
 
-// Uses the app's translations; website-only copy falls back to English.
-export default extendReleaseMessages("nb", mergeCatalog(mergeCatalog(mergeCatalog(en,{
+// Combine app translations with localized website copy.
+export default extendReleaseMessages("nb", mergeCatalog(mergeCatalog(mergeCatalog(mergeCatalog(en,{
   "decks": {
     "magicPromptBody": "Beskriv hva du vil lære. Kortene genereres på serveren.",
     "magicPromptPlaceholder": "Forklar fotosyntese til en biologiprøve på videregående",
@@ -551,4 +552,4 @@ export default extendReleaseMessages("nb", mergeCatalog(mergeCatalog(mergeCatalo
   "supportPage": {
     "title": "Støtte"
   }
-}));
+}), web));

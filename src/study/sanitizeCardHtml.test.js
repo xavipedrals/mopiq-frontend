@@ -110,3 +110,35 @@ describe('htmlLooksEmpty', () => {
     assert.equal(htmlLooksEmpty('<p>{{c1::x}}</p>'), false);
   });
 });
+
+
+describe('HTML text entity preservation', () => {
+  it('preserves escaped ampersands, literal markup and Unicode through repeated saves', () => {
+    const html = '<p><strong>ATP &amp; ADP</strong> &lt;b&gt;literal&lt;/b&gt; 🧠</p>';
+    assert.equal(sanitizeCardHtml(html), html);
+    assert.equal(sanitizeCardHtml(sanitizeCardHtml(html)), html);
+    assert.equal(sanitizeCardHtml(editorHtmlToStored(html)), html);
+  });
+  it('normalizes raw and numeric entities once without decoding encoded literal entities twice', () => {
+    assert.equal(sanitizeCardHtml('<p>A & B &#38; &#x1f9e0; &amp;lt;b&amp;gt;</p>'), '<p>A &amp; B &amp; 🧠 &amp;lt;b&amp;gt;</p>');
+  });
+  it('keeps encoded malicious markup as text and still rejects unsafe URL schemes', () => {
+    const html = '<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>';
+    assert.equal(sanitizeCardHtml(html), html);
+    const unsafe = sanitizeCardHtml('<a href="javasc&#114;ipt:alert(1)">x</a>');
+    assert.equal(unsafe, 'x');
+  });
+  it('retains input and encoded-output byte limits', () => {
+    assert.throws(() => sanitizeCardHtml('<p>' + '&'.repeat(25_000) + '</p>'), CardHtmlTooLargeError);
+  });
+});
+
+
+describe('bounded numeric entity grammar', () => {
+  it('preserves unsupported malformed numeric entities instead of truncating them', () => {
+    assert.equal(sanitizeCardHtml('<p>&#abc; &#12f; &#xZZ;</p>'), '<p>&amp;#abc; &amp;#12f; &amp;#xZZ;</p>');
+  });
+  it('uses HTML replacement codepoints for recognized numeric references', () => {
+    assert.equal(sanitizeCardHtml('<p>&#128; &#x80; &#0; &#xD800; &#1114112;</p>'), '<p>€ € � � �</p>');
+  });
+});

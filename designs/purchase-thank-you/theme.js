@@ -1,0 +1,1 @@
+(() => { const requested = new URLSearchParams(location.search).get('theme'); document.documentElement.dataset.theme = requested === 'dark' || (!requested && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'; })();

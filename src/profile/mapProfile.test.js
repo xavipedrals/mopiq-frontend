@@ -45,6 +45,24 @@ describe('mapDisplayProfileRow', () => {
     assert.equal(profile.isPremium, true);
   });
 
+  it('lets an explicit unpaid result override a stale premium flag', () => {
+    const profile = mapDisplayProfileRow(
+      { is_premium: true },
+      { hasPaidAccess: false, canManageSubscription: false },
+    );
+    assert.equal(profile.isPremium, false);
+    assert.equal(profile.canManageSubscription, false);
+  });
+
+  it('keeps manage separate from an active website subscription', () => {
+    const profile = mapDisplayProfileRow({ is_premium: false }, {
+      hasPaidAccess: true,
+      canManageSubscription: true,
+    });
+    assert.equal(profile.isPremium, true);
+    assert.equal(profile.canManageSubscription, true);
+  });
+
   it('maps is_premium from get_user_profile', () => {
     const profile = mapDisplayProfileRow({ is_premium: true, name: 'Ada' });
     assert.equal(profile.isPremium, true);

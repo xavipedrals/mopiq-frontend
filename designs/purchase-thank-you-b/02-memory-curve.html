@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Thank you · Mopiq Plus</title>
+<link rel="icon" href="../../public/logo-small.svg">
+<script>
+  (() => {
+    const t = new URLSearchParams(location.search).get('theme');
+    document.documentElement.dataset.theme = t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  })();
+</script>
+<style>
+  :root {
+    --bg: #f7f8fc; --ink: #0d1324; --muted: #5b6478; --faint: #94a3b8;
+    --surface: #ffffff; --edge: rgba(15, 23, 42, 0.07);
+    --hero: #0d1324; --hero-ink: #ffffff; --hero-muted: #aab3c8; --hero-grid: rgba(255, 255, 255, 0.06);
+    --mint: #14c8a8; --mint-soft: #d8f7ef; --mint-ink: #0c8a72;
+    --grad: linear-gradient(120deg, #2f6bff 0%, #8b5cf6 55%, #e25ce0 100%);
+  }
+  [data-theme="dark"] {
+    --bg: #070b16; --ink: #f1f4fb; --muted: #a3acc2; --faint: #6b7590;
+    --surface: #111829; --edge: rgba(255, 255, 255, 0.08);
+    --hero: #0f1629; --mint-soft: rgba(20, 200, 168, 0.14); --mint-ink: #5eead4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { width: min(1040px, 100% - 32px); margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 20px; letter-spacing: -0.02em; color: inherit; text-decoration: none; }
+  .theme { border: 1px solid var(--edge); background: var(--surface); color: var(--muted); width: 38px; height: 38px; border-radius: 12px; cursor: pointer; display: grid; place-items: center; }
+
+  .hero { position: relative; overflow: hidden; border-radius: 32px; background: var(--hero); color: var(--hero-ink); padding: clamp(32px, 6vw, 64px) clamp(24px, 6vw, 64px) 32px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 40px; align-items: center; }
+  .hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(520px 280px at 0% 0%, rgba(47, 107, 255, .45), transparent 60%), radial-gradient(520px 300px at 100% 100%, rgba(226, 92, 224, .32), transparent 60%); pointer-events: none; }
+  .hero > * { position: relative; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 9px; border-radius: 999px; background: rgba(20, 200, 168, .14); color: #8ff0d9; font-size: 13px; font-weight: 700; }
+  .pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 4px rgba(20, 200, 168, .25); animation: pulse 2s ease-in-out infinite; }
+  h1 { font-size: clamp(36px, 5.4vw, 58px); line-height: 1; letter-spacing: -0.04em; margin: 18px 0 16px; font-weight: 800; }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { color: var(--hero-muted); font-size: 17px; line-height: 1.55; margin: 0 0 28px; max-width: 420px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 24px; border-radius: 16px; font-weight: 700; font-size: 16px; text-decoration: none; }
+  .btn.grad-btn { color: #fff; background: var(--grad); box-shadow: 0 14px 34px -12px rgba(139, 92, 246, .8); }
+  .btn.link { color: var(--hero-ink); padding: 0 8px; opacity: .85; }
+
+  .chart { background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .08); border-radius: 22px; padding: 18px 18px 12px; }
+  .chart-head { display: flex; justify-content: space-between; font-size: 13px; color: var(--hero-muted); margin-bottom: 6px; }
+  .legend { display: flex; gap: 14px; }
+  .legend span::before { content: ""; display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; background: var(--grad); }
+  .legend span.off::before { background: repeating-linear-gradient(90deg, #6b7590 0 4px, transparent 4px 7px); }
+  svg.curve { width: 100%; height: auto; display: block; }
+  .curve .line { stroke-dasharray: 1400; stroke-dashoffset: 1400; animation: draw 2.4s cubic-bezier(.5, 0, .2, 1) .3s forwards; }
+  .curve .dot { opacity: 0; transform-box: fill-box; transform-origin: center; animation: pop .4s ease-out forwards; }
+  .curve .d1 { animation-delay: .9s; } .curve .d2 { animation-delay: 1.5s; } .curve .d3 { animation-delay: 2.1s; }
+  .caption { margin: 8px 2px 0; font-size: 12.5px; color: var(--hero-muted); }
+
+  .steps-title { margin: 56px 0 18px; font-size: 13px; font-weight: 700; letter-spacing: .12em; color: var(--faint); text-transform: uppercase; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: s; }
+  .step { background: var(--surface); border: 1px solid var(--edge); border-radius: 22px; padding: 22px; }
+  .step .when { display: inline-block; font-size: 12px; font-weight: 700; color: var(--mint-ink); background: var(--mint-soft); padding: 4px 9px; border-radius: 8px; }
+  .step h3 { margin: 14px 0 6px; font-size: 18px; letter-spacing: -0.01em; }
+  .step p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+
+  .note { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin: 40px 0 0; padding: 22px 0; border-top: 1px solid var(--edge); color: var(--muted); font-size: 14.5px; }
+  .note a { color: var(--ink); font-weight: 600; }
+  footer { padding: 4px 0 36px; color: var(--faint); font-size: 14px; }
+
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 7px rgba(20, 200, 168, .08); } }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } .steps { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) {
+    .curve .line { animation: none; stroke-dashoffset: 0; }
+    .curve .dot { animation: none; opacity: 1; }
+    .pill i { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="https://mopiq.app"><img src="../../public/logo-small.svg" width="34" height="25" alt="">mopiq</a>
+    <button class="theme" type="button" aria-label="Toggle dark mode">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </header>
+
+  <section class="hero">
+    <div>
+      <span class="pill"><i></i>Mopiq Plus is active</span>
+      <h1>Thank you.<br><span class="grad">Now watch it stick.</span></h1>
+      <p>Your purchase is complete. From today, Mopiq schedules every review right before you'd forget, so what you learn stays learned.</p>
+      <a class="btn grad-btn" href="https://mopiq.app/decks">Start my first session
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <a class="btn link" href="ankicards://">Open on iPhone</a>
+    </div>
+
+    <figure class="chart" style="margin:0">
+      <div class="chart-head"><span>Memory</span>
+        <div class="legend"><span>With Plus</span><span class="off">Without reviews</span></div>
+      </div>
+      <svg class="curve" viewBox="0 0 600 230" role="img" aria-label="Illustration: memory drops without reviews, but each scheduled review restores it and makes it fade more slowly.">
+        <defs>
+          <linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#2f6bff"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#e25ce0"/></linearGradient>
+          <linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8b5cf6" stop-opacity=".25"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></linearGradient>
+        </defs>
+        <g stroke="rgba(255,255,255,.06)">
+          <line x1="20" x2="580" y1="20" y2="20"/><line x1="20" x2="580" y1="80" y2="80"/><line x1="20" x2="580" y1="140" y2="140"/><line x1="20" x2="580" y1="200" y2="200"/>
+        </g>
+        <path d="M20 20 Q60 190 580 192" fill="none" stroke="#6b7590" stroke-width="2.5" stroke-dasharray="5 6"/>
+        <path d="M20 20 Q35 125 110 130 L110 20 Q130 95 240 100 L240 20 Q265 65 400 70 L400 20 Q430 42 580 46 L580 200 L20 200 Z" fill="url(#fill)"/>
+        <path class="line" d="M20 20 Q35 125 110 130 L110 20 Q130 95 240 100 L240 20 Q265 65 400 70 L400 20 Q430 42 580 46" fill="none" stroke="url(#g)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <g fill="#14c8a8" stroke="#0d1324" stroke-width="3">
+          <circle class="dot d1" cx="110" cy="20" r="7"/><circle class="dot d2" cx="240" cy="20" r="7"/><circle class="dot d3" cx="400" cy="20" r="7"/>
+        </g>
+        <g fill="#aab3c8" font-size="13" font-family="inherit" text-anchor="middle">
+          <text x="110" y="222">Review</text><text x="240" y="222">Review</text><text x="400" y="222">Review</text>
+        </g>
+      </svg>
+      <figcaption class="caption">Each review lands at the right moment, and every time, the memory fades more slowly.</figcaption>
+    </figure>
+  </section>
+
+  <h2 class="steps-title">Your first days with Plus</h2>
+  <div class="steps">
+    <article class="step"><span class="when">Today</span><h3>Study without a cap</h3><p>Go through as many cards as you like. There's no daily limit anymore.</p></article>
+    <article class="step"><span class="when">Tomorrow</span><h3>Reviews find you</h3><p>The AI picks the cards you're about to forget and shows them first.</p></article>
+    <article class="step"><span class="when">Anytime</span><h3>Add a premium deck</h3><p>Browse 10,000+ ready-made decks for medicine, languages, school and more.</p></article>
+  </div>
+
+  <div class="note">
+    <span>Your receipt is on its way from Paddle, our payment partner. Plus works on the web and the iPhone app with the same account.</span>
+    <a href="https://mopiq.app/support">Need a hand?</a>
+  </div>
+  <footer>Made for a curious mind. Yours.</footer>
+</div>
+<script>
+  document.querySelector('.theme').addEventListener('click', () => {
+    const r = document.documentElement;
+    r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+  });
+</script>
+</body>
+</html>
