@@ -3,13 +3,25 @@
     <main>
       <h1>You're in</h1>
       <p>Mopiq Flashcards Pro is ready on this account.</p>
-      <a href="/decks">Go to your decks</a>
+      <router-link to="/decks" @click="completeWelcome">Go to your decks</router-link>
     </main>
   </div>
 </template>
 
 <script>
-export default { name: 'WelcomePage' };
+import { trackProductEvent } from '../analytics';
+
+export default {
+  name: 'WelcomePage',
+  mounted() {
+    void trackProductEvent('onboarding_welcome_shown');
+  },
+  methods: {
+    completeWelcome() {
+      void trackProductEvent('onboarding_welcome_completed');
+    },
+  },
+};
 </script>
 
 <style scoped>

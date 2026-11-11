@@ -1,0 +1,16 @@
+---
+description: Before a migration, schema, RPC, RLS, or Edge Function change, load the production contract check. Also when the user says "production contracts" or "database guardian".
+alwaysApply: true
+---
+
+# Production contract check
+
+For database or client/server request, response, or storage contract changes, read this file before editing:
+
+`/Users/xavierpedralscamprubi/iosProjects/anki-server/anki-supabase-local/tools/database-guardian/implementer/SKILL.md`
+
+That includes migrations, SQL, tables, columns, RPCs, overloads, RLS, grants, triggers, and changes to Edge Function or client contracts. UI, presentation, and job orchestration edits that preserve these contracts do not require a review.
+
+When the user mentions **production contracts** or **database guardian**, perform the requested operation using a named file scope. Do not review unrelated pending work.
+
+The shipping contract is the released app, not this checkout.

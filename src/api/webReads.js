@@ -23,6 +23,7 @@ function deckCapabilities(mode, creatorId, supabaseUid) {
   return {
     canStudy,
     canEdit: canStudy && (!creatorId || creatorId === supabaseUid),
+    canManage: Boolean(creatorId && creatorId === supabaseUid),
   };
 }
 

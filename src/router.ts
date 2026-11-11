@@ -6,6 +6,8 @@ import SharedDeck from './components/SharedDeck.vue';
 import NotFound from './components/404.vue';
 import TermsOfService from './components/TermsOfService.vue';
 import PrivacyPolicy from './components/PrivacyPolicy.vue';
+import DeleteAccount from './components/DeleteAccount.vue';
+import DeleteData from './components/DeleteData.vue';
 import AppSplit from './components/AppSplit.vue';
 import DeckPlaceholder from './components/DeckPlaceholder.vue';
 import DeckDetailPage from './components/DeckDetail.vue';
@@ -79,6 +81,8 @@ const routes: RouteRecordRaw[] = [
   ] : []),
   { path: '/terms', component: TermsOfService },
   { path: '/privacy', component: PrivacyPolicy },
+  { path: '/delete-account', component: DeleteAccount, meta: { skipAuthReady: true } },
+  { path: '/delete-data', component: DeleteData, meta: { skipAuthReady: true } },
   { path: '/refund', component: RefundPolicy },
   {
     path: '/support',
@@ -118,6 +122,7 @@ router.beforeEach(async (to) => {
     if (isLoggedIn()) return { path: '/decks' };
     return true;
   }
+  if (to.meta.skipAuthReady) return true;
   await authReady;
   if (to.meta.requiresAuth && !isLoggedIn()) {
     return { path: '/', query: { login: '1', next: to.fullPath } };

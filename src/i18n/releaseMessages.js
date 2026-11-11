@@ -1,3 +1,5 @@
+import { streakMessages } from './streakMessages.js';
+
 // Study UI copy shared with iOS 2.2.7, plus web-specific session messages.
 export const releaseMessages = {
   "en": {
@@ -1265,5 +1267,6 @@ export function extendReleaseMessages(locale, catalog) {
   const extra = releaseMessages[locale] || releaseMessages.en;
   const result = { ...catalog };
   for (const [group, messages] of Object.entries(extra)) result[group] = { ...catalog[group], ...messages };
+  if (streakMessages[locale]) result.streak = streakMessages[locale];
   return result;
 }

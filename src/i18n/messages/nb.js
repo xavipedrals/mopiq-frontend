@@ -70,9 +70,6 @@ export default extendReleaseMessages("nb", mergeCatalog(mergeCatalog(mergeCatalo
     "flagImportant": "Viktig",
     "flagReviewLater": "Repeter senere",
     "flagDifficult": "Vanskelig",
-    "keyboardHintPrefix": "Du kan også trykke",
-    "keyboardHintSuffix": "for å vise svaret",
-    "dismissKeyboardHint": "Lukk tastaturtips",
     "savingSession": "Lagrer studieøkten",
     "last10": "Siste 10 vurderinger",
     "doneBody": "Kom tilbake senere for å fortsette.",
@@ -353,6 +350,9 @@ export default extendReleaseMessages("nb", mergeCatalog(mergeCatalog(mergeCatalo
     "resetError": "Noe gikk galt"
   },
   "editor": {
+    aiAddingTitle: "Legger til KI-kortene dine…",
+    aiAddingBody: "Du kan fortsette å bruke appen mens vi legger dem til i bakgrunnen.",
+    aiGeneratingMore: "Genererer flere kort...",
     "addTitle": "Lag kort",
     "editTitle": "Redigeringskort",
     "front": "FORSIDEN",
@@ -504,6 +504,10 @@ export default extendReleaseMessages("nb", mergeCatalog(mergeCatalog(mergeCatalo
     "rememberMessage": "Hjelp meg å huske dette"
   },
   "profile": {
+    retryStats: "Prøv på nytt",
+    todayStats: "Dagens statistikk",
+    allTimeStats: "Samlet statistikk",
+    statsLoadError: "Kunne ikke laste statistikken. Prøv igjen når du er på nett.",
     "loadError": "Noe gikk galt",
     "level": "Nivå {level}",
     "joined": "Ble med i {date}",

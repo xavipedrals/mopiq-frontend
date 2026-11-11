@@ -64,18 +64,59 @@ export function shouldTrackAnonymousLanding({ loggedIn, path, nextQuery }) {
   return true;
 }
 
-async function logAnalyticsEvent(name) {
+let analyticsClient;
+
+async function initializeAnalyticsClient() {
   const { getAnalytics, initializeAnalytics, isSupported, logEvent } = await import('firebase/analytics');
   const { app } = await import('./firebaseInit');
-  if (!(await isSupported())) return false;
+  if (!(await isSupported())) return null;
   let analytics;
   try {
     analytics = initializeAnalytics(app, { config: { send_page_view: false } });
   } catch {
     analytics = getAnalytics(app);
   }
-  logEvent(analytics, name);
+  return (name) => logEvent(analytics, name);
+}
+
+async function logAnalyticsEvent(name) {
+  analyticsClient ??= initializeAnalyticsClient().catch(() => {
+    analyticsClient = undefined;
+    return null;
+  });
+  const log = await analyticsClient;
+  if (!log || !analyticsConsentGranted()) return false;
+  log(name);
   return true;
+}
+
+// Only send product milestones from the live web app, using the existing consent.
+export async function trackProductEvent(name) {
+  if (!import.meta.env?.PROD || !['mopiq.app', 'www.mopiq.app'].includes(globalThis.location?.hostname)) return false;
+  if (!analyticsConsentGranted()) return false;
+  try {
+    return await logAnalyticsEvent(name);
+  } catch {
+    return false;
+  }
+}
+
+export function createStudyMilestones(track = trackProductEvent) {
+  let presented = false;
+  const answered = new Set();
+  return {
+    present() {
+      if (presented) return;
+      presented = true;
+      void track('study_session_started');
+    },
+    acknowledge(cardId) {
+      void track('study_review_saved');
+      if (answered.size >= 5) return;
+      answered.add(cardId);
+      if (answered.size === 5) void track('study_five_cards_answered');
+    },
+  };
 }
 
 export async function trackAnonymousLandingVisit(context) {

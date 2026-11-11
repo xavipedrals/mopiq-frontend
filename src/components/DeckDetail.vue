@@ -1,6 +1,6 @@
 <template>
   <div class="detail-page" :class="{ selecting: selectionMode }">
-      <SharedGenerationStatus :deck-id="$route.params.deckId" @committed="onGenerationCommitted" />
+      <SharedGenerationStatus :deck-id="$route.params.deckId" :inline-job-id="inlineGenerationJob?.jobId" @committed="onGenerationCommitted" />
       <div v-if="deckGeneration" class="detail generation-hold">
         <div class="topbar">
           <router-link :to="listTo" class="back">
@@ -11,7 +11,7 @@
           </router-link>
           <div class="tools">
             <button
-              v-if="deck?.canEdit"
+              v-if="deck?.canManage"
               type="button"
               class="tool"
               :aria-label="$t('deck.settings')"
@@ -44,7 +44,7 @@
           </router-link>
           <div class="tools">
             <button
-              v-if="deck?.canEdit"
+              v-if="deck?.canManage"
               type="button"
               class="tool"
               :aria-label="$t('deck.settings')"
@@ -72,9 +72,16 @@
           <SkeletonBlock v-else class="title-line" w="min(340px, 80%)" h="1.5rem" radius="8px" />
           <p class="sub">
             <SkeletonBlock v-if="subPending" w="min(200px, 60%)" h="1rem" radius="6px" />
-            <template v-else>{{ $t('deck.studiedOf', { seen: seenCount, total: deck.cardCount }) }}</template>
+            <template v-else-if="seenCount !== null">{{ $t('deck.studiedOf', { seen: seenCount, total: deck.cardCount }) }}</template>
+            <template v-else>{{ $t('decks.cards', { count: deck.cardCount }) }}</template>
           </p>
         </div>
+
+        <AdditionalGenerationBanner
+          v-if="inlineGenerationJob || additionalGeneration"
+          :progress="inlineGenerationJob?.progress"
+          :error="additionalGeneration?.error || (inlineGenerationJob?.status === 'failed' ? inlineGenerationJob.errorMessage || $t('decks.magicProgressFailed') : '')"
+        />
 
         <DeckStats
           :list-stats="listStats"
@@ -102,18 +109,12 @@
                 {{ $t('deck.study') }}
               </button>
             </div>
-            <div v-else class="app-only">
-              <h2>{{ $t('deck.appOnlyTitle') }}</h2>
-              <p>{{ $t('deck.appOnlyBody') }}</p>
-              <a :href="storeUrl" target="_blank" rel="noopener">
-                <button type="button" class="mopiq-btn">{{ $t('deck.downloadApp') }}</button>
-              </a>
-            </div>
+            <p v-else class="apple-study-notice">{{ $t('deck.appOnlyBody') }}</p>
           </template>
         </DeckStats>
 
         <button
-          v-if="activeFolder"
+          v-if="deck?.canStudy && activeFolder"
           type="button"
           class="folder-back"
           @click="leaveFolder"
@@ -125,11 +126,13 @@
         </button>
         <DeckFolders
           v-if="showFolders"
+          :key="deck.id"
           :folders="deckFolders"
           :parent="folderParent"
           :counts="subdeckCounts"
           :decks="deck.decks"
           :deck-name="deck.name"
+          :can-open="deck.canStudy"
           :can-edit="Boolean(deck.canEdit)"
           :can-add="canAddFolder"
           :busy="foldersBusy"
@@ -335,7 +338,7 @@
         <p v-if="deckPending" class="cta">
           <SkeletonBlock w="min(480px, 92%)" h="1rem" radius="6px" />
         </p>
-        <p v-else-if="deck && !deck.canEdit" class="cta" v-html="ctaHtml"></p>
+        <p v-else-if="deck?.canStudy && !deck.canEdit" class="cta" v-html="ctaHtml"></p>
       </div>
     <StudyLimitSheet
       :open="limitOpen"
@@ -344,7 +347,7 @@
       @dismiss="limitOpen = false"
     />
     <DeckSettings
-      :open="settingsOpen"
+      :open="settingsOpen && Boolean(deck?.canManage)"
       :deck="deck"
       @dismiss="settingsOpen = false"
       @saved="onSettingsSaved"
@@ -387,6 +390,7 @@
       :deck="deck"
       :card="editorCard"
       :next-position="deck?.cardCount || 0"
+      :additional-generation="additionalGeneration"
       @dismiss="closeEditor"
       @saved="onCardSaved"
       @magic-imported="onMagicImported"
@@ -530,7 +534,9 @@
 </template>
 
 <script>
+import { trackProductEvent } from '../analytics';
 import SharedGenerationStatus from "./SharedGenerationStatus.vue";
+import AdditionalGenerationBanner from "./AdditionalGenerationBanner.vue";
 import { deckReviewSync } from '../study/reviewSync';
 import { getCurrentUser } from '../auth/session';
 import { submitReview } from '../api/mopiq';
@@ -589,6 +595,8 @@ import {
   blocksDeckGeneration,
   dismissGenerationJob,
   generationForDeck,
+  additionalGenerationForDeck,
+  generationPhase,
   subscribeGenerationJobs,
 } from '../study/generationJobs';
 import {
@@ -601,6 +609,7 @@ import {
   FolderEditError,
   parentOf,
   parseDeckFolders,
+  completedFolders,
   renameFolder,
   rootFolder,
   rootFolderId,
@@ -620,6 +629,7 @@ export default {
   },
   components: {
     SharedGenerationStatus,
+    AdditionalGenerationBanner,
     DeckStats,
     StudyLimitSheet,
     DeckSettings,
@@ -653,7 +663,7 @@ export default {
       error: '',
       deck: null,
       listStats: null,
-      time: { todayMilliseconds: 0, totalMilliseconds: 0, activeDays: 0 },
+      time: null,
       histogram: { counts: { AGAIN: 0, HARD: 0, GOOD: 0, EASY: 0 }, total: 0, grade: 0 },
       cards: [],
       cardTotal: 0,
@@ -662,12 +672,13 @@ export default {
       searchText: '',
       searchTimer: 0,
       browseQuery: defaultCardBrowseQuery(),
-      seenCount: 0,
+      seenCount: null,
       studiedToday: 0,
       storeUrl: APP_STORE_URL,
       limitOpen: false,
       settingsOpen: false,
       generationJobs: [],
+      additionalGenerations: new Map(),
       sharedRefreshStamp: '',
       sharedRefreshing: false,
       suppressGenerationReload: false,
@@ -706,9 +717,19 @@ export default {
       foldersBusy: false,
       actionCards: [],
       bulkAction: false,
+      trackedUsableDeck: null,
     };
   },
   watch: {
+    usableDeckId: {
+      flush: 'post',
+      immediate: true,
+      handler(deckId) {
+        if (!deckId || this.trackedUsableDeck === deckId) return;
+        this.trackedUsableDeck = deckId;
+        void trackProductEvent('deck_with_cards_viewed');
+      },
+    },
     searchText() {
       clearTimeout(this.searchTimer);
       this.searchTimer = setTimeout(() => {
@@ -719,6 +740,7 @@ export default {
       }, 300);
     },
     '$route.params.deckId'(deckId) {
+      this.trackedUsableDeck = null;
       if (!deckId || this.$route.meta.preview) return;
       this.reloadAll(deckId);
     },
@@ -736,13 +758,24 @@ export default {
   },
   created() {
     if (!this.$route.meta.preview) {
-      this.unsubscribeGenerations = subscribeGenerationJobs((next) => {
+      this.unsubscribeGenerations = subscribeGenerationJobs((next, submissions) => {
         const deckId = this.$route.params.deckId;
         const wasBlocking = blocksDeckGeneration(generationForDeck(this.generationJobs, deckId));
+        const previous = additionalGenerationForDeck(this.generationJobs, deckId);
+        const previousSubmission = this.additionalGenerations.get(deckId);
         this.generationJobs = next;
+        this.additionalGenerations = submissions;
         const nowBlocking = blocksDeckGeneration(generationForDeck(next, deckId));
         if (this.suppressGenerationReload) return;
         if (wasBlocking && !nowBlocking && deckId) this.reloadAll(deckId);
+        const job = additionalGenerationForDeck(next, deckId);
+        const submission = submissions.get(deckId);
+        if (previous && (previous.jobId !== job?.jobId || previous.insertedCards !== job?.insertedCards)
+          || previousSubmission?.submitting && !submission) {
+          const stamp = job ? `${job.jobId}:${job.revision}:${job.insertedCards}`
+            : `${previous?.jobId || previousSubmission.startedAt}:settled`;
+          this.refreshCommittedGeneration(deckId, stamp);
+        }
       });
     }
     if (this.$route.meta.preview) {
@@ -770,6 +803,17 @@ export default {
     this.setInspectorOpen?.(false);
   },
   computed: {
+    usableDeckId() {
+      return !this.$route.meta.preview && this.deck?.cardCount > 0
+        && String(this.deck.id) === String(this.$route.params.deckId) ? this.deck.id : null;
+    },
+    additionalGeneration() {
+      return this.additionalGenerations.get(this.$route.params.deckId);
+    },
+    inlineGenerationJob() {
+      const job = additionalGenerationForDeck(this.generationJobs, this.$route.params.deckId);
+      return generationPhase(job) === 'active' || job?.pipeline !== 'shared' && job?.status === 'failed' ? job : null;
+    },
     deckGeneration() {
       const job = generationForDeck(this.generationJobs, this.$route.params.deckId);
       return blocksDeckGeneration(job) ? job : null;
@@ -816,18 +860,22 @@ export default {
         : 'deck.noCardsYet';
     },
     deckFolders() {
-      return parseDeckFolders(this.deck?.decks, this.deck?.name || '');
+      const folders = parseDeckFolders(this.deck?.decks, this.deck?.name || '');
+      return this.deck?.canStudy ? folders : completedFolders(folders);
     },
     activeFolder() {
+      if (!this.deck?.canStudy) return null;
       const folder = findFolder(this.deckFolders, this.$route.query.folder);
       return folder && folder.depth > 0 ? folder : null;
     },
     folderParent() {
+      if (!this.deck?.canStudy && this.deckFolders.filter((folder) => folder.depth === 0).length > 1) return null;
       return this.activeFolder || rootFolder(this.deckFolders);
     },
     showFolders() {
+      if (!this.deck) return false;
       const parent = this.folderParent;
-      if (!parent || !this.deck) return false;
+      if (!parent) return this.deckFolders.length > 0;
       const hasChildren = this.deckFolders.some((folder) => (
         folder.depth === parent.depth + 1 && folder.fullPath.startsWith(`${parent.fullPath}::`)
       ));
@@ -1012,8 +1060,10 @@ export default {
       this.studySheetOpen = false;
       this.limitOpen = false;
       this.exitCheckboxMode();
-      this.seenCount = 0;
+      this.time = null;
+      this.seenCount = null;
       this.studiedToday = 0;
+      this.subdeckCounts = {};
       this.deck = cachedDeck(deckId);
       this.listStats = cachedDeckStats(deckId);
       this.loadDeck(deckId);
@@ -1030,6 +1080,7 @@ export default {
         cardCount: 53,
         canStudy: true,
         canEdit: true,
+        canManage: true,
         topic: { color: '#0A7AFF', backgroundColor: '#E0F2FE', imageName: 'history' },
         decks: {
           1: { id: 1, name: 'UK Prime Ministers', conf: 1, desc: '' },
@@ -1118,8 +1169,8 @@ export default {
       }
       if (this.deck.canStudy) {
         await this.loadMoreCards();
+        if (gen === this.loadGen) this.loadFolderCounts(deckId);
       }
-      this.loadFolderCounts(deckId);
       if (gen === this.loadGen) this.cardsReady = true;
     },
     async loadListStats(deckId) {
@@ -1130,8 +1181,8 @@ export default {
           : await fetchDeck(deckId);
         if (gen !== this.loadGen) return;
         if (!this.deck) this.deck = deck;
-        this.listStats = await fetchDeckTodayStats(deck);
-        if (gen !== this.loadGen) return;
+        const stats = await fetchDeckTodayStats(deck);
+        if (gen === this.loadGen) this.listStats = stats;
       } catch {
         // The dashboard falls back to em dashes when stats are unavailable.
       } finally {
@@ -1145,7 +1196,7 @@ export default {
         if (gen !== this.loadGen) return;
         this.time = time;
       } catch {
-        // Keep the zeroed defaults.
+        // Keep the last confirmed summary, if any.
       } finally {
         if (gen === this.loadGen) this.timePending = false;
       }
@@ -1171,11 +1222,16 @@ export default {
     },
     async loadSeen(deckId) {
       const gen = this.loadGen;
-      const counts = await fetchDeckProgressCounts(deckId).catch(() => ({ seen: 0, studiedToday: 0 }));
-      if (gen !== this.loadGen) return;
-      this.seenCount = counts.seen;
-      this.studiedToday = counts.studiedToday;
-      this.seenPending = false;
+      try {
+        const counts = await fetchDeckProgressCounts(deckId);
+        if (gen !== this.loadGen) return;
+        this.seenCount = counts.seen;
+        this.studiedToday = counts.studiedToday;
+      } catch {
+        // Keep the last confirmed progress, if any.
+      } finally {
+        if (gen === this.loadGen) this.seenPending = false;
+      }
     },
     preview(text) {
       if (isImageOcclusionMarkup(text)) return this.$t('deck.occlusionLabel');
@@ -2016,14 +2072,14 @@ h1 {
   color: var(--button-text) !important;
   border: none !important;
 }
-.app-only {
-  background: var(--card-bg);
+.apple-study-notice {
+  margin: 0;
+  padding: 16px 18px;
   border: 1px solid var(--stat-card-border);
   border-radius: 24px;
-  padding: 24px 18px;
+  background: var(--card-bg);
+  color: var(--text);
 }
-.app-only h2 { font-size: 1.25rem; margin-bottom: 8px; color: var(--title); }
-.app-only p { color: var(--text); margin-bottom: 16px; }
 .cta { color: var(--text-secondary); margin: 28px 0 0; font-size: 0.9rem; }
 .cta a { color: var(--blue-button); }
 .cards { margin-top: 6px; padding-top: 0; padding-bottom: 8px; }

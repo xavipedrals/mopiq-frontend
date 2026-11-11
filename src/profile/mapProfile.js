@@ -51,3 +51,26 @@ export function mergeHighestStats(base, other) {
     answerFeedbackPosition: base.answerFeedbackPosition || other.answerFeedbackPosition || '',
   };
 }
+
+// Keep the server snapshot separate from the syncable, merged display profile.
+export function mapProfileStatisticsRow(row) {
+  const fields = {
+    todayCardsStudied: 'today_cards_studied',
+    todayMilliseconds: 'today_milliseconds',
+    todayEndsAtEpoch: 'today_ends_at_epoch',
+    cardsStudied: 'cards_studied',
+    secondsStudied: 'seconds_studied',
+    daysUsingApp: 'days_using_app',
+    experience: 'experience',
+  };
+  const stats = {};
+  for (const [key, field] of Object.entries(fields)) {
+    const value = row?.[field];
+    if (value == null || value === '' || !Number.isFinite(Number(value)) || Number(value) < 0) {
+      throw new Error(`Invalid profile statistic: ${field}`);
+    }
+    stats[key] = Number(value);
+  }
+  stats.todaySecondsStudied = Math.floor(stats.todayMilliseconds / 1000);
+  return stats;
+}

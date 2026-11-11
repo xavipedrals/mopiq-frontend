@@ -1,5 +1,5 @@
 <template>
-  <section v-if="job && !['done', 'done_with_warnings', 'cancelled'].includes(job.status)" class="server-generation" role="status" aria-live="polite">
+  <section v-if="job && job.id !== inlineJobId && !['done', 'done_with_warnings', 'cancelled'].includes(job.status)" class="server-generation" role="status" aria-live="polite">
     <div><strong>{{ $t('generation.title') }}</strong><p>{{ $t('generation.saved', { count: job.inserted_cards }) }} · {{ $t(`generation.${job.status}`) }}</p></div>
     <div class="generation-actions">
       <button v-if="['queued', 'generating'].includes(job.status)" :disabled="busy" @click="control('pause')">{{ $t('generation.pause') }}</button>
@@ -13,7 +13,7 @@
 import { listSharedGenerationJobs, controlSharedGeneration } from '../api/aiGeneration';
 import { getCurrentUser, onSessionChange } from '../auth/session';
 export default {
-  props: { deckId: { type: String, required: true }, previewJob: { type: Object, default: null } },
+  props: { deckId: { type: String, required: true }, previewJob: { type: Object, default: null }, inlineJobId: { type: String, default: '' } },
   emits: ['committed'],
   data: () => ({ job: null, busy: false, error: '', timer: null, refreshing: false, request: 0, disposed: false }),
   mounted() { if (!this.previewJob) this.unsubscribeSession = onSessionChange(() => { this.request++; this.job = null; this.error = ''; }); if (this.previewJob) { this.job = this.previewJob; return; } this.refresh(); this.timer = setInterval(() => this.refresh(), 5000); },

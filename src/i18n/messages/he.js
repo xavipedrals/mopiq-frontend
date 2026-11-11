@@ -70,9 +70,6 @@ export default extendReleaseMessages("he", mergeCatalog(mergeCatalog(mergeCatalo
     "flagImportant": "חשוב",
     "flagReviewLater": "לחזרה בהמשך",
     "flagDifficult": "קשה",
-    "keyboardHintPrefix": "אפשר גם ללחוץ על",
-    "keyboardHintSuffix": "כדי להציג את התשובה",
-    "dismissKeyboardHint": "סגירת טיפ למקלדת",
     "savingSession": "שמירת מפגש הלימוד",
     "last10": "10 הדירוגים האחרונים",
     "doneBody": "אפשר לחזור מאוחר יותר להמשך הלימוד.",
@@ -353,6 +350,9 @@ export default extendReleaseMessages("he", mergeCatalog(mergeCatalog(mergeCatalo
     "resetError": "משהו השתבש"
   },
   "editor": {
+    aiAddingTitle: "מוסיפים את כרטיסיות ה-AI שלך…",
+    aiAddingBody: "אפשר להמשיך להשתמש באפליקציה בזמן שאנחנו מוסיפים אותן ברקע.",
+    aiGeneratingMore: "יוצר עוד כרטיסים...",
     "addTitle": "צור כרטיס",
     "editTitle": "כרטיס עריכה",
     "front": "הצד הקדמי",
@@ -504,6 +504,10 @@ export default extendReleaseMessages("he", mergeCatalog(mergeCatalog(mergeCatalo
     "rememberMessage": "עזור לי לזכור את זה"
   },
   "profile": {
+    retryStats: "נסה שוב",
+    todayStats: "הסטטיסטיקה של היום",
+    allTimeStats: "הסטטיסטיקה הכוללת",
+    statsLoadError: "לא ניתן לטעון נתונים. נסו שוב כשיהיה חיבור לאינטרנט.",
     "loadError": "משהו השתבש",
     "level": "רמה {level}",
     "joined": "הצטרף ל-{date}",

@@ -1,5 +1,6 @@
 import { startSharedGeneration, sharedGenerationEnabled } from './aiGeneration';
 import { assertReviewSyncResults } from '../study/reviewSync';
+import { refreshStudyStreak } from './studyStreak';
 import { supabase, supabaseAnonKey, supabaseUrl } from '../supabaseInit';
 import { getDownloadURL, ref as storageRef } from 'firebase/storage';
 import { doc, getDoc } from 'firebase/firestore';
@@ -9,7 +10,7 @@ import { MAX_REVIEW_DURATION_MS, PAGE_SIZE } from '../constants';
 import { CARD_BROWSE_FIRST_PAGE, defaultCardBrowseQuery, toBrowseDeckCardsParams } from '../study/cardBrowse';
 import { ankiDayEndExclusive, ankiDayStart, ankiDayString, studyDayWireFields, toIso } from '../study/ankiDay';
 import { parseDeckConfig } from '../study/deckConfig';
-import { mapDisplayProfileRow, mergeHighestStats } from '../profile/mapProfile';
+import { mapDisplayProfileRow, mapProfileStatisticsRow, mergeHighestStats } from '../profile/mapProfile';
 import { getAvatarImageName, getDeckTopicByPostgresId } from '../utils';
 import { edgeFunctionUrl } from './functionsUrl';
 import { cacheDeck, cacheDeckList, clearDeckCache, orderByLastUsed, prependCachedDeck, removeCachedDeck } from './deckCache';
@@ -181,7 +182,7 @@ export async function fetchAnswerHistogram(deckId) {
 function mapTodayStatsRow(deckId, row) {
   return {
     id: deckId,
-    statsAvailable: true,
+    statsAvailable: Boolean(row),
     newRemainingToday: Number(row?.new_remaining_today) || 0,
     reviewDueToday: Number(row?.review_due_today) || 0,
     cardsForToday: Number(row?.cards_for_today) || 0,
@@ -286,7 +287,8 @@ export async function fetchMediaMap(deckId) {
   return map;
 }
 
-export async function submitReview({ deckId, card, previous, answer, durationMs, reviewedAt }) {
+export async function submitReview({ deckId, card, previous, answer, durationMs, reviewedAt, onStreakCelebration }) {
+  const expectedOwner = getCurrentUser()?.supabaseUid;
   const now = reviewedAt ? new Date(reviewedAt) : new Date();
   const studyDay = studyDayWireFields(now);
   const reviewedAtIso = toIso(now);
@@ -340,6 +342,7 @@ export async function submitReview({ deckId, card, previous, answer, durationMs,
   throwIfError(error, 'Could not save this review');
   const results = data?.results || [];
   assertReviewSyncResults(results);
+  void refreshStudyStreak({ reviewedAt: reviewedAtIso, expectedOwner, onCelebration: onStreakCelebration });
   return results;
 }
 
@@ -414,6 +417,7 @@ export async function createDeck({ name, topic }) {
       contentMode: 'postgres',
       canStudy: true,
       canEdit: true,
+      canManage: true,
       config: parseDeckConfig({}),
     });
   }
@@ -614,6 +618,7 @@ async function deckFromImport(started, { name, topic, existingDeckId }) {
       contentMode: 'postgres',
       canStudy: true,
       canEdit: true,
+      canManage: true,
     });
   }
 }
@@ -1354,4 +1359,14 @@ export async function fetchUserProfile() {
   const merged = mergeHighestStats(supabaseProfile, firebaseProfile);
   if (!merged) return emptyProfile(sessionUser);
   return withAvatar(merged);
+}
+
+// Same server snapshot and device timezone as iOS fetchProfileStatistics().
+export async function fetchUserProfileStatistics() {
+  await getAccessToken();
+  const { data, error } = await supabase.rpc('get_user_profile_stats', {
+    p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  }).single();
+  throwIfError(error, 'Could not load profile statistics');
+  return mapProfileStatisticsRow(data);
 }

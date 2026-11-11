@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Turn notes into flashcards and study them with Mopiq’s spaced repetition.">
+<title>Mopiq · Study Desk</title>
+<style>
+*,*::before,*::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+html[data-theme=dark] { color-scheme: dark; }
+body {
+  --sans: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+  --radius: 26px;
+  margin: 0;
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; }
+button { color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid var(--link); outline-offset: 4px; }
+svg { flex: none; vertical-align: middle; }
+h1,h2,h3,p,figure { margin: 0; }
+h1,h2,h3 { line-height: 1.01; letter-spacing: -.055em; text-wrap: balance; }
+h1 { font-size: clamp(64px, 8.6vw, 132px); font-weight: 800; }
+h2 { font-size: clamp(37px, 5.2vw, 67px); font-weight: 750; }
+h3 { font-size: clamp(27px, 3.1vw, 42px); font-weight: 750; }
+p { text-wrap: pretty; }
+section[id], [id="samples"] { scroll-margin-top: 26px; }
+.wrap { width: min(1184px, calc(100% - 72px)); margin-inline: auto; }
+.mono,.eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .105em; line-height: 1.5; }
+.eyebrow { color: var(--link); margin-bottom: 14px; }
+.hero-kicker { display: flex; align-items: center; gap: 8px; }
+.hero-kicker i,.desk-queue i,.live i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.lede { color: var(--muted); font-size: clamp(17px, 2vw, 21px); max-width: 520px; line-height: 1.52; margin-top: 21px; }
+.skip { position: fixed; z-index: 10; top: 8px; left: 12px; padding: 12px; background: var(--surface); transform: translateY(-150%); }
+.skip:focus { transform: none; }
+.topbar { position: relative; border-bottom: 1px solid var(--line); z-index: 2; }
+.nav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 74px; }
+.brand { display: inline-flex; align-items: center; gap: 9px; width: fit-content; font-size: 26px; font-weight: 800; letter-spacing: -.06em; }
+.brand img { width: 31px; height: 24px; }
+.nav nav,.nav-end { display: flex; align-items: center; gap: 28px; }
+.nav nav a,.footer nav a { color: var(--muted); font-size: 14px; font-weight: 650; }
+.nav nav a:hover,.footer nav a:hover { color: var(--link); }
+.nav-end { justify-self: end; gap: 10px; }
+.nav-cta,.theme { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.nav-cta { font-size: 13px; font-weight: 750; gap: 7px; padding: 0 14px; }
+.nav-cta svg { width: 16px; }
+.theme { width: 42px; padding: 0; }
+.theme svg { width: 16px; }
+.theme .sun, [data-theme=dark] .theme .moon { display: none; }
+[data-theme=dark] .theme .sun { display: block; }
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+.btn { min-height: 52px; padding: 10px 17px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 12px; border: 1px solid var(--line); font-size: 14px; font-weight: 750; }
+.btn.primary { color: var(--on-accent); background: var(--accent); border-color: transparent; }
+.btn.secondary { background: var(--surface); }
+.btn:hover,.nav-cta:hover,.theme:hover,.flip:hover,.mini-btn:hover { filter: brightness(.94); }
+.btn svg { width: 17px; }
+.platforms { display: flex; flex-wrap: wrap; align-items: center; justify-content: inherit; gap: 7px 13px; margin: 21px 0 0; padding: 0; list-style: none; }
+.platforms li { display: inline-flex; gap: 5px; align-items: center; color: var(--muted); font-size: 12px; white-space: nowrap; font-weight: 680; }
+.platforms svg { width: 15px; height: 15px; }
+.rating { display: inline-flex; align-items: baseline; gap: 7px; margin-top: 13px; font-size: 13px; color: var(--muted); }
+.rating strong { color: var(--ink); font-weight: 800; }
+.rating:hover { text-decoration: underline; text-underline-offset: 3px; }
+.star { color: var(--star); font-size: 17px; line-height: 1; }
+.sample-card,.occlusion { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 17px; background: var(--surface); border: 1px solid var(--line); border-radius: 17px; }
+.sample-head,.sample-foot,.occlusion-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.sample-head .subject { font-size: 12px; font-weight: 750; color: var(--link); background: var(--soft); padding: 4px 8px; border-radius: 6px; }
+.sample-type { color: var(--muted); font-size: 11px; font-weight: 650; }
+.sample-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 9px; min-height: 132px; padding-block: 14px; }
+.prompt { font-size: clamp(19px, 2.2vw, 29px); font-weight: 720; line-height: 1.16; letter-spacing: -.035em; }
+.answer { color: var(--link); font-size: 15px; font-weight: 700; }
+.sample-foot { border-top: 1px solid var(--line); padding-top: 9px; }
+.sample-foot .mono { color: var(--muted); font-size: 9px; }
+.flip,.mini-btn { min-height: 40px; border: 0; border-radius: 8px; background: var(--soft); color: var(--link); font-size: 12px; font-weight: 800; padding: 6px 9px; display: inline-flex; align-items: center; gap: 5px; }
+.flip svg { width: 15px; height: 15px; }
+.section-head { margin-bottom: 27px; max-width: 710px; }
+.section-head > p:last-child,.faq-head > p:last-child,.closing p:not(.eyebrow) { color: var(--muted); font-size: 17px; margin-top: 12px; }
+.feature-section,.samples,.faq { margin-block: 96px; }
+.features { display: grid; gap: 14px; }
+.feature { min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(18px, 3vw, 33px); display: grid; gap: 19px; align-content: start; }
+.feature-copy > p:last-child { color: var(--muted); margin-top: 10px; font-size: 15px; max-width: 420px; }
+.feature .eyebrow span { margin-right: 5px; color: var(--muted); }
+.feature-art { min-width: 0; }
+.source-art { position: relative; display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 10px; align-items: center; padding: 20px; border-radius: 16px; background: var(--soft); }
+.source-sheet { min-width: 0; min-height: 147px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; font-size: 13px; overflow-wrap: anywhere; }
+.source-sheet svg { color: var(--link); }
+.source-sheet i { display: block; width: 90%; height: 5px; background: var(--line); border-radius: 4px; }
+.source-sheet i:nth-last-child(1) { width: 65%; }
+.source-sheet span { font-size: 11px; color: var(--muted); }
+.convert { border-radius: 50%; width: 34px; height: 34px; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
+.convert svg { width: 16px; height: 16px; }
+.review-art,.progress-art,.quiz-art { padding: 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.review-art strong,.progress-art strong { display: block; font-weight: 780; }
+.review-art .mono,.progress-art .mono { color: var(--muted); font-size: 9px; }
+.review-grades { margin-top: 10px; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 5px; }
+.review-grades span { color: #213151; background: #ffdadd; text-align: center; border-radius: 6px; padding: 8px 2px; font-size: 11px; font-weight: 750; }
+.review-grades span:nth-child(2) { background: #ffe3ba; }
+.review-grades span:nth-child(3) { background: #d4efd9; }
+.review-grades span:nth-child(4) { background: #d4e6ff; }
+.heart { width: 100%; max-height: 235px; display: block; color: var(--link); margin-block: 10px; background: var(--soft); border-radius: 12px; }
+.occlusion-foot { font-size: 13px; font-weight: 700; }
+.occlusion .answer { margin-top: 6px; }
+.quiz-art fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 4px; min-width: 0; }
+.quiz-art legend { margin-bottom: 8px; font-weight: 750; }
+.quiz-art label { display: flex; gap: 7px; align-items: center; min-height: 32px; padding: 3px 8px; background: var(--soft); border-radius: 7px; font-size: 13px; cursor: pointer; }
+.quiz-art input { accent-color: var(--accent); }
+.quiz-art > div { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 7px; }
+.quiz-result { font-size: 12px; color: var(--link); font-weight: 700; }
+.progress-top { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 7px; }
+.timer-demo { display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; background: var(--soft); color: var(--link); padding: 5px 7px; font: 750 11px var(--mono); }
+.timer-demo svg { width: 14px; height: 14px; }
+.progress-art strong { font-size: 28px; letter-spacing: -.06em; }
+.bars { display: grid; grid-template-columns: repeat(7, 1fr); align-items: end; gap: 9px; height: 94px; }
+.bars span { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: end; }
+.bars i { width: 100%; max-width: 38px; height: calc(var(--bar) * .7); background: var(--accent); border-radius: 5px 5px 1px 1px; }
+.bars small { font: 9px/1.65 var(--mono); margin-top: 4px; color: var(--muted); }
+.sample-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.closing > div { border-radius: var(--radius); padding: clamp(24px, 5vw, 61px); background: var(--closing); border: 1px solid var(--line); }
+.closing .btn.secondary { background: var(--surface); }
+.faq { display: grid; grid-template-columns: .78fr 1.22fr; gap: 40px; align-items: start; }
+.faq h2 { font-size: clamp(33px, 4.4vw, 57px); }
+.faq-list { border-top: 1px solid var(--line); }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary { display: grid; grid-template-columns: 26px minmax(0,1fr) 20px; gap: 9px; align-items: center; list-style: none; min-height: 59px; padding: 10px 2px; font-size: 15px; font-weight: 750; cursor: pointer; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq-no { color: var(--link); }
+.plus { font-size: 21px; color: var(--link); justify-self: center; line-height: 1; }
+details[open] .plus { transform: rotate(45deg); }
+.faq details p { margin: 0 22px 17px 37px; font-size: 14px; color: var(--muted); }
+.faq details a { color: var(--link); text-decoration: underline; }
+.footer { padding-block: 27px; border-top: 1px solid var(--line); }
+.footer .wrap,.footer nav { display: flex; gap: 19px; align-items: center; flex-wrap: wrap; }
+.footer .wrap > span { color: var(--muted); font-size: 13px; }
+.footer nav { margin-left: auto; }
+@media(max-width: 800px) {
+  .wrap { width: calc(100% - 40px); }
+  .feature-section,.samples,.faq { margin-block: 68px; }
+  .faq { grid-template-columns: 1fr; gap: 22px; }
+  .sample-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .nav nav { gap: 12px; }
+}
+@media(max-width: 560px) {
+  .wrap { width: calc(100% - 32px); }
+  .nav { grid-template-columns: 1fr auto; min-height: 64px; }
+  .nav nav { display: none; }
+  .nav-cta { font-size: 12px; }
+  .brand { font-size: 23px; }
+  .nav-end { gap: 6px; }
+  .actions { gap: 7px; }
+  .btn { min-height: 46px; padding-inline: 10px; font-size: 12px; }
+  .sample-grid { grid-template-columns: 1fr; }
+  .footer nav { margin-left: 0; width: 100%; }
+  .source-art { padding: 9px; gap: 6px; }
+  .source-sheet { padding: 8px; }
+}
+@media(prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+.desk {
+  --bg: #f6faff; --surface: #fff; --panel: #fff; --ink: #0d2041; --muted: #526780;
+  --line: #d8e5f2; --accent: #0758da; --on-accent: #fff; --link: #0758c5; --soft: #eaf3ff;
+  --closing: #e2efff; --star: #9a5b00; --canvas: #dfedff;
+  background-image: radial-gradient(ellipse 70% 650px at 50% 350px,#e3f0ff 0%,transparent 100%);
+}
+[data-theme=dark] .desk {
+  --bg: #0b1424; --surface: #15243b; --panel: #0f1d31; --ink: #f0f6ff; --muted: #afc3dd;
+  --line: #2a4160; --accent: #78b4ff; --on-accent: #0b1a32; --link: #9ac6ff; --soft: #203754;
+  --closing: #142944; --star: #ffd478; --canvas: #162b47;
+  background-image: radial-gradient(ellipse 70% 650px at 50% 350px,#142b49 0%,transparent 100%);
+}
+.desk .topbar { background: var(--bg); }
+.desk .hero { text-align: center; padding-top: 50px; }
+.desk .hero-kicker { justify-content: center; }
+.desk h1 { color: var(--ink); font-size: clamp(68px, 9.7vw, 116px); }
+.desk .lede { margin: 10px auto 0; max-width: 560px; }
+.desk .hero .actions,.desk .platforms { justify-content: center; }
+.desk .hero .actions { margin-top: 20px; }
+.desk-stage {
+  margin: 25px auto 0; width: min(970px,100%); padding: 27px 29px 0;
+  background: radial-gradient(circle at center,var(--surface),transparent 80%), var(--canvas);
+  border: 1px solid var(--line); border-radius: 30px; overflow: hidden;
+}
+.desk-window { text-align: left; border: 1px solid var(--line); border-radius: 17px 17px 0 0; overflow: hidden; background: var(--surface); box-shadow: 0 8px 34px #09305d24; }
+.window-bar { height: 41px; background: var(--panel); border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 13px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.traffic { display: flex; gap: 4px; }
+.traffic i { width: 7px; height: 7px; border-radius: 50%; background: #f78888; }
+.traffic i:nth-child(2) { background: #f4b944; }
+.traffic i:nth-child(3) { background: #59bf84; }
+.demo-pill { justify-self: end; color: var(--link); }
+.window-body { display: grid; grid-template-columns: minmax(150px, 26%) minmax(0,1fr); }
+.window-body aside { border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 7px; padding: 17px 10px; background: var(--panel); color: var(--muted); font-size: 12px; }
+.window-body aside > * { padding: 6px; }
+.window-body aside strong { background: var(--soft); color: var(--link); border-radius: 6px; }
+.window-body aside svg { margin-right: 4px; width: 15px; height: 15px; }
+.desk-queue { margin-top: auto; color: var(--link); display: flex; align-items: center; gap: 5px; }
+.desk-study { padding: 12px; background: var(--soft); }
+.study-meta { display: flex; justify-content: space-between; margin: 0 0 8px; font-weight: 800; font-size: 13px; }
+.study-meta .mono { color: var(--muted); }
+.desk-study .sample-body { min-height: 100px; text-align: center; }
+.desk-study .review-art { padding: 8px 11px; margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.desk-study .review-art strong { font-size: 11px; }
+.desk-study .review-grades { margin-top: 0; width: 58%; }
+.desk-study .review-grades span { padding-block: 4px; }
+.desk .section-head { margin-inline: auto; text-align: center; }
+.desk .features { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.desk .feature-source { grid-column: 1/-1; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: center; }
+.desk .feature-review { background: var(--soft); }
+.desk .feature-diagram { grid-row: span 2; }
+.desk .feature-quiz { grid-column: 1; }
+.desk .feature-progress { grid-column: 1/-1; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: center; }
+.desk .closing { text-align: center; }
+.desk .closing .actions { justify-content: center; }
+@media(max-width: 620px) {
+  .desk .hero { padding-top: 42px; }
+  .desk-stage { padding: 12px 11px 0; border-radius: 18px; }
+  .window-body { grid-template-columns: minmax(0,1fr); }
+  .window-body aside { display: none; }
+  .desk .features,.desk .feature-source,.desk .feature-progress { grid-template-columns: minmax(0,1fr); }
+  .desk .feature-diagram { grid-row: auto; }
+}
+
+</style>
+</head>
+<body class="desk" id="top">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar"><div class="wrap nav"><a class="brand" href="#top"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTJweCIgaGVpZ2h0PSIzOHB4IiB2aWV3Qm94PSIwIDAgNTIgMzgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8dGl0bGU+QXNzZXQgOTwvdGl0bGU+CiAgICA8ZGVmcz4KICAgICAgICA8bGluZWFyR3JhZGllbnQgeDE9IjUwJSIgeTE9IjEwMCUiIHgyPSI1MCUiIHkyPSItMy40Njk0NDY5NWUtMTYlIiBpZD0ibGluZWFyR3JhZGllbnQtMSI+CiAgICAgICAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMwNzdFRkUiIG9mZnNldD0iMCUiPjwvc3RvcD4KICAgICAgICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzE2QjBGRSIgb2Zmc2V0PSIxMDAlIj48L3N0b3A+CiAgICAgICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDwvZGVmcz4KICAgIDxnIGlkPSJTaGFyZS1kZWNrIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4KICAgICAgICA8ZyBpZD0iRXh0cmEtTGFyZ2UiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04MTIuMDAwMDAwLCAtMzA4LjAwMDAwMCkiIGZpbGwtcnVsZT0ibm9uemVybyI+CiAgICAgICAgICAgIDxnIGlkPSJHcm91cCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEyLjAwMDAwMCwgMzAxLjAwMDAwMCkiPgogICAgICAgICAgICAgICAgPGcgaWQ9IkFzc2V0LTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAuMDAwMDAwLCA3LjI0NTkwMikiPgogICAgICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik01MS45NjQyMTkzLDIxLjA1NDQxMiBDNTEuNjYyNjg2LDI0LjUxNjg3NSA0OS41MzYwODI4LDI2LjkwOTMwNTggNDYuMzgxNTI1MiwyOC4xMzA3NTc4IEM0NS44MDI5ODUyLDI4LjM1MzU2MSA0NS4yMTUwNjc0LDI4LjU1MzI5MDggNDQuNjI3MTQ5NywyOC43NTMwMjA1IEM0NC40ODI4NzU0LDI5Ljc0MjI5NTcgNDQuNDEwMDE2OCwzMC43NDIzODY2IDQ0LjQxMDAxNjgsMzEuNzQxMDM1MyBDNDQuNDEwMDE2OCwzMy45MTI4MjYgNDMuOTg1MTI5LDM2LjkyMzkxNDMgNDEuMzc2NjQ5NiwzNy40NDQ1MDk1IEMzOS4yMzQ4OTc2LDM3Ljg3MjgxMDggMzcuMjQ5NjgzMiwzNi4wMzkxOTA4IDM1LjU4NDAzNjQsMzQuOTgyODU4MyBDMzQuMTQ3MDY0MywzNC4wNzI4OTgyIDMyLjYzODY3NjUsMzMuMjcxODE2MSAzMS4wNzY5MDcxLDMyLjU5MTg2OTYgQzI5LjczMzcxMzQsMzIuMDA3ODIyNCAyOC4zMDQ2NzY0LDMxLjQ4MDAxNjcgMjcuMjk5ODA1OSwzMC40MTQzMTA2IEMyNy4xNDI1NDY5LDMwLjI0NzAyNzkgMjcuMDAwNDM2NywzMC4wNzAzNzE2IDI2Ljg2OTE0NzEsMjkuODg0MzQxOCBDMjMuNDc0MzcyOCwzMS4yODAyODY5IDE5LjEwMjE0LDI5Ljg0NjEyNjMgMTYuNjE3NzM2NSwyNy4zMTA5Mjg1IEMxMy42NDU2ODU5LDI3LjgyOTM2MDYgMTAuNDAzMTIwOSwyNy43Mjk4NTYyIDcuNDc2NTE2NywyNy4wNDU1ODM1IEM0LjIyOTYyMzUyLDI2LjI4NDg3OTkgMS4yNzkyMTQwMywyNC4wMjg3MjY5IDAuMzY0NTE0OTUxLDIwLjc3MDMxOTggQy0wLjQyNjgyOTU5OSwxNy45NTg5NjEzIDAuMTAzMzc4NDY0LDE0Ljg1NTU3OTIgMS42MzQxMjg4MiwxMi4zODU5OTY1IEMyLjc4Njg4MDQ5LDEwLjUyNzEzOTggNC41MTM4NDM5LDkuMDQxMDYzOSA2LjU3MTE5NTQ1LDguMjc0NTkxOTYgQzYuODYxMTg2OCw4LjE2NzE1NjEgNy4xNTMzNDIyNyw4LjA4NDIzNTggNy40NDY5NDA0Nyw4LjAyMjk0Njg5IEM3LjgyOTI2NzM3LDUuNTM4MjIyMjQgOS4zNzgwNTIwMSwzLjI1NjgzMjU3IDExLjUyMTk2ODIsMS45MzAxMDc4NiBDMTMuODYzNTQwMSwwLjQ3ODY0MjE3OSAxNi44NDcxMzI3LDAuMTYxMzgxOTIxIDE5LjQ4MTU4MTQsMC45NzE4Mzc2NyBDMjAuMTg2MzYxNCwxLjE4NjcwOTM5IDIwLjg2MzAwNzksMS40ODA4OTYxNyAyMS41MDQzMDcyLDEuODQxNDE5MTkgQzIxLjg2MTM4NjEsMS40OTk2NDMzNyAyMi4yNjUzNTQxLDEuMjAxODUxMzYgMjIuNjkzODQ4OCwwLjk2NjA2OTMwMSBDMjQuMzc2MDg3MiwwLjA0MDI0NjE4NjQgMjYuMzgzNjY0MSwtMC4xMDMyNDE5NzUgMjguMjk3NDYyNywwLjA1NjEwOTE5OTMgQzMwLjAxMTQ0MTQsMC4yMDAzMTg0MDcgMzEuNzMwNDY5NywwLjU4MjQ3MjgwOCAzMy4yMjI5ODc0LDEuNDM0NzQ5MjMgQzMzLjcxODU2OTYsMS43MTY2NzgyMyAzNC4xODc0NjExLDIuMDU3MDExOTYgMzQuNjEwMTg0OCwyLjQ0NDkzNDczIEMzOS4zMTcxMzM5LDAuNTA5NjQ3MTU4IDQ1LjEzNjQzNzksNC40Njg5MTA5NiA0Ny4wNDIzMDE1LDguNjk3MTI0OTQgQzQ3LjU2NDU3NDUsOS44NTcyODgwMiA0Ny44NTY3Mjk5LDExLjE3MDMxMjkgNDcuODI0MjY4MiwxMi40NTE2MTE3IEM0OC4xNjQwMzQyLDEyLjY1NDk0NjYgNDguNDkwODE1NSwxMi44ODM1MTgyIDQ4LjgwMDI4MzksMTMuMTM4NzY4NSBDNTEuMTAyMTgwNCwxNS4wMzgwMDM4IDUyLjIxOTU4NDgsMTguMTEzOTg2MiA1MS45NjQyMTkzLDIxLjA1NDQxMiBaIiBpZD0iUGF0aCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudC0xKSI+PC9wYXRoPgogICAgICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNi45MzA4MTE4LDI3LjI1NDY4NjkgQzEzLjg3NDM2MDcsMjcuODM1MTI4OSAxMC41MDYyNzcxLDI3Ljc1MjIwODYgNy40Nzc5NTk0NSwyNy4wNDQ4NjI1IEM0LjIzMTc4NzY0LDI2LjI4NjMyMiAxLjI4MDY1Njc3LDI0LjAyODcyNjkgMC4zNjUyMzYzMjMsMjAuNzcwMzE5OCBDLTAuNDI1Mzg2ODU2LDE3Ljk1ODk2MTMgMC4xMDQ4MjEyMDcsMTQuODU2MzAwMiAxLjYzNTU3MTU2LDEyLjM4NjcxNzUgQzIuNzg4MzIzMjQsMTAuNTI3ODYwOCA0LjUxNjAwODAxLDkuMDQxMDYzOSA2LjU3NDA4MDk0LDguMjc0NTkxOTYgQzcuOTE4NzE3NDQsNy43NzM0NjQ5NiA5LjMwMjMwOCw3LjgzNDAzMjgzIDEwLjcxODM2MDMsNy45MDQ2OTUzNCIgaWQ9IlBhdGgiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNOS4wNjY0MTk1MiwxMy4yMDQzODM3IEM3Ljc0OTkxNjUxLDEyLjE4NDEwMzYgNy4yNjU4NzYyMiwxMC4zNzcxNjIyIDcuMzczMzYwNTgsOC43MTU4NzIxMyBDNy41NTA4MTc5Nyw1Ljk2Nzk2NTY4IDkuMTgxMTE3NTksMy4zODAxMzE0NCAxMS41MjM0MTA5LDEuOTI5Mzg2ODEgQzEzLjg2NTcwNDIsMC40Nzg2NDIxNzkgMTYuODQ5Mjk2OCwwLjE2MTM4MTkyMSAxOS40ODMwMjQyLDAuOTcxMTE2NjI0IEMyMi4xMTY3NTE2LDEuNzgwODUxMzMgMjQuMzc0NjQ0NCwzLjY3NTc2MDMyIDI1LjczODAzNjYsNi4wNjg5MTIxMiIgaWQ9IlBhdGgiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMzIuNzM2MDYxNiw0LjEzOTM5MjkyIEMzMi45OTI4Njk5LDMuNDU4NzI1NDYgMzMuNTk1OTM2NSwyLjkxNzIxOTg4IDM0LjI3OTc5NjcsMi41OTEzMDcwNyBDMzkuMDQzMDEyOCwwLjMyMjg5NjIzNCA0NS4wOTE3MTI5LDQuMzY5NDA2NjEgNDcuMDQxNTgwMSw4LjY5Nzg0NTk4IEM0Ny44OTQ5NjI2LDEwLjU5MzQ3NiA0OC4xMzY2MjIxLDEyLjg5NTc3NiA0Ny4zNDU5OTg5LDE0LjgwNDM4NDkiIGlkPSJQYXRoIj48L3BhdGg+CiAgICAgICAgICAgICAgICAgICAgPHBhdGggZD0iTTQwLjc0MjU2NDEsMTEuNDk5MTA5OCBDNDMuNTAzOTc0MiwxMC44MzUwMjY0IDQ2LjU3NzAxNjksMTEuMzA0NDI3NCA0OC44MDAyODM5LDEzLjEzOTQ4OTYgQzUxLjEwMjE4MDQsMTUuMDM4MDAzOCA1Mi4yMTgxNDIxLDE4LjExNTQyODMgNTEuOTYyNzc2NiwyMS4wNTUxMzMgQzUxLjY2MTk2NDcsMjQuNTE3NTk2MSA0OS41MzYwODI4LDI2LjkwODU4NDggNDYuMzgxNTI1MiwyOC4xMzAwMzY4IEM0NS43ODI3ODY4LDI4LjM2MTQ5MjUgNDUuMTczOTQ5MywyOC41NjY5OTA3IDQ0LjU2NjU1NDQsMjguNzc0NjUxOSIgaWQ9IlBhdGgiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTYuMDc5NTkzNCwxNy4yNzQ2ODg2IEMxNS41NDcyMjEyLDE0LjMzMTM3ODcgMTYuNDMzNzg2OCwxMS4xMzQ5ODE2IDE4LjYxNzM3ODQsOC45NzE4NDM0OCBDMjEuMjgyMTI0Nyw2LjMzMjA5MzkzIDI1Ljc1NDYyODEsNS41MzAyOTA3MyAyOS40MTcwMzEzLDUuOTg4ODc2MDEgQzMyLjg4NzU0OTYsNi40MjM2NjY3OCAzNi4xNjQwMTkxLDcuODA1OTEyMDMgMzguMTE4MjE0NSwxMC42MDE0MDc1IEMzOS4yOTgzNzgzLDEyLjI5MDA5NzQgMzkuODAxODk1NiwxNC4zMjQ4ODkzIDM5LjQ3ODcyMTIsMTYuMzkxNDA3MiIgaWQ9IlBhdGgiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNNDYuNDQyODQxOCwyMi43MjM2MzM1IEM0NS4xMTI2MzI3LDI1LjUyNDE3NjQgNDQuNDEyOTAyMywyOC42NDU1ODQ3IDQ0LjQwOTI5NTUsMzEuNzQyNDc3NCBDNDQuNDA5Mjk1NSwzMy45MTI4MjYgNDMuOTg1MTI5LDM2LjkyMzkxNDMgNDEuMzc2NjQ5NiwzNy40NDM3ODg0IEMzOS4yMzYzNDAzLDM3Ljg3NDI1MjkgMzcuMjUxMTI1OSwzNi4wMzg0Njk3IDM1LjU4MzMxNSwzNC45ODQzMDA0IEMzNC4xNDYzNDI5LDM0LjA3MTQ1NjEgMzIuNjQwMTE5MiwzMy4yNzI1MzcxIDMxLjA3OTA3MTMsMzIuNTkzMzExNyBDMjkuNzM1MTU2MSwzMi4wMDc4MjI0IDI4LjMwNDY3NjQsMzEuNDgwNzM3NyAyNy4zMDE5NywzMC40MTI4Njg1IEMyNy4xNDMyNjgzLDMwLjI0Nzc0OSAyNy4wMDE4Nzk1LDMwLjA2ODIwODUgMjYuODcxMzExMiwyOS44ODIxNzg2IEMyMy4zOTA2OTM3LDMxLjMxNTYxODIgMTguODc5MjM2MiwyOS43NjgyNTM0IDE2LjQzMTYyMjcsMjcuMTEyNjQwOCBDMTMuNjY3MzI3LDI0LjExMjM2ODIgMTIuNDA2MzY5NiwxOC42MjA4ODE2IDE1LjMxMTMzMjcsMTUuNDEzNjY4OCBDMTYuOTgyNzUwNSwxNi40OTE2MzI2IDE4LjY2NDk4ODksMTcuNTUzMDEyNCAyMC4zNjAyMTE5LDE4LjU4NjI3MTQgQzIyLjg1MTgyOTEsMjAuMTA5MTIwNiAyNS4zMTk2NDExLDIxLjY0ODU1MzkgMjcuNTcwMzIwMiwyMy40Njc3NTMxIEw0Ni40NDM1NjMxLDIyLjcyMzYzMzUgTDQ2LjQ0Mjg0MTgsMjIuNzIzNjMzNSBaIiBpZD0iUGF0aCI+PC9wYXRoPgogICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICA8L2c+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=" alt="" width="31" height="24"><span>Mopiq</span></a><nav aria-label="Main navigation"><a href="#features">Features</a><a href="#samples">Try a card</a><a href="#faq">FAQ</a></nav><div class="nav-end"><button type="button" class="theme" aria-label="Switch color theme" aria-pressed="false"><svg class="moon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M20 15a8.5 8.5 0 0 1-11-11A8.5 8.5 0 1 0 20 15Z"/></svg><svg class="sun" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/></svg></button><a class="nav-cta" href="https://mopiq.app/login">Open Mopiq <svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a></div></div></header>
+<main id="main">
+<section class="hero wrap">
+  <div class="hero-copy"><p class="eyebrow hero-kicker"><i></i> AI FLASHCARDS & SPACED REPETITION</p>
+  <h1>Make it stick.</h1><p class="lede">Turn the material you already have into flashcards. Mopiq brings them back when it’s time to review.</p>
+  <div class="actions"><a class="btn primary" href="https://mopiq.app/login">Start on web<svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a><a class="btn secondary" href="https://apps.apple.com/us/app/mopiq-ai-flashcards-learning/id6443485322">Download on the App Store</a></div><ul class="platforms" aria-label="Mopiq platforms"><li><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>iOS</li><li><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M11 17h2"/></svg>iPad</li><li><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="12" rx="1"/><path d="M2 20h20"/></svg>Mac</li><li><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m7 4 2 3m8-3-2 3M4 16v-2a8 8 0 0 1 16 0v2H4Z"/><path d="M9 12h.01M15 12h.01M7 19h10"/></svg>Android</li><li><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a16 16 0 0 1 0 18 16 16 0 0 1 0-18Z"/></svg>Web</li></ul><a class="rating" href="https://apps.apple.com/us/app/mopiq-ai-flashcards-learning/id6443485322"><span class="star" aria-hidden="true">★</span><strong>4.7/5</strong><span>App Store average</span></a></div>
+  <div class="desk-stage"><div class="desk-window">
+    <div class="window-bar"><span class="traffic" aria-hidden="true"><i></i><i></i><i></i></span><span>Mopiq / Study</span><span class="demo-pill">Interactive preview</span></div>
+    <div class="window-body"><aside aria-label="Example deck list"><span class="mono">MY DECKS</span><strong><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="2"/><path d="M7 3h10m-9 8h8m-8 4h5"/></svg> Plant biology</strong><span><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="2"/><path d="M7 3h10m-9 8h8m-8 4h5"/></svg> French words</span><span><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="2"/><path d="M7 3h10m-9 8h8m-8 4h5"/></svg> World geography</span><span class="desk-queue"><i></i> 6 cards due · example</span></aside>
+    <div class="desk-study"><div class="study-meta"><span>Today’s review</span><span class="mono">01 / 06</span></div><!-- Flashcard slot hero. Replace the subject, type, question and answer together. -->
+  <article class="sample-card " data-card-slot="hero">
+    <div class="sample-head"><span class="subject">Biology</span><span class="sample-type">Short answer</span></div>
+    <div class="sample-body">
+      <p class="prompt">Where does the Calvin cycle take place?</p><p class="answer" id="answer-hero" aria-live="polite" hidden>In the stroma of the chloroplast.</p>
+    </div>
+    <div class="sample-foot"><span class="mono">SAMPLE CARD</span><button type="button" class="flip" aria-controls="answer-hero" aria-expanded="false"><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 2.7 6.4M3 12V6m0 6h6"/></svg><span>Show answer</span></button></div>
+  </article><div class="review-art"><div><span class="mono">AFTER YOU FLIP</span><strong>How well did you remember?</strong></div><div class="review-grades" aria-label="Review rating examples"><span>Again</span><span>Hard</span><span>Good</span><span>Easy</span></div></div></div></div>
+  </div></div>
+</section>
+<section class="wrap feature-section" id="features"><div class="section-head"><p class="eyebrow">THE STUDY TOOLKIT</p><h2>From lecture notes to recall.</h2><p>Create cards, practice with a quiz, and come back for a short review.</p></div><div class="features"><article class="feature feature-source"><div class="feature-copy"><p class="eyebrow"><span>01</span> AI FLASHCARDS</p><h3>Bring your own material</h3><p>Turn PDFs, lecture slides, photos, and notes into editable cards. Start with a topic or write your own cards when you want full control.</p></div><div class="feature-art"><div class="source-art" aria-label="Example conversion from lecture notes to flashcards">
+  <div class="source-sheet"><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6m-6 4h6"/></svg><strong>Biology lecture.pdf</strong><i></i><i></i><i></i></div>
+  <span class="convert"><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 6-3 9-9 10 6 1 9 4 9 10 1-6 4-9 10-10-6-1-9-4-10-10Z"/></svg></span>
+  <div class="source-sheet output"><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="13" rx="2"/><path d="M7 3h10m-9 8h8m-8 4h5"/></svg><strong>Plant biology</strong><span>Sample flashcards</span><i></i></div></div></div></article><article class="feature feature-review"><div class="feature-copy"><p class="eyebrow"><span>02</span> SPACED REPETITION</p><h3>See tough cards sooner</h3><p>Try to recall the answer, flip the card, and rate how it went. Mopiq uses that rating to schedule your next review.</p></div><div class="feature-art"><div class="review-art"><div><span class="mono">AFTER YOU FLIP</span><strong>How well did you remember?</strong></div><div class="review-grades" aria-label="Review rating examples"><span>Again</span><span>Hard</span><span>Good</span><span>Easy</span></div></div></div></article><article class="feature feature-diagram"><div class="feature-copy"><p class="eyebrow"><span>03</span> IMAGE OCCLUSION</p><h3>Study the diagram itself</h3><p>Hide a label on an anatomy image, map, or process diagram. Recall the missing part before you reveal it.</p></div><div class="feature-art"><!-- Replace this diagram and its hidden label with a real image occlusion card. -->
+  <article class="occlusion" data-card-slot="image-occlusion"><div class="sample-head"><span class="subject">Anatomy</span><span class="sample-type">Image occlusion</span></div><svg class="heart" role="img" aria-label="Simplified heart diagram with a covered label pointing to the lower right side of the drawing" viewBox="0 0 300 214">
+  <defs><pattern id="dots" width="13" height="13" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="currentColor" opacity=".26"/></pattern></defs>
+  <rect width="300" height="214" rx="16" fill="url(#dots)"/>
+  <g stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4">
+    <path d="M131 84v-43c0-11 6-21 17-21h14v12h-10c-5 0-7 3-7 9v41" fill="#8cb8ee" stroke="#315689"/>
+    <path d="M152 84V36c0-12 10-23 24-23h24v15h-22c-6 0-9 4-9 10v46" fill="#ffa59a" stroke="#963e48"/>
+    <path d="M167 75c5-15 25-27 48-25v17c-11 0-22 5-26 12" fill="#f3aab9" stroke="#963e48"/>
+    <path d="M146 80c-19-21-48-18-58 5-16 37 17 82 79 111 20-22 40-53 41-79 1-33-18-56-43-49-8 2-14 6-19 12Z" fill="#ffb4a8" stroke="#963e48"/>
+    <path d="M145 82c-15 12-20 37-6 62l28 52c16-25 35-48 37-75 1-26-10-47-30-49-12-1-20 4-29 10Z" fill="#f5808a" stroke="#963e48"/>
+    <path d="M146 86c-16 20-14 41-5 61m35-61c13 17 17 31 12 45m-83-35c-6 10-6 20-2 30" fill="none" stroke="#ffe4df" opacity=".9"/>
+    <path d="M166 146h60l22-20h23" fill="none" stroke="#315689" stroke-dasharray="4 4"/>
+    <circle cx="166" cy="146" r="5" fill="#fff" stroke="#315689"/>
+    <rect x="235" y="110" width="49" height="29" rx="5" fill="#205dc8" stroke="#fff"/>
+    <path d="M255 124h9" stroke="#fff"/>
+  </g></svg><div class="occlusion-foot"><span>Which chamber is marked?</span><button type="button" class="flip" aria-controls="answer-occlusion" aria-expanded="false"><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 2.7 6.4M3 12V6m0 6h6"/></svg><span>Show answer</span></button></div><p id="answer-occlusion" class="answer" aria-live="polite" hidden>Left ventricle.</p></article></div></article><article class="feature feature-quiz"><div class="feature-copy"><p class="eyebrow"><span>04</span> QUIZ PRACTICE</p><h3>Test what you remember</h3><p>Generate a multiple-choice quiz for a deck and practice before the real exam.</p></div><div class="feature-art"><form class="quiz-art" data-quiz>
+  <fieldset><legend>What does a ribosome make?</legend>
+  <label><input type="radio" name="choice" value="dna"> DNA</label>
+  <label><input type="radio" name="choice" value="protein"> Protein</label>
+  <label><input type="radio" name="choice" value="lipid"> Lipids</label></fieldset>
+  <div><button type="submit" class="mini-btn">Check answer</button><span class="quiz-result" aria-live="polite"></span></div>
+  </form></div></article><article class="feature feature-progress"><div class="feature-copy"><p class="eyebrow"><span>05</span> STUDY STATS</p><h3>See the time you put in</h3><p>See how long you’ve been studying during a session and check your review activity over time.</p></div><div class="feature-art"><div class="progress-art" aria-label="Illustrative study time for seven days">
+  <div class="progress-top"><div><span class="mono">EXAMPLE STUDY WEEK</span><strong>1h 42m</strong></div><span class="timer-demo"><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 1m-5-12h6"/></svg> 08:24</span></div>
+  <div class="bars" aria-hidden="true"><span><i style="--bar:33%"></i><small>M</small></span><span><i style="--bar:60%"></i><small>T</small></span><span><i style="--bar:47%"></i><small>W</small></span><span><i style="--bar:81%"></i><small>T</small></span><span><i style="--bar:63%"></i><small>F</small></span><span><i style="--bar:100%"></i><small>S</small></span><span><i style="--bar:76%"></i><small>S</small></span></div></div></div></article></div></section>
+<section class="wrap samples" id="samples"><div class="section-head"><p class="eyebrow">TRY A FLASHCARD</p><h2>A card for whatever you’re learning.</h2><p>Try a translation, a fill-in-the-blank, or a quick geography question.</p></div><div class="sample-grid"><!-- Flashcard slot examples-1. Replace the subject, type, question and answer together. -->
+  <article class="sample-card " data-card-slot="examples-1">
+    <div class="sample-head"><span class="subject">French</span><span class="sample-type">Vocabulary</span></div>
+    <div class="sample-body">
+      <p class="prompt">What does « pourtant » mean?</p><p class="answer" id="answer-examples-1" aria-live="polite" hidden>Yet, however, or nevertheless.</p>
+    </div>
+    <div class="sample-foot"><span class="mono">SAMPLE CARD</span><button type="button" class="flip" aria-controls="answer-examples-1" aria-expanded="false"><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 2.7 6.4M3 12V6m0 6h6"/></svg><span>Show answer</span></button></div>
+  </article><!-- Flashcard slot examples-2. Replace the subject, type, question and answer together. -->
+  <article class="sample-card " data-card-slot="examples-2">
+    <div class="sample-head"><span class="subject">Chemistry</span><span class="sample-type">Cloze deletion</span></div>
+    <div class="sample-body">
+      <p class="prompt">A catalyst lowers the […] of a reaction.</p><p class="answer" id="answer-examples-2" aria-live="polite" hidden>Activation energy.</p>
+    </div>
+    <div class="sample-foot"><span class="mono">SAMPLE CARD</span><button type="button" class="flip" aria-controls="answer-examples-2" aria-expanded="false"><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 2.7 6.4M3 12V6m0 6h6"/></svg><span>Show answer</span></button></div>
+  </article><!-- Flashcard slot examples-3. Replace the subject, type, question and answer together. -->
+  <article class="sample-card " data-card-slot="examples-3">
+    <div class="sample-head"><span class="subject">Geography</span><span class="sample-type">Short answer</span></div>
+    <div class="sample-body">
+      <p class="prompt">Which mountain range separates France and Spain?</p><p class="answer" id="answer-examples-3" aria-live="polite" hidden>The Pyrenees.</p>
+    </div>
+    <div class="sample-foot"><span class="mono">SAMPLE CARD</span><button type="button" class="flip" aria-controls="answer-examples-3" aria-expanded="false"><svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 2.7 6.4M3 12V6m0 6h6"/></svg><span>Show answer</span></button></div>
+  </article></div></section>
+<section class="wrap closing"><div><p class="eyebrow">YOUR NEXT STUDY SESSION</p><h2>Start with one deck.</h2><p>Add a few cards and see what you remember tomorrow.</p><div class="actions"><a class="btn primary" href="https://mopiq.app/login">Start on web<svg class="" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a><a class="btn secondary" href="https://apps.apple.com/us/app/mopiq-ai-flashcards-learning/id6443485322">Download on the App Store</a></div></div></section><section class="faq wrap" id="faq"><div class="faq-head"><p class="eyebrow">GOOD TO KNOW</p><h2>Questions about Mopiq</h2><p>From your first import to your next review.</p></div><div class="faq-list"><details><summary><span class="faq-no mono">01</span><span>What can I do with Mopiq?</span><span class="plus" aria-hidden="true">+</span></summary><p>Create flashcards from your own material, organize them into decks, then study with spaced repetition. You can also practice with quizzes and track your study activity.</p></details><details><summary><span class="faq-no mono">02</span><span>How is Mopiq different from a general AI chatbot?</span><span class="plus" aria-hidden="true">+</span></summary><p>Mopiq saves the cards you make into editable decks and keeps track of when each card is due. You can return to the same deck for reviews and quizzes without rebuilding it each time.</p></details><details><summary><span class="faq-no mono">03</span><span>How do active recall and spaced repetition work together?</span><span class="plus" aria-hidden="true">+</span></summary><p>Try to answer the front of a card from memory. Flip it, then choose Again, Hard, Good, or Easy. Mopiq uses your rating to bring harder cards back sooner and space out the cards you know well.</p></details><details><summary><span class="faq-no mono">04</span><span>Can I make cards from my own study materials?</span><span class="plus" aria-hidden="true">+</span></summary><p>Yes. Start from a PDF, slides, a Word document, notes, photos, or audio. You can also start from a topic, paste text, or write cards yourself. Import options vary by platform.</p></details><details><summary><span class="faq-no mono">05</span><span>Can I bring over decks from Anki?</span><span class="plus" aria-hidden="true">+</span></summary><p>Yes. Export a deck from Anki as an .apkg file and use Mopiq’s Anki import. On the web, this creates a deck from the cards. Your Anki review history stays in Anki.</p></details><details><summary><span class="faq-no mono">06</span><span>What subjects and languages can I study?</span><span class="plus" aria-hidden="true">+</span></summary><p>Use Mopiq for anything you can turn into questions and answers. Try vocabulary in the language you’re learning, a diagram for anatomy, or short prompts for science or history.</p></details><details><summary><span class="faq-no mono">07</span><span>Can I start free, and what comes with Pro?</span><span class="plus" aria-hidden="true">+</span></summary><p>Yes. Start with a free account to create decks and review flashcards. Check the upgrade screen in Mopiq for the current limits, features, and prices for your platform.</p></details><details><summary><span class="faq-no mono">08</span><span>Can I use Mopiq on more than one device?</span><span class="plus" aria-hidden="true">+</span></summary><p>You can use Mopiq on iPhone, iPad, Mac, and in a browser. Sign in with the same account to access your decks across devices. A native Android app is in development, and you can use the web app on Android today.</p></details><details><summary><span class="faq-no mono">09</span><span>Can I see how my studying is going?</span><span class="plus" aria-hidden="true">+</span></summary><p>Mopiq shows your review activity and study time so you can see how often you’re studying and what’s left to review.</p></details><details><summary><span class="faq-no mono">10</span><span>Where can I read about how Mopiq handles my data?</span><span class="plus" aria-hidden="true">+</span></summary><p>The <a href="https://mopiq.app/privacy">Mopiq Privacy Policy</a> explains how the service handles your information.</p></details></div></section>
+</main>
+<footer class="footer"><div class="wrap"><a class="brand" href="#top"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTJweCIgaGVpZ2h0PSIzOHB4IiB2aWV3Qm94PSIwIDAgNTIgMzgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8dGl0bGU+QXNzZXQgOTwvdGl0bGU+CiAgICA8ZGVmcz4KICAgICAgICA8bGluZWFyR3JhZGllbnQgeDE9IjUwJSIgeTE9IjEwMCUiIHgyPSI1MCUiIHkyPSItMy40Njk0NDY5NWUtMTYlIiBpZD0ibGluZWFyR3JhZGllbnQtMSI+CiAgICAgICAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMwNzdFRkUiIG9mZnNldD0iMCUiPjwvc3RvcD4KICAgICAgICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzE2QjBGRSIgb2Zmc2V0PSIxMDAlIj48L3N0b3A+CiAgICAgICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDwvZGVmcz4KICAgIDxnIGlkPSJTaGFyZS1kZWNrIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4KICAgICAgICA8ZyBpZD0iRXh0cmEtTGFyZ2UiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04MTIuMDAwMDAwLCAtMzA4LjAwMDAwMCkiIGZpbGwtcnVsZT0ibm9uemVybyI+CiAgICAgICAgICAgIDxnIGlkPSJHcm91cCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEyLjAwMDAwMCwgMzAxLjAwMDAwMCkiPgogICAgICAgICAgICAgICAgPGcgaWQ9IkFzc2V0LTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAuMDAwMDAwLCA3LjI0NTkwMikiPgogICAgICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik01MS45NjQyMTkzLDIxLjA1NDQxMiBDNTEuNjYyNjg2LDI0LjUxNjg3NSA0OS41MzYwODI4LDI2LjkwOTMwNTggNDYuMzgxNTI1MiwyOC4xMzA3NTc4IEM0NS44MDI5ODUyLDI4LjM1MzU2MSA0NS4yMTUwNjc0LDI4LjU1MzI5MDggNDQuNjI3MTQ5NywyOC43NTMwMjA1IEM0NC40ODI4NzU0LDI5Ljc0MjI5NTcgNDQuNDEwMDE2OCwzMC43NDIzODY2IDQ0LjQxMDAxNjgsMzEuNzQxMDM1MyBDNDQuNDEwMDE2OCwzMy45MTI4MjYgNDMuOTg1MTI5LDM2LjkyMzkxNDMgNDEuMzc2NjQ5NiwzNy40NDQ1MDk1IEMzOS4yMzQ4OTc2LDM3Ljg3MjgxMDggMzcuMjQ5NjgzMiwzNi4wMzkxOTA4IDM1LjU4NDAzNjQsMzQuOTgyODU4MyBDMzQuMTQ3MDY0MywzNC4wNzI4OTgyIDMyLjYzODY3NjUsMzMuMjcxODE2MSAzMS4wNzY5MDcxLDMyLjU5MTg2OTYgQzI5LjczMzcxMzQsMzIuMDA3ODIyNCAyOC4zMDQ2NzY0LDMxLjQ4MDAxNjcgMjcuMjk5ODA1OSwzMC40MTQzMTA2IEMyNy4xNDI1NDY5LDMwLjI0NzAyNzkgMjcuMDAwNDM2NywzMC4wNzAzNzE2IDI2Ljg2OTE0NzEsMjkuODg0MzQxOCBDMjMuNDc0MzcyOCwzMS4yODAyODY5IDE5LjEwMjE0LDI5Ljg0NjEyNjMgMTYuNjE3NzM2NSwyNy4zMTA5Mjg1IEMxMy42NDU2ODU5LDI3LjgyOTM2MDYgMTAuNDAzMTIwOSwyNy43Mjk4NTYyIDcuNDc2NTE2NywyNy4wNDU1ODM1IEM0LjIyOTYyMzUyLDI2LjI4NDg3OTkgMS4yNzkyMTQwMywyNC4wMjg3MjY5IDAuMzY0NTE0OTUxLDIwLjc3MDMxOTggQy0wLjQyNjgyOTU5OSwxNy45NTg5NjEzIDAuMTAzMzc4NDY0LDE0Ljg1NTU3OTIgMS42MzQxMjg4MiwxMi4zODU5OTY1IEMyLjc4Njg4MDQ5LDEwLjUyNzEzOTggNC41MTM4NDM5LDkuMDQxMDYzOSA2LjU3MTE5NTQ1LDguMjc0NTkxOTYgQzYuODYxMTg2OCw4LjE2NzE1NjEgNy4xNTMzNDIyNyw4LjA4NDIzNTggNy40NDY5NDA0Nyw4LjAyMjk0Njg5IEM3LjgyOTI2NzM3LDUuNTM4MjIyMjQgOS4zNzgwNTIwMSwzLjI1NjgzMjU3IDExLjUyMTk2ODIsMS45MzAxMDc4NiBDMTMuODYzNTQwMSwwLjQ3ODY0MjE3OSAxNi44NDcxMzI3LDAuMTYxMzgxOTIxIDE5LjQ4MTU4MTQsMC45NzE4Mzc2NyBDMjAuMTg2MzYxNCwxLjE4NjcwOTM5IDIwLjg2MzAwNzksMS40ODA4OTYxNyAyMS41MDQzMDcyLDEuODQxNDE5MTkgQzIxLjg2MTM4NjEsMS40OTk2NDMzNyAyMi4yNjUzNTQxLDEuMjAxODUxMzYgMjIuNjkzODQ4OCwwLjk2NjA2OTMwMSBDMjQuMzc2MDg3MiwwLjA0MDI0NjE4NjQgMjYuMzgzNjY0MSwtMC4xMDMyNDE5NzUgMjguMjk3NDYyNywwLjA1NjEwOTE5OTMgQzMwLjAxMTQ0MTQsMC4yMDAzMTg0MDcgMzEuNzMwNDY5NywwLjU4MjQ3MjgwOCAzMy4yMjI5ODc0LDEuNDM0NzQ5MjMgQzMzLjcxODU2OTYsMS43MTY2NzgyMyAzNC4xODc0NjExLDIuMDU3MDExOTYgMzQuNjEwMTg0OCwyLjQ0NDkzNDczIEMzOS4zMTcxMzM5LDAuNTA5NjQ3MTU4IDQ1LjEzNjQzNzksNC40Njg5MTA5NiA0Ny4wNDIzMDE1LDguNjk3MTI0OTQgQzQ3LjU2NDU3NDUsOS44NTcyODgwMiA0Ny44NTY3Mjk5LDExLjE3MDMxMjkgNDcuODI0MjY4MiwxMi40NTE2MTE3IEM0OC4xNjQwMzQyLDEyLjY1NDk0NjYgNDguNDkwODE1NSwxMi44ODM1MTgyIDQ4LjgwMDI4MzksMTMuMTM4NzY4NSBDNTEuMTAyMTgwNCwxNS4wMzgwMDM4IDUyLjIxOTU4NDgsMTguMTEzOTg2MiA1MS45NjQyMTkzLDIxLjA1NDQxMiBaIiBpZD0iUGF0aCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudC0xKSI+PC9wYXRoPgogICAgICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNi45MzA4MTE4LDI3LjI1NDY4NjkgQzEzLjg3NDM2MDcsMjcuODM1MTI4OSAxMC41MDYyNzcxLDI3Ljc1MjIwODYgNy40Nzc5NTk0NSwyNy4wNDQ4NjI1IEM0LjIzMTc4NzY0LDI2LjI4NjMyMiAxLjI4MDY1Njc3LDI0LjAyODcyNjkgMC4zNjUyMzYzMjMsMjAuNzcwMzE5OCBDLTAuNDI1Mzg2ODU2LDE3Ljk1ODk2MTMgMC4xMDQ4MjEyMDcsMTQuODU2MzAwMiAxLjYzNTU3MTU2LDEyLjM4NjcxNzUgQzIuNzg4MzIzMjQsMTAuNTI3ODYwOCA0LjUxNjAwODAxLDkuMDQxMDYzOSA2LjU3NDA4MDk0LDguMjc0NTkxOTYgQzcuOTE4NzE3NDQsNy43NzM0NjQ5NiA5LjMwMjMwOCw3LjgzNDAzMjgzIDEwLjcxODM2MDMsNy45MDQ2OTUzNCIgaWQ9IlBhdGgiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNOS4wNjY0MTk1MiwxMy4yMDQzODM3IEM3Ljc0OTkxNjUxLDEyLjE4NDEwMzYgNy4yNjU4NzYyMiwxMC4zNzcxNjIyIDcuMzczMzYwNTgsOC43MTU4NzIxMyBDNy41NTA4MTc5Nyw1Ljk2Nzk2NTY4IDkuMTgxMTE3NTksMy4zODAxMzE0NCAxMS41MjM0MTA5LDEuOTI5Mzg2ODEgQzEzLjg2NTcwNDIsMC40Nzg2NDIxNzkgMTYuODQ5Mjk2OCwwLjE2MTM4MTkyMSAxOS40ODMwMjQyLDAuOTcxMTE2NjI0IEMyMi4xMTY3NTE2LDEuNzgwODUxMzMgMjQuMzc0NjQ0NCwzLjY3NTc2MDMyIDI1LjczODAzNjYsNi4wNjg5MTIxMiIgaWQ9IlBhdGgiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMzIuNzM2MDYxNiw0LjEzOTM5MjkyIEMzMi45OTI4Njk5LDMuNDU4NzI1NDYgMzMuNTk1OTM2NSwyLjkxNzIxOTg4IDM0LjI3OTc5NjcsMi41OTEzMDcwNyBDMzkuMDQzMDEyOCwwLjMyMjg5NjIzNCA0NS4wOTE3MTI5LDQuMzY5NDA2NjEgNDcuMDQxNTgwMSw4LjY5Nzg0NTk4IEM0Ny44OTQ5NjI2LDEwLjU5MzQ3NiA0OC4xMzY2MjIxLDEyLjg5NTc3NiA0Ny4zNDU5OTg5LDE0LjgwNDM4NDkiIGlkPSJQYXRoIj48L3BhdGg+CiAgICAgICAgICAgICAgICAgICAgPHBhdGggZD0iTTQwLjc0MjU2NDEsMTEuNDk5MTA5OCBDNDMuNTAzOTc0MiwxMC44MzUwMjY0IDQ2LjU3NzAxNjksMTEuMzA0NDI3NCA0OC44MDAyODM5LDEzLjEzOTQ4OTYgQzUxLjEwMjE4MDQsMTUuMDM4MDAzOCA1Mi4yMTgxNDIxLDE4LjExNTQyODMgNTEuOTYyNzc2NiwyMS4wNTUxMzMgQzUxLjY2MTk2NDcsMjQuNTE3NTk2MSA0OS41MzYwODI4LDI2LjkwODU4NDggNDYuMzgxNTI1MiwyOC4xMzAwMzY4IEM0NS43ODI3ODY4LDI4LjM2MTQ5MjUgNDUuMTczOTQ5MywyOC41NjY5OTA3IDQ0LjU2NjU1NDQsMjguNzc0NjUxOSIgaWQ9IlBhdGgiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTYuMDc5NTkzNCwxNy4yNzQ2ODg2IEMxNS41NDcyMjEyLDE0LjMzMTM3ODcgMTYuNDMzNzg2OCwxMS4xMzQ5ODE2IDE4LjYxNzM3ODQsOC45NzE4NDM0OCBDMjEuMjgyMTI0Nyw2LjMzMjA5MzkzIDI1Ljc1NDYyODEsNS41MzAyOTA3MyAyOS40MTcwMzEzLDUuOTg4ODc2MDEgQzMyLjg4NzU0OTYsNi40MjM2NjY3OCAzNi4xNjQwMTkxLDcuODA1OTEyMDMgMzguMTE4MjE0NSwxMC42MDE0MDc1IEMzOS4yOTgzNzgzLDEyLjI5MDA5NzQgMzkuODAxODk1NiwxNC4zMjQ4ODkzIDM5LjQ3ODcyMTIsMTYuMzkxNDA3MiIgaWQ9IlBhdGgiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNNDYuNDQyODQxOCwyMi43MjM2MzM1IEM0NS4xMTI2MzI3LDI1LjUyNDE3NjQgNDQuNDEyOTAyMywyOC42NDU1ODQ3IDQ0LjQwOTI5NTUsMzEuNzQyNDc3NCBDNDQuNDA5Mjk1NSwzMy45MTI4MjYgNDMuOTg1MTI5LDM2LjkyMzkxNDMgNDEuMzc2NjQ5NiwzNy40NDM3ODg0IEMzOS4yMzYzNDAzLDM3Ljg3NDI1MjkgMzcuMjUxMTI1OSwzNi4wMzg0Njk3IDM1LjU4MzMxNSwzNC45ODQzMDA0IEMzNC4xNDYzNDI5LDM0LjA3MTQ1NjEgMzIuNjQwMTE5MiwzMy4yNzI1MzcxIDMxLjA3OTA3MTMsMzIuNTkzMzExNyBDMjkuNzM1MTU2MSwzMi4wMDc4MjI0IDI4LjMwNDY3NjQsMzEuNDgwNzM3NyAyNy4zMDE5NywzMC40MTI4Njg1IEMyNy4xNDMyNjgzLDMwLjI0Nzc0OSAyNy4wMDE4Nzk1LDMwLjA2ODIwODUgMjYuODcxMzExMiwyOS44ODIxNzg2IEMyMy4zOTA2OTM3LDMxLjMxNTYxODIgMTguODc5MjM2MiwyOS43NjgyNTM0IDE2LjQzMTYyMjcsMjcuMTEyNjQwOCBDMTMuNjY3MzI3LDI0LjExMjM2ODIgMTIuNDA2MzY5NiwxOC42MjA4ODE2IDE1LjMxMTMzMjcsMTUuNDEzNjY4OCBDMTYuOTgyNzUwNSwxNi40OTE2MzI2IDE4LjY2NDk4ODksMTcuNTUzMDEyNCAyMC4zNjAyMTE5LDE4LjU4NjI3MTQgQzIyLjg1MTgyOTEsMjAuMTA5MTIwNiAyNS4zMTk2NDExLDIxLjY0ODU1MzkgMjcuNTcwMzIwMiwyMy40Njc3NTMxIEw0Ni40NDM1NjMxLDIyLjcyMzYzMzUgTDQ2LjQ0Mjg0MTgsMjIuNzIzNjMzNSBaIiBpZD0iUGF0aCI+PC9wYXRoPgogICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICA8L2c+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=" alt="" width="31" height="24"><span>Mopiq</span></a><span>Flashcards for the things you want to remember.</span><nav aria-label="Legal"><a href="https://mopiq.app/privacy">Privacy</a><a href="https://mopiq.app/terms">Terms</a><a href="https://mopiq.app/refund">Refunds</a><a href="https://pattern-safflower-f6f.notion.site/Mopiq-Flashcards-Help-Center-153d54f05ccd8064b251d28c41948094">Help</a></nav></div></footer>
+<script>
+const root = document.documentElement;
+const themeButton = document.querySelector('.theme');
+function setTheme(theme) {
+  root.dataset.theme = theme;
+  const isDark = theme === 'dark';
+  themeButton.setAttribute('aria-pressed', String(isDark));
+  themeButton.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+}
+const requestedTheme = new URLSearchParams(location.search).get('theme');
+setTheme(['light', 'dark'].includes(requestedTheme) ? requestedTheme : root.dataset.theme);
+themeButton.addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
+
+for (const button of document.querySelectorAll('.flip')) {
+  button.addEventListener('click', () => {
+    const answer = document.getElementById(button.getAttribute('aria-controls'));
+    const revealed = answer.hidden;
+    answer.hidden = !revealed;
+    button.setAttribute('aria-expanded', String(revealed));
+    button.querySelector('span').textContent = revealed ? 'Hide answer' : 'Show answer';
+  });
+}
+
+const sampleButtons = document.querySelectorAll('[data-select-sample]');
+for (const button of sampleButtons) {
+  button.addEventListener('click', () => {
+    for (const sample of document.querySelectorAll('[data-sample]')) {
+      sample.hidden = sample.dataset.sample !== button.dataset.selectSample;
+    }
+    for (const option of sampleButtons) {
+      option.setAttribute('aria-pressed', String(option === button));
+    }
+  });
+}
+
+for (const quiz of document.querySelectorAll('[data-quiz]')) {
+  quiz.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const choice = new FormData(quiz).get('choice');
+    const result = quiz.querySelector('.quiz-result');
+    result.textContent = choice === 'protein' ? 'Correct. Ribosomes make proteins.' :
+      choice ? 'Try again.' : 'Choose an answer first.';
+  });
+  quiz.addEventListener('change', () => {
+    quiz.querySelector('.quiz-result').textContent = '';
+  });
+}
+
+</script>
+</body>
+</html>

@@ -26,6 +26,8 @@
   --error: #DC2626;
   --green: #22C55E;
   --green-shadow: #16A34A;
+  --stat-emerald: #059669;
+  --stat-blue: #2563EB;
   --stat-orange: #FF9500;
   --stat-indigo: #5856D6;
   --stat-cyan: #06B6D4;
@@ -149,6 +151,8 @@ html[data-theme="dark"] body.app-shell {
   --error: #F87171;
   --green: #22C55E;
   --green-shadow: #16A34A;
+  --stat-emerald: #34D399;
+  --stat-blue: #60A5FA;
   --stat-orange: #FF9500;
   --stat-indigo: #A88BFA;
   --stat-cyan: #22D3EE;

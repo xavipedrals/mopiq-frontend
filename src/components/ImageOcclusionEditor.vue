@@ -7,7 +7,7 @@
     @keydown.esc.stop="onEscape"
   >
     <header class="nav">
-      <button type="button" class="nav-text" :disabled="saving" @click="$emit('cancel')">
+      <button type="button" class="nav-text" :disabled="saving" @click="closeEditor">
         {{ $t('common.cancel') }}
       </button>
       <h2 id="occlusion-title">{{ $t('editor.occlusion') }}</h2>
@@ -16,7 +16,7 @@
           type="button"
           class="nav-icon"
           :aria-label="$t('editor.occlusionModes')"
-          :disabled="saving"
+          :disabled="saving || detecting"
           @click="modeOpen = true"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -25,29 +25,31 @@
             <circle cx="18" cy="12" r="1.4" fill="currentColor"/>
           </svg>
         </button>
-        <button type="button" class="nav-text save" :disabled="saving" @click="requestSave">
+        <button type="button" class="nav-text save" :disabled="saving || detecting" @click="requestSave">
           {{ saving ? $t('common.loading') : $t('common.save') }}
         </button>
       </div>
     </header>
 
     <div class="stage-wrap">
-      <div class="fit">
-        <img ref="image" class="photo" :src="imageUrl" alt="" draggable="false">
-        <div class="overlay" @pointerdown="onPointerDown" @contextmenu.prevent>
+      <div class="fit" :style="imageFitStyle">
+        <img ref="image" class="photo" :src="imageUrl" alt="" draggable="false" @load="onImageLoad">
+        <div class="overlay" :class="{ preview: previewing }" @pointerdown="onPointerDown" @contextmenu.prevent>
           <div
-            v-for="rect in rectangles"
+            v-for="(rect, index) in visibleRectangles"
             :key="rect.id"
             class="mask"
-            :class="{ selected: rect.id === selectedId }"
+            :class="{ selected: rect.id === selectedId && !previewing, active: previewing && index === 0 }"
             :style="maskStyle(rect)"
           >
-            <template v-if="rect.id === selectedId">
+            <template v-if="rect.id === selectedId && !previewing && !detecting">
               <span class="handle nw"></span>
               <span class="handle ne"></span>
               <span class="handle sw"></span>
               <span class="handle se"></span>
-              <span class="handle rot"></span>
+              <span class="handle rot" aria-hidden="true">
+                <TablerIcon name="rotateClockwise" />
+              </span>
               <button
                 type="button"
                 class="del"
@@ -55,17 +57,43 @@
                 @pointerdown.stop
                 @click.stop="remove(rect.id)"
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8 8.5h8M9.2 8.5l.4 9h4.8l.4-9M10 8.4V7.2h4v1.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                </svg>
+                <TablerIcon name="trash" />
               </button>
             </template>
           </div>
           <div v-if="draft" class="mask draft" :style="maskStyle(draft)"></div>
         </div>
+        <div v-if="detecting" class="scan" aria-hidden="true"></div>
       </div>
-      <p v-if="!rectangles.length && !draft" class="hint">{{ $t('editor.occlusionHint') }}</p>
     </div>
+    <footer class="detection-tray">
+      <div v-if="detecting || previewing || hasAutomaticMasks || detectionFeedback" class="detection-status">
+        <div class="detection-message" role="status">
+          <span v-if="detecting" class="saving-spin detection-spin" aria-hidden="true"></span>
+          <TablerIcon v-else-if="hasAutomaticMasks && !previewing" name="check" class="detection-check" />
+          {{ detectionStatus }}
+        </div>
+        <div class="detection-actions">
+          <button v-if="detecting" type="button" @click="cancelDetection">{{ $t('common.cancel') }}</button>
+          <button v-else-if="previewing" type="button" @click="previewing = false">{{ $t('editor.occlusionEditMasks') }}</button>
+          <template v-else-if="hasAutomaticMasks">
+            <button type="button" @click="undoDetection">{{ $t('editor.occlusionUndoAi') }}</button>
+            <button type="button" @click="showPreview">{{ $t('editor.occlusionPreview') }}</button>
+          </template>
+          <button
+            v-else-if="detectionFeedback !== 'occlusionDetectionLimit'"
+            type="button"
+            :disabled="!imageReady"
+            @click="startDetection"
+          >{{ $t('editor.occlusionTryAgain') }}</button>
+        </div>
+      </div>
+      <button v-else type="button" class="detect-button" :disabled="!imageReady" @click="startDetection">
+        <TablerIcon name="sparkles" />
+        {{ $t('editor.occlusionDetectAi') }}
+      </button>
+      <p class="hint">{{ $t(detectionHint) }}</p>
+    </footer>
     <p v-if="shownError && !saving" class="error">{{ shownError }}</p>
 
     <div v-if="saving" class="saving-overlay" role="status" aria-live="polite" aria-busy="true">
@@ -113,6 +141,10 @@
 </template>
 
 <script>
+import { getLocale } from '../i18n';
+import { detectOcclusionText } from '../study/imageOcclusionOcr';
+import TablerIcon from './TablerIcon.vue';
+
 const HANDLE_PX = 16;
 const ROTATE_OFFSET = 28;
 const CREATE_THRESHOLD = 6;
@@ -158,6 +190,22 @@ function localPoint(point, rect) {
   };
 }
 
+function coversRegion(mask, region, w, h) {
+  const right = region.left + region.width;
+  const bottom = region.top + region.height;
+  if (!mask.rotation) {
+    const overlapX = Math.min(right, mask.left + mask.width) - Math.max(region.left, mask.left);
+    const overlapY = Math.min(bottom, mask.top + mask.height) - Math.max(region.top, mask.top);
+    return overlapX > 0 && overlapY > 0 && overlapX * overlapY >= region.width * region.height * 0.7;
+  }
+  return [
+    [region.left, region.top], [right, region.top], [region.left, bottom], [right, bottom],
+  ].every(([x, y]) => {
+    const local = localPoint({ x: x * w, y: y * h, w, h }, mask);
+    return Math.abs(local.x) <= local.hw && Math.abs(local.y) <= local.hh;
+  });
+}
+
 function handleHit(local) {
   if (Math.hypot(local.x, local.y + local.hh + ROTATE_OFFSET) <= HANDLE_PX) {
     return { kind: 'rotate' };
@@ -175,7 +223,11 @@ function hitTest(point, rectangles, selectedId) {
   if (selectedId) {
     const selected = rectangles.find((rect) => rect.id === selectedId);
     if (selected) {
-      const handle = handleHit(localPoint(point, selected));
+      const local = localPoint(point, selected);
+      if (Math.abs(local.x) <= local.hw / 2 && Math.abs(local.y) <= local.hh / 2) {
+        return { id: selected.id, kind: 'move' };
+      }
+      const handle = handleHit(local);
       if (handle) return { id: selected.id, ...handle };
     }
   }
@@ -206,6 +258,7 @@ function cornerClient(rect, corner, box) {
 
 export default {
   name: 'ImageOcclusionEditor',
+  components: { TablerIcon },
   props: {
     imageUrl: { type: String, required: true },
     saving: { type: Boolean, default: false },
@@ -221,9 +274,40 @@ export default {
       mode: 'hideAll',
       modeOpen: false,
       localError: '',
+      imageSize: null,
+      detectionController: null,
+      detectionFeedback: '',
+      previewing: false,
     };
   },
   computed: {
+    imageReady() { return this.imageSize !== null; },
+    imageFitStyle() {
+      if (!this.imageSize) return null;
+      const { width, height } = this.imageSize;
+      return { '--photo-width': `${width}px`, '--photo-ratio': width / height };
+    },
+    detecting() { return this.detectionController !== null; },
+    hasAutomaticMasks() { return this.rectangles.some((rect) => rect.automatic); },
+    visibleRectangles() {
+      return this.previewing && this.mode === 'hideOne' ? this.rectangles.slice(0, 1) : this.rectangles;
+    },
+    detectionStatus() {
+      if (this.detecting) return this.$t('editor.occlusionDetecting');
+      if (this.previewing) return this.$t('editor.occlusionPreviewing');
+      if (this.hasAutomaticMasks) {
+        const count = this.rectangles.length;
+        return this.$t(count === 1 ? 'editor.occlusionOneReady' : 'editor.occlusionMasksReady', { count });
+      }
+      return this.$t(`editor.${this.detectionFeedback}`);
+    },
+    detectionHint() {
+      if (this.detecting) return 'editor.occlusionDetectingHint';
+      if (this.previewing) return 'editor.occlusionPreviewHint';
+      if (this.detectionFeedback === 'occlusionDetectionLimit') return 'editor.occlusionLimitHint';
+      if (this.hasAutomaticMasks) return 'editor.occlusionReviewHint';
+      return 'editor.occlusionHint';
+    },
     shownError() {
       if (this.saveError) return this.saveError;
       if (this.localError === 'none') return this.$t('editor.occlusionNone');
@@ -238,12 +322,67 @@ export default {
     window.addEventListener('keydown', this.onKeyDown);
   },
   beforeUnmount() {
+    this.cancelDetection();
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
     window.removeEventListener('pointercancel', this.onPointerUp);
     window.removeEventListener('keydown', this.onKeyDown);
   },
   methods: {
+    onImageLoad({ currentTarget }) {
+      const { naturalWidth, naturalHeight } = currentTarget;
+      if (naturalWidth && naturalHeight) this.imageSize = { width: naturalWidth, height: naturalHeight };
+    },
+    async startDetection() {
+      const image = this.$refs.image;
+      if (!image?.naturalWidth || !image.naturalHeight || this.detecting || this.saving) return;
+      const available = MAX_RECTS - this.rectangles.length;
+      if (available <= 0) {
+        this.detectionFeedback = 'occlusionDetectionLimit';
+        return;
+      }
+      this.selectedId = '';
+      this.draft = null;
+      this.gesture = null;
+      this.detectionFeedback = '';
+      this.localError = '';
+      const controller = new AbortController();
+      this.detectionController = controller;
+      try {
+        const regions = await detectOcclusionText(image, { locale: getLocale(), signal: controller.signal });
+        if (controller.signal.aborted) return;
+        const candidates = regions.filter((region) =>
+          !this.rectangles.some((mask) => coversRegion(mask, region, image.naturalWidth, image.naturalHeight)),
+        );
+        this.rectangles.push(...candidates.slice(0, available).map((rect) => ({
+          ...rect, id: crypto.randomUUID(), automatic: true,
+        })));
+        if (!regions.length) this.detectionFeedback = 'occlusionNoText';
+        else if (!candidates.length) this.detectionFeedback = 'occlusionAlreadyCovered';
+        else if (candidates.length > available) this.detectionFeedback = 'occlusionDetectionLimit';
+      } catch {
+        if (!controller.signal.aborted) this.detectionFeedback = 'occlusionDetectionFailed';
+      } finally {
+        if (this.detectionController === controller) this.detectionController = null;
+      }
+    },
+    cancelDetection() {
+      this.detectionController?.abort();
+      this.detectionController = null;
+    },
+    undoDetection() {
+      this.rectangles = this.rectangles.filter((rect) => !rect.automatic);
+      this.selectedId = '';
+      this.detectionFeedback = '';
+    },
+    showPreview() {
+      this.selectedId = '';
+      this.previewing = true;
+    },
+    closeEditor() {
+      this.cancelDetection();
+      this.$emit('cancel');
+    },
     maskStyle(rect) {
       return {
         left: `${rect.left * 100}%`,
@@ -275,9 +414,12 @@ export default {
       this.rectangles = this.rectangles.filter((rect) => rect.id !== id);
       if (this.selectedId === id) this.selectedId = '';
       this.localError = '';
+      if (['occlusionAlreadyCovered', 'occlusionDetectionLimit'].includes(this.detectionFeedback)) {
+        this.detectionFeedback = '';
+      }
     },
     onPointerDown(event) {
-      if (this.saving || (event.button != null && event.button !== 0)) return;
+      if (this.saving || this.detecting || this.previewing || (event.button != null && event.button !== 0)) return;
       const point = this.imagePoint(event);
       if (!point) return;
       const hit = hitTest(point, this.rectangles, this.selectedId);
@@ -392,14 +534,10 @@ export default {
     onKeyDown(event) {
       if (event.key === 'Escape') {
         event.stopPropagation();
-        if (this.modeOpen) {
-          this.modeOpen = false;
-          return;
-        }
-        if (!this.saving) this.$emit('cancel');
+        this.onEscape();
         return;
       }
-      if (this.modeOpen || !this.selectedId) return;
+      if (this.modeOpen || this.saving || this.detecting || this.previewing || !this.selectedId) return;
       if (event.key !== 'Backspace' && event.key !== 'Delete') return;
       const tag = event.target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
@@ -411,10 +549,12 @@ export default {
         this.modeOpen = false;
         return;
       }
-      if (!this.saving) this.$emit('cancel');
+      if (this.detecting) this.cancelDetection();
+      else if (this.previewing) this.previewing = false;
+      else if (!this.saving) this.closeEditor();
     },
     requestSave() {
-      if (this.saving) return;
+      if (this.saving || this.detecting) return;
       if (!this.rectangles.length) {
         this.localError = 'none';
         return;
@@ -486,27 +626,28 @@ export default {
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
-  padding: 12px 16px 24px;
+  padding: 12px 16px;
+  container-type: size;
   background: var(--page-bg, #f8fafc);
 }
 .fit {
   position: relative;
-  display: inline-block;
-  max-width: 100%;
+  width: min(100%, 960px, var(--photo-width, 960px), calc((100dvh - 150px) * var(--photo-ratio, 1)));
+  width: min(100%, 960px, var(--photo-width, 960px), calc(100cqh * var(--photo-ratio, 1)));
   line-height: 0;
   touch-action: none;
   user-select: none;
 }
 .photo {
   display: block;
-  max-width: min(100%, 960px);
-  max-height: calc(100dvh - 150px);
-  width: auto;
+  width: 100%;
   height: auto;
   -webkit-user-drag: none;
 }
 .overlay { position: absolute; inset: 0; }
+.overlay.preview { pointer-events: none; }
 .mask {
   position: absolute;
   box-sizing: border-box;
@@ -525,6 +666,29 @@ export default {
   background: rgba(239, 68, 68, 0.08);
   pointer-events: none;
 }
+.preview .mask {
+  border: 1px solid #212121;
+  background: #ffeba2;
+}
+.preview .mask.active { background: #ff8e8e; }
+.scan {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 1px solid var(--blue-button, #0a7aff);
+  border-radius: 6px;
+  pointer-events: none;
+}
+.scan::after {
+  content: '';
+  position: absolute;
+  inset: 15% 0 auto;
+  height: 2px;
+  background: var(--blue-button, #0a7aff);
+  box-shadow: 0 0 12px var(--blue-button, #0a7aff);
+  animation: io-scan 1.25s ease-in-out infinite alternate;
+}
+@keyframes io-scan { to { top: 85%; } }
 .handle {
   position: absolute;
   width: 14px;
@@ -538,7 +702,20 @@ export default {
 .handle.ne { left: 100%; top: 0; }
 .handle.sw { left: 0; top: 100%; }
 .handle.se { left: 100%; top: 100%; }
-.handle.rot { left: 50%; top: -28px; }
+.handle.rot {
+  left: 50%;
+  top: -28px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--blue-button, #0a7aff);
+  color: var(--button-text, #fff);
+  display: grid;
+  place-items: center;
+  cursor: grab;
+}
+.handle.rot svg { width: 16px; height: 16px; }
 .del {
   position: absolute;
   left: 50%;
@@ -556,19 +733,73 @@ export default {
   padding: 0;
 }
 .del svg { width: 16px; height: 16px; }
-.hint {
-  position: absolute;
-  left: 50%;
-  bottom: 28px;
-  transform: translateX(-50%);
-  margin: 0;
-  max-width: min(440px, calc(100% - 32px));
-  padding: 10px 16px;
+.detection-tray {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--page-bg, #f8fafc);
+}
+.detect-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  margin-bottom: 6px;
+  padding: 8px 18px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--card-bg, #fff) 88%, transparent);
-  color: var(--title, #1e293d);
+  background: color-mix(in srgb, var(--card-bg, #fff) 72%, transparent);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--title, #1e293d) 9%, transparent);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.detect-button:disabled { opacity: 0.45; cursor: default; }
+.detect-button svg { width: 19px; height: 19px; transform: rotate(90deg); }
+.detection-status {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 8px;
+  width: min(100%, 500px);
+  min-height: 48px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  border-radius: 15px;
+  background: var(--card-bg, #fff);
+  font-size: 14px;
+  font-weight: 650;
+}
+.detection-message, .detection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.detection-actions { margin-inline-start: auto; }
+.detection-actions button {
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--blue-button, #0a7aff);
+  font: inherit;
+  cursor: pointer;
+}
+.detection-check { width: 17px; height: 17px; color: #23845e; }
+.detection-tray .detection-spin { width: 16px; height: 16px; border-width: 2px; }
+.hint {
+  margin: 0;
   text-align: center;
-  font-size: 15px;
+  color: var(--secondary-text, var(--title, #1e293d));
+  font-size: 13px;
 }
 .error {
   margin: 0;
@@ -598,7 +829,7 @@ export default {
   animation: io-spin 0.8s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .saving-spin { animation: none; }
+  .saving-spin, .scan::after { animation: none; }
 }
 @keyframes io-spin { to { transform: rotate(360deg); } }
 .sheet-back {

@@ -205,6 +205,16 @@
 </template>
 
 <script>
+import { trackProductEvent } from '../analytics';
+
+const observedPaddleTransactions = new Set();
+function trackCheckoutEvent(event) {
+  const id = event?.data?.transaction_id;
+  if (event?.name !== 'checkout.completed' || !id || observedPaddleTransactions.has(id)) return;
+  if (observedPaddleTransactions.size === 100) observedPaddleTransactions.delete(observedPaddleTransactions.values().next().value);
+  observedPaddleTransactions.add(id);
+  void trackProductEvent('purchase_confirmed');
+}
 import { h } from 'vue';
 import { initializePaddle } from '@paddle/paddle-js';
 import { HELP_CENTER_URL } from '../constants';
@@ -338,12 +348,16 @@ export default {
   },
   async mounted() {
     this.observePlusCard();
+    void trackProductEvent('paywall_view');
     await authReady;
     this.refreshAccount();
     await this.loadEntitlement();
     try {
       const { environment, token } = readPaddleConfig();
-      const paddle = await initializePaddle({ environment, token });
+      const paddle = await initializePaddle({
+        environment, token,
+        ...(environment === 'production' ? { eventCallback: trackCheckoutEvent } : {}),
+      });
       if (!paddle) throw new Error('Paddle.js did not initialize.');
       this.paddle = paddle;
       await this.loadPrices();
@@ -426,6 +440,7 @@ export default {
     },
     async subscribe() {
       if (!this.canSubscribe) return;
+      void trackProductEvent('paywall_continue');
       await authReady;
       this.refreshAccount();
       if (!this.loggedIn) {

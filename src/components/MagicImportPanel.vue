@@ -137,7 +137,10 @@
 </template>
 
 <script>
+import { trackProductEvent } from '../analytics';
+import { getCurrentUser } from '../auth/session';
 import { sharedGenerationEnabled } from '../api/aiGeneration';
+import { observePdfStart, observePdfProgress, submitAdditionalGeneration } from '../study/generationJobs';
 import { trimGenerationInstructions } from '../study/sharedGeneration';
 import { fetchDeck, fetchMagicImportJob, startMagicImport } from '../api/mopiq';
 import DeckTopicsPicker from './DeckTopicsPicker.vue';
@@ -206,8 +209,9 @@ export default {
     source: { type: String, required: true },
     deckId: { type: String, default: '' },
     targetSubdeckId: { type: Number, default: null },
+    backgroundExistingDeck: { type: Boolean, default: false },
   },
-  emits: ['busy', 'queued', 'done', 'background', 'layout'],
+  emits: ['busy', 'queued', 'done', 'background', 'layout', 'submitted'],
   data() {
     return {
       sharedGenerationEnabled,
@@ -426,6 +430,7 @@ export default {
               thumbnail: '',
             }));
             this.pdfPhase = 'pages';
+            void trackProductEvent('pdf_generation_document_selected');
           },
           onThumbnails: (batch) => {
             if (token !== this.pdfRenderToken) {
@@ -488,12 +493,31 @@ export default {
       }
       return '';
     },
+    submitInBackground(start) {
+      if (!submitAdditionalGeneration(this.deckId, start, (error) => this.messageFor(error))) return false;
+      this.$emit('submitted');
+      return true;
+    },
     async submitPhotos() {
       if (this.busy || this.photos.length === 0) {
         this.formError = this.$t('decks.photoNone');
         return;
       }
       this.formError = '';
+      if (this.backgroundExistingDeck && this.deckId) {
+        const photos = this.photos.map((photo) => photo.file);
+        const locale = getLocale() || 'en';
+        const payload = { source: sharedGenerationEnabled ? 'photo' : 'paste',
+          deckId: this.deckId, targetSubdeckId: this.targetSubdeckId, name: '', topic: '' };
+        const noText = this.$t('decks.photoNoText');
+        this.submitInBackground(async (isCurrent) => {
+          const text = await extractNotePhotoText(photos, { locale });
+          if (!isCurrent()) return null;
+          if (text.trim().length < 40) throw new Error(noText);
+          return startMagicImport({ ...payload, text });
+        });
+        return;
+      }
       this.photoReading = true;
       this.setBusy(true);
       try {
@@ -551,19 +575,32 @@ export default {
         return;
       }
       this.formError = '';
+      const payload = {
+        source: this.source,
+        deckId: this.deckId,
+        targetSubdeckId: this.targetSubdeckId,
+        name: this.source === 'aiPrompt' ? '' : this.name,
+        topic: this.source === 'aiPrompt' ? '' : this.topicId,
+        text: this.text,
+        file: this.file,
+        pages: usesPdfPagePicker(this.source) ? sortedPdfPages(this.pdfPageSelection) : null,
+        generationInstructions: this.generationInstructions,
+      };
+      const start = async () => {
+        if (payload.source !== 'pdf') return startMagicImport(payload);
+        const owner = getCurrentUser()?.supabaseUid;
+        void trackProductEvent('pdf_generation_started');
+        const result = await startMagicImport(payload);
+        if (owner && owner === getCurrentUser()?.supabaseUid) observePdfStart(result);
+        return result;
+      };
+      if (this.backgroundExistingDeck && this.deckId) {
+        if (!this.submitInBackground(start) && this.pdfPhase === 'uploading') this.pdfPhase = 'pages';
+        return;
+      }
       this.setBusy(true);
       try {
-        const started = await startMagicImport({
-          source: this.source,
-          deckId: this.deckId,
-          targetSubdeckId: this.targetSubdeckId,
-          name: this.source === 'aiPrompt' ? '' : this.name,
-          topic: this.source === 'aiPrompt' ? '' : this.topicId,
-          text: this.text,
-          file: this.file,
-          pages: usesPdfPagePicker(this.source) ? sortedPdfPages(this.pdfPageSelection) : null,
-          generationInstructions: this.generationInstructions,
-        });
+        const started = await start();
         this.resultDeckId = started.deckId;
         this.jobId = started.jobId;
         if (started.deck) this.$emit('queued', started.deck);
@@ -611,6 +648,7 @@ export default {
       if (!this.jobId) return;
       try {
         const job = await fetchMagicImportJob(this.jobId);
+        observePdfProgress(this.jobId, job);
         const view = importJobView(job);
         this.progress = view.progress;
         if (!view.finished && !view.failed) return;

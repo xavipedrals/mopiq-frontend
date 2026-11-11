@@ -23,6 +23,12 @@ npm run build
 firebase deploy
 ```
 
+To enable Sentry for the Vue app, set `VITE_SENTRY_DSN` to the `mopiq-web` project’s
+public DSN in `.env.production.local` before building. The build tags events with
+the Git revision, and the app samples 10% of performance traces. Set a private
+`SENTRY_AUTH_TOKEN` with the `org:ci` scope in the same file or the build environment
+to upload source maps and remove them from `dist` before deploying to Firebase.
+
 ## Typecheck / lint
 
 ```

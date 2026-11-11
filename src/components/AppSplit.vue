@@ -2,6 +2,7 @@
   <div class="split-root" :class="{ 'is-list': isListRoute, 'is-detail': !isListRoute, 'has-inspector': inspectorOpen }">
     <aside class="sidebar" :aria-label="$t('decks.title')">
       <div class="sidebar-top">
+        <div class="profile-and-streak">
         <router-link
           :to="profileTo"
           class="profile-card"
@@ -18,6 +19,8 @@
             <div class="profile-level">{{ $t('profile.level', { level: profileLevel }) }}</div>
           </div>
         </router-link>
+        <StudyStreakPanel v-if="!isPreview" />
+        </div>
         <a
           class="download-row"
           :href="storeUrl"
@@ -128,8 +131,10 @@
 </template>
 
 <script>
+import { ANALYTICS_CONSENT_EVENT, trackProductEvent } from '../analytics';
 import CreateDeckSheet from './Decks.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
+import StudyStreakPanel from './StudyStreakPanel.vue';
 import { listSharedGenerationJobs } from '../api/aiGeneration';
 import { mapImportJob } from '../study/magicImport';
 import { fetchDeckList, fetchMagicImportJob, fetchUserProfile } from '../api/mopiq';
@@ -151,7 +156,7 @@ const WIDE_SPLIT_QUERY = '(min-width: 900px)';
 
 export default {
   name: 'AppSplit',
-  components: { CreateDeckSheet, SkeletonBlock },
+  components: { CreateDeckSheet, SkeletonBlock, StudyStreakPanel },
   provide() {
     return {
       refreshAppSplit: () => this.refreshDecks(),
@@ -213,6 +218,9 @@ export default {
       if (this.avatarFailed) return getAvatarImageName(this.profile?.avatarNumber || 0);
       return this.profile?.avatarUrl || getAvatarImageName(this.profile?.avatarNumber || 0);
     },
+    rootLibraryVisible() {
+      return !this.isPreview && (this.isListRoute || this.wideSplit);
+    },
     showDetailPane() {
       if (!this.isListRoute) return true;
       if (!this.wideSplit) return false;
@@ -221,6 +229,9 @@ export default {
     },
   },
   watch: {
+    rootLibraryVisible(visible) {
+      if (visible) this.trackHome();
+    },
     selectedDeckId() {
       this.inspectorOpen = false;
     },
@@ -246,6 +257,8 @@ export default {
     await this.refreshDecks();
   },
   mounted() {
+    window.addEventListener(ANALYTICS_CONSENT_EVENT, this.trackHome);
+    this.trackHome();
     this.wideMedia = window.matchMedia(WIDE_SPLIT_QUERY);
     this.onWideChange = (event) => {
       this.wideSplit = event.matches;
@@ -254,11 +267,15 @@ export default {
     this.openFirstDeck();
   },
   beforeUnmount() {
+    window.removeEventListener(ANALYTICS_CONSENT_EVENT, this.trackHome);
     this.wideMedia?.removeEventListener('change', this.onWideChange);
     this.unsubscribeGenerations?.();
     this.stopGenerationPolling?.();
   },
   methods: {
+    trackHome() {
+      if (this.rootLibraryVisible) void trackProductEvent('home_viewed');
+    },
     openFirstDeck() {
       if (!this.wideSplit || !this.isListRoute) return;
       const first = this.visibleDecks[0];
@@ -394,6 +411,8 @@ export default {
   flex: 0 0 auto;
   padding: 12px 0 4px;
 }
+.profile-and-streak { display: flex; align-items: center; padding-inline-end: 12px; }
+.profile-and-streak .profile-card { flex: 1; min-width: 0; }
 .profile-card {
   display: flex;
   align-items: center;

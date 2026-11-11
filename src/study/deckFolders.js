@@ -122,17 +122,33 @@ export function folderScopeIds(folders = [], folder) {
   return ids;
 }
 
+/** Complete imported paths for display without adding rows to the saved deck metadata. */
+export function completedFolders(folders) {
+  const paths = new Map(folders.map((folder) => [folder.fullPath, folder]));
+  for (const folder of folders) {
+    const parts = folder.fullPath.split('::');
+    for (let depth = 0; depth < parts.length - 1; depth++) {
+      const fullPath = parts.slice(0, depth + 1).join('::');
+      if (!paths.has(fullPath)) {
+        paths.set(fullPath, { id: `missing:${fullPath}`, fullPath, title: folderTitle(fullPath), depth });
+      }
+    }
+  }
+  return [...paths.values()].sort((a, b) => a.fullPath.localeCompare(b.fullPath, undefined, { sensitivity: 'base' }));
+}
+
 export function flattenFolderRows(folders = [], parent, expandedIds = {}) {
   const rows = [];
   function walk(node, depth) {
-    for (const child of directChildren(folders, node)) {
+    const children = node ? directChildren(folders, node) : folders.filter((folder) => folder.depth === 0);
+    for (const child of children) {
       const hasChildren = directChildren(folders, child).length > 0;
       const expanded = Boolean(expandedIds[child.id]);
       rows.push({ folder: child, depth, hasChildren, expanded });
       if (hasChildren && expanded) walk(child, depth + 1);
     }
   }
-  if (parent) walk(parent, 0);
+  walk(parent, 0);
   return rows;
 }
 

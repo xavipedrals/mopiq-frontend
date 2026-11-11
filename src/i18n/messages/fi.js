@@ -70,9 +70,6 @@ export default extendReleaseMessages("fi", mergeCatalog(mergeCatalog(mergeCatalo
     "flagImportant": "Tärkeä",
     "flagReviewLater": "Kertaa myöhemmin",
     "flagDifficult": "Vaikea",
-    "keyboardHintPrefix": "Voit myös painaa",
-    "keyboardHintSuffix": "näyttääksesi vastauksen",
-    "dismissKeyboardHint": "Sulje näppäimistövinkki",
     "savingSession": "Tallennetaan harjoituskertaa",
     "last10": "Viimeiset 10 arviota",
     "doneBody": "Palaa myöhemmin jatkamaan opiskelua.",
@@ -353,6 +350,9 @@ export default extendReleaseMessages("fi", mergeCatalog(mergeCatalog(mergeCatalo
     "resetError": "Jotain meni pieleen"
   },
   "editor": {
+    aiAddingTitle: "Lisätään tekoälymuistikorttejasi…",
+    aiAddingBody: "Voit jatkaa sovelluksen käyttöä, kun lisäämme kortit taustalla.",
+    aiGeneratingMore: "Luodaan lisää kortteja...",
     "addTitle": "Luo kortti",
     "editTitle": "Kortin muokkaus",
     "front": "ETUPUOLI",
@@ -504,6 +504,10 @@ export default extendReleaseMessages("fi", mergeCatalog(mergeCatalog(mergeCatalo
     "rememberMessage": "Auta minua muistamaan tämä"
   },
   "profile": {
+    retryStats: "Yritä uudelleen",
+    todayStats: "Tämän päivän tilastot",
+    allTimeStats: "Kaikkien aikojen tilastot",
+    statsLoadError: "Tilastoja ei voitu ladata. Yritä uudelleen verkkoyhteydellä.",
     "loadError": "Jotain meni pieleen",
     "level": "Taso {level}",
     "joined": "Liittyi {date}:hen",

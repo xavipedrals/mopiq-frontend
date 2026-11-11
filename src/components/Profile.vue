@@ -30,11 +30,14 @@
             <SkeletonBlock class="s-meta" w="min(190px, 52vw)" h="1rem" radius="6px" />
             <SkeletonBlock class="s-meta" w="min(220px, 58vw)" h="0.95rem" radius="6px" />
           </div>
-          <div class="stats">
-            <div v-for="n in 4" :key="n" class="stat">
-              <SkeletonBlock class="s-stat-icon" w="28px" h="28px" radius="9px" />
-              <SkeletonBlock class="s-stat-value" w="64%" h="2rem" radius="10px" />
-              <SkeletonBlock w="48%" h="1rem" radius="6px" />
+          <div v-for="count in [2, 4]" :key="count" class="stat-section">
+            <SkeletonBlock w="160px" h="1.5rem" radius="6px" />
+            <div class="stats">
+              <div v-for="n in count" :key="n" class="stat">
+                <SkeletonBlock class="s-stat-icon" w="28px" h="28px" radius="9px" />
+                <SkeletonBlock class="s-stat-value" w="64%" h="2rem" radius="10px" />
+                <SkeletonBlock w="48%" h="1rem" radius="6px" />
+              </div>
             </div>
           </div>
         </div>
@@ -69,39 +72,30 @@
             <p v-if="profile.email" class="email">{{ profile.email }}</p>
           </div>
 
-          <div class="stats">
-            <div class="stat">
-              <TablerIcon class="stat-icon" name="copy" />
-              <div class="value orange">{{ profile.cardsStudied }}</div>
-              <div class="label">{{ $t('profile.cardsStudied') }}</div>
-            </div>
-            <div class="stat">
-              <TablerIcon class="stat-icon" name="calendar" />
-              <div class="value indigo">
-                {{ profile.daysUsingApp }}<span class="unit">{{ $t('profile.daysUnit') }}</span>
+          <section v-for="section in statSections" :key="section.title" class="stat-section" :aria-labelledby="section.title" :aria-busy="statisticsLoading">
+            <h2 :id="section.title">{{ $t(`profile.${section.title}`) }}</h2>
+            <div class="stats">
+              <div v-for="stat in section.stats" :key="stat.label" class="stat">
+                <TablerIcon class="stat-icon" :name="stat.icon" />
+                <div class="value" :class="stat.color">
+                  <template v-if="stat.value == null">—</template>
+                  <template v-else-if="stat.time">
+                    <span v-for="(part, index) in timeParts(stat.value)" :key="index">
+                      {{ part.primary }}<span class="unit">{{ part.unit }}</span>
+                      <span v-if="index < timeParts(stat.value).length - 1"> </span>
+                    </span>
+                  </template>
+                  <template v-else>
+                    {{ formatNumber(stat.value) }}<span v-if="stat.days" class="unit">{{ $t('profile.daysUnit') }}</span>
+                  </template>
+                </div>
+                <div class="label">{{ $t(`profile.${stat.label}`) }}</div>
               </div>
-              <div class="label">{{ $t('profile.comingBack') }}</div>
             </div>
-            <div class="stat">
-              <TablerIcon class="stat-icon" name="clock" />
-              <div class="value cyan">
-                <template v-if="studiedTime.parts">
-                  <span v-for="(part, index) in studiedTime.parts" :key="index">
-                    {{ part.primary }}<span class="unit">{{ part.unit }}</span>
-                    <span v-if="index < studiedTime.parts.length - 1"> </span>
-                  </span>
-                </template>
-                <template v-else>
-                  {{ studiedTime.primary }}<span class="unit">{{ studiedTime.unit }}</span>
-                </template>
-              </div>
-              <div class="label">{{ $t('profile.studied') }}</div>
-            </div>
-            <div class="stat">
-              <TablerIcon class="stat-icon" name="star" />
-              <div class="value lime">{{ expLabel }}</div>
-              <div class="label">{{ $t('profile.experience') }}</div>
-            </div>
+          </section>
+          <div v-if="statisticsError" class="stats-error" role="status">
+            <p>{{ $t('profile.statsLoadError') }}</p>
+            <button type="button" class="tool" @click="loadStatistics">{{ $t('profile.retryStats') }}</button>
           </div>
         </template>
         </div>
@@ -112,7 +106,8 @@
 import ProfileSettings from './ProfileSettings.vue';
 import TablerIcon from './TablerIcon.vue';
 import SkeletonBlock from './SkeletonBlock.vue';
-import { fetchUserProfile } from '../api/mopiq';
+import { fetchUserProfileStatistics, fetchUserProfile } from '../api/mopiq';
+import { getCurrentUser } from '../auth/session';
 import { getAvatarImageName } from '../utils';
 import { formatJoinedDate, formatStudiedTime, getLevelAndPercentage } from '../profile/experience';
 import { adoptFromProfileIfNeeded, localeTag } from '../i18n';
@@ -128,6 +123,11 @@ export default {
       error: '',
       avatarFailed: false,
       settingsOpen: false,
+      statistics: null,
+      statisticsLoading: false,
+      statisticsError: false,
+      statisticsRequest: 0,
+      statisticsTimer: null,
       profile: {
         name: '',
         email: '',
@@ -159,11 +159,20 @@ export default {
       const date = formatJoinedDate(this.profile.joinedDate, this.$i18n.locale);
       return date ? this.$t('profile.joined', { date }) : '';
     },
-    studiedTime() {
-      return formatStudiedTime(this.profile.secondsStudied);
-    },
-    expLabel() {
-      return (this.profile.experience || 0).toLocaleString(localeTag(this.$i18n.locale), { maximumFractionDigits: 0 });
+    statSections() {
+      const stats = this.statistics;
+      return [
+        { title: 'todayStats', stats: [
+          { label: 'cardsStudied', icon: 'copy', color: 'emerald', value: stats?.todayCardsStudied },
+          { label: 'studied', icon: 'clock', color: 'blue', value: stats?.todaySecondsStudied, time: true },
+        ] },
+        { title: 'allTimeStats', stats: [
+          { label: 'cardsStudied', icon: 'copy', color: 'orange', value: stats?.cardsStudied },
+          { label: 'comingBack', icon: 'calendar', color: 'indigo', value: stats?.daysUsingApp, days: true },
+          { label: 'studied', icon: 'clock', color: 'cyan', value: stats?.secondsStudied, time: true },
+          { label: 'experience', icon: 'star', color: 'lime', value: stats?.experience },
+        ] },
+      ];
     },
     avatarSrc() {
       if (this.avatarFailed) return getAvatarImageName(this.profile.avatarNumber || 0);
@@ -184,9 +193,19 @@ export default {
         avatarUrl: getAvatarImageName(3),
         isPremium: false,
       };
+      this.statistics = {
+        todayCardsStudied: 42,
+        todaySecondsStudied: 1260,
+        todayEndsAtEpoch: Date.now() / 1000 + 86400,
+        cardsStudied: 80,
+        daysUsingApp: 12,
+        secondsStudied: 5400,
+        experience: 4200,
+      };
       this.loading = false;
       return;
     }
+    void this.loadStatistics();
     try {
       this.profile = await fetchUserProfile();
       adoptFromProfileIfNeeded(this.profile.locale);
@@ -196,7 +215,48 @@ export default {
       this.loading = false;
     }
   },
+  mounted() {
+    if (this.$route.meta.preview) return;
+    window.addEventListener('focus', this.refreshStatistics);
+    document.addEventListener('visibilitychange', this.refreshStatistics);
+    this.statisticsTimer = window.setInterval(() => {
+      if (this.statistics && Date.now() / 1000 >= this.statistics.todayEndsAtEpoch) {
+        this.refreshStatistics();
+      }
+    }, 60_000);
+  },
+  beforeUnmount() {
+    this.statisticsRequest += 1;
+    window.clearInterval(this.statisticsTimer);
+    window.removeEventListener('focus', this.refreshStatistics);
+    document.removeEventListener('visibilitychange', this.refreshStatistics);
+  },
   methods: {
+    formatNumber(value) {
+      return value.toLocaleString(localeTag(this.$i18n.locale), { maximumFractionDigits: 0 });
+    },
+    timeParts(seconds) {
+      const time = formatStudiedTime(seconds);
+      return time.parts || [time];
+    },
+    refreshStatistics() {
+      if (document.visibilityState === 'visible' && !this.statisticsLoading) void this.loadStatistics();
+    },
+    async loadStatistics() {
+      const request = ++this.statisticsRequest;
+      const owner = getCurrentUser()?.supabaseUid;
+      this.statistics = null;
+      this.statisticsLoading = true;
+      this.statisticsError = false;
+      try {
+        const snapshot = await fetchUserProfileStatistics();
+        if (request === this.statisticsRequest && owner === getCurrentUser()?.supabaseUid) this.statistics = snapshot;
+      } catch {
+        if (request === this.statisticsRequest) this.statisticsError = true;
+      } finally {
+        if (request === this.statisticsRequest) this.statisticsLoading = false;
+      }
+    },
     onAvatarError() {
       this.avatarFailed = true;
     },
@@ -302,17 +362,20 @@ h1 {
 }
 .joined, .email { color: var(--text-secondary); margin-top: 6px; }
 .email { font-size: 0.95rem; }
+.stat-section { margin-top: 28px; }
+.stat-section h2 { font-size: 1.25rem; font-weight: 700; color: var(--title); margin: 0 0 18px; }
 .stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
-  margin: 28px 0 32px;
+  margin: 0;
 }
 .stat {
   background: var(--card-bg);
-  box-shadow: var(--card-shadow);
-  border-radius: 20px;
-  padding: 18px 20px 16px;
+  border: 1px solid var(--stat-card-border);
+  border-radius: 24px;
+  min-width: 0;
+  padding: 24px 18px;
   text-align: left;
 }
 .stat :deep(.stat-icon) {
@@ -336,6 +399,9 @@ h1 {
 .indigo { color: var(--stat-indigo); }
 .cyan { color: var(--stat-cyan); }
 .lime { color: var(--stat-lime); }
+.emerald { color: var(--stat-emerald); }
+.blue { color: var(--stat-blue); }
+.stats-error { margin-top: 18px; color: var(--text-secondary); text-align: center; }
 .s-ring { position: absolute; left: 14px; top: 0; }
 .s-level { position: absolute; right: 4px; bottom: 12px; }
 .s-name { margin-top: 6px; }

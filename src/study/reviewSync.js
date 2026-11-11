@@ -59,6 +59,8 @@ export function createReviewSyncQueue({
         notify();
         await runJob(job);
         pending.shift();
+        // Local observer is per review so the shared queue can outlive its study view.
+        try { job.onSaved?.(); } catch { /* Tracking cannot affect the review. */ }
         notify();
       } catch (err) {
         error = err?.message || 'Could not save this review';

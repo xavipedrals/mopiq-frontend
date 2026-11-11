@@ -8,11 +8,13 @@
           :style="{ paddingLeft: `${row.depth * 20}px` }"
           @contextmenu.prevent="openMenu(row, $event)"
         >
-          <button
-            type="button"
+          <component
+            :is="row.hasChildren || canOpen ? 'button' : 'span'"
+            :type="row.hasChildren || canOpen ? 'button' : undefined"
             class="folder-icon"
-            :aria-label="row.hasChildren ? (row.expanded ? $t('common.close') : $t('deck.folders')) : row.folder.title"
+            :aria-label="row.folder.title"
             :aria-expanded="row.hasChildren ? String(row.expanded) : undefined"
+            :aria-hidden="!canOpen && !row.hasChildren ? 'true' : undefined"
             @click="onIconClick(row)"
           >
             <StudyMenuIcon name="folder" />
@@ -21,12 +23,13 @@
                 <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </span>
-          </button>
-          <button type="button" class="folder-main" @click="$emit('open', row.folder)">
+          </component>
+          <component :is="canOpen ? 'button' : 'div'" :type="canOpen ? 'button' : undefined" class="folder-main"
+            @click="canOpen && $emit('open', row.folder)">
             <span class="folder-title">{{ row.folder.title }}</span>
-            <span class="folder-count">{{ $t('decks.cards', { count: counts[row.folder.id] || 0 }) }}</span>
-          </button>
-          <span class="chevron" aria-hidden="true" @click="$emit('open', row.folder)">
+            <span v-if="canOpen" class="folder-count">{{ $t('decks.cards', { count: counts[row.folder.id] || 0 }) }}</span>
+          </component>
+          <span v-if="canOpen" class="chevron" aria-hidden="true" @click="$emit('open', row.folder)">
             <StudyMenuIcon name="chevronRight" />
           </span>
           <button
@@ -158,6 +161,7 @@ export default {
     counts: { type: Object, default: () => ({}) },
     decks: { type: [Object, String], default: () => ({}) },
     deckName: { type: String, default: '' },
+    canOpen: { type: Boolean, default: true },
     canEdit: { type: Boolean, default: false },
     canAdd: { type: Boolean, default: false },
     busy: { type: Boolean, default: false },
@@ -192,7 +196,7 @@ export default {
     },
     onIconClick(row) {
       if (!row.hasChildren) {
-        this.$emit('open', row.folder);
+        if (this.canOpen) this.$emit('open', row.folder);
         return;
       }
       const next = { ...this.expandedIds };
@@ -318,9 +322,11 @@ h2 {
   border-radius: 8px;
   background: transparent !important;
   color: #64748b;
-  cursor: pointer;
   flex: 0 0 auto;
 }
+button.folder-icon,
+.folder-menu,
+button.folder-main { cursor: pointer; }
 .folder-icon :deep(.tabler-icon),
 .folder-menu :deep(.tabler-icon),
 .chevron :deep(.tabler-icon) {
@@ -353,7 +359,6 @@ h2 {
   border: 0 !important;
   background: transparent !important;
   text-align: left;
-  cursor: pointer;
   color: inherit;
   font: inherit;
 }
@@ -377,9 +382,9 @@ h2 {
   cursor: pointer;
 }
 .folder-menu { color: var(--text-secondary); }
-.folder-icon:hover,
+button.folder-icon:hover,
 .folder-menu:hover,
-.folder-main:hover { background: color-mix(in srgb, var(--text) 6%, transparent) !important; }
+button.folder-main:hover { background: color-mix(in srgb, var(--text) 6%, transparent) !important; }
 .add-folder {
   display: flex;
   align-items: center;

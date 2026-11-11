@@ -19,6 +19,7 @@ import { trackWebLogin } from '../analytics';
 import { isLocalDebugHost } from '../debug/flags';
 
 const getSupabaseTokens = httpsCallable(functions, 'getSupabaseTokensV1');
+const sendSignupVerificationEmail = httpsCallable(functions, 'sendSignupVerificationEmailV1');
 
 let readyResolve;
 export const authReady = new Promise((resolve) => {
@@ -146,10 +147,11 @@ onAuthStateChanged(auth, async (user) => {
 
 export async function loginWithEmail(email, password) {
   await signInWithEmailAndPassword(auth, email, password);
-  await getAccessToken();
+  const token = await getAccessToken();
   notify();
   trackWebSession();
   void trackWebLogin();
+  return Boolean(token);
 }
 
 export async function registerWithEmail(name, email, password) {
@@ -157,18 +159,25 @@ export async function registerWithEmail(name, email, password) {
   if (name) {
     await updateProfile(result.user, { displayName: name });
   }
-  await getAccessToken();
+  try {
+    await sendSignupVerificationEmail();
+  } catch (error) {
+    console.warn('Could not confirm signup verification email', error?.code);
+  }
+  const token = await getAccessToken();
   notify();
   trackWebSession();
+  return Boolean(token);
 }
 
 export async function loginWithGoogle() {
   const provider = new GoogleAuthProvider();
   await signInWithPopup(auth, provider);
-  await getAccessToken();
+  const token = await getAccessToken();
   notify();
   trackWebSession();
   void trackWebLogin();
+  return Boolean(token);
 }
 
 export async function loginWithApple() {
@@ -176,10 +185,11 @@ export async function loginWithApple() {
   provider.addScope('email');
   provider.addScope('name');
   await signInWithPopup(auth, provider);
-  await getAccessToken();
+  const token = await getAccessToken();
   notify();
   trackWebSession();
   void trackWebLogin();
+  return Boolean(token);
 }
 
 export async function updateAccountDisplayName(name) {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { mapDisplayProfileRow, mergeHighestStats, statNumber } from './mapProfile.js';
+import { mapDisplayProfileRow, mapProfileStatisticsRow, mergeHighestStats, statNumber } from './mapProfile.js';
 
 describe('statNumber', () => {
   it('reads the first finite value', () => {
@@ -94,5 +94,35 @@ describe('mergeHighestStats', () => {
     assert.equal(merged.secondsStudied, 8);
     assert.equal(merged.daysUsingApp, 6);
     assert.equal(merged.name, 'Remote');
+  });
+});
+
+// RPC snapshots must not inherit higher, stale Firebase or local totals.
+describe('profile statistics snapshot', () => {
+  const row = {
+    today_cards_studied: '42', today_milliseconds: '1260999',
+    today_ends_at_epoch: 1793746800,
+    cards_studied: '274', seconds_studied: '12600', days_using_app: '18', experience: '1280',
+  };
+  it('converts milliseconds to whole seconds and keeps the server study-day boundary', () => {
+    const stats = mapProfileStatisticsRow(row);
+    assert.equal(stats.todayCardsStudied, 42);
+    assert.equal(stats.todaySecondsStudied, 1260);
+    assert.equal(stats.todayEndsAtEpoch, row.today_ends_at_epoch);
+    assert.equal(stats.cardsStudied, 274);
+    assert.equal(stats.secondsStudied, 12600);
+    assert.equal(stats.daysUsingApp, 18);
+    assert.equal(stats.experience, 1280);
+  });
+  it('shows zero for a valid day without reviews', () => {
+    const stats = mapProfileStatisticsRow({ ...row, today_cards_studied: 0, today_milliseconds: 0 });
+    assert.equal(stats.todayCardsStudied, 0);
+    assert.equal(stats.todaySecondsStudied, 0);
+  });
+  it('rejects missing or invalid statistics instead of displaying false zeroes', () => {
+    for (const bad of [null, undefined, '', 'invalid', -1, Infinity]) {
+      assert.throws(() => mapProfileStatisticsRow({ ...row, today_cards_studied: bad }));
+    }
+    assert.throws(() => mapProfileStatisticsRow(null));
   });
 });

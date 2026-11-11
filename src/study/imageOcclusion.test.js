@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { WEB_OCCLUSION_NOTE_MODEL_ID } from './sanitizeCardHtml.js';
+import { occlusionTextRegions } from './imageOcclusionOcr.js';
 import {
   MAX_OCCLUSION_RECTS,
   OCCLUSION_NOTE_MODEL_NAME,
@@ -15,6 +16,28 @@ import {
 
 const rect = (left, top, width, height, rotation = 0) => ({
   left, top, width, height, rotation,
+});
+
+describe('occlusionTextRegions', () => {
+  it('joins wrapped diagram labels without masking connector lines or neighboring labels', () => {
+    const word = (text, confidence, x0, y0, x1, y1) => ({ text, confidence, bbox: { x0, y0, x1, y1 } });
+    const boxes = occlusionTextRegions([{ paragraphs: [{ lines: [
+      { words: [word('Tympanic', 92, 40, 20, 120, 40)] },
+      { words: [word('Tympanic', 92, 200, 20, 280, 40)] },
+      { words: [word('membrane', 95, 41, 44, 128, 64)] },
+      { words: [word('cavity', 95, 200, 44, 247, 64)] },
+      { words: [
+        word('—', 0, 30, 68, 190, 102), word('4', 59, 180, 99, 190, 107),
+        word('Vestibule', 96, 200, 90, 280, 110),
+      ] },
+      { words: [word('N', 63, 60, 72, 80, 85)] },
+    ] }] }], 300, 120);
+    assert.equal(boxes.length, 3);
+    assert.ok(boxes[0].left < 0.15 && boxes[0].left + boxes[0].width < 0.45);
+    assert.ok(boxes[0].top + boxes[0].height > 64 / 120);
+    assert.ok(boxes[1].left > 0.65 && boxes[1].top + boxes[1].height > 64 / 120);
+    assert.ok(boxes[2].left > 0.65);
+  });
 });
 
 describe('formatRectToken', () => {

@@ -70,9 +70,6 @@ export default extendReleaseMessages("sv", mergeCatalog(mergeCatalog(mergeCatalo
     "flagImportant": "Viktigt",
     "flagReviewLater": "Repetera senare",
     "flagDifficult": "Svårt",
-    "keyboardHintPrefix": "Du kan också trycka på",
-    "keyboardHintSuffix": "för att visa svaret",
-    "dismissKeyboardHint": "Stäng tangentbordstips",
     "savingSession": "Sparar studiesession",
     "last10": "Senaste 10 betygen",
     "doneBody": "Kom tillbaka senare för att fortsätta studera.",
@@ -353,6 +350,9 @@ export default extendReleaseMessages("sv", mergeCatalog(mergeCatalog(mergeCatalo
     "resetError": "Något gick fel"
   },
   "editor": {
+    aiAddingTitle: "Lägger till dina AI-kort…",
+    aiAddingBody: "Du kan fortsätta använda appen medan vi lägger till dem i bakgrunden.",
+    aiGeneratingMore: "Genererar fler kort...",
     "addTitle": "Skapa kort",
     "editTitle": "Redigeringskort",
     "front": "FRAMSIDA",
@@ -504,6 +504,10 @@ export default extendReleaseMessages("sv", mergeCatalog(mergeCatalog(mergeCatalo
     "rememberMessage": "Hjälp mig komma ihåg detta"
   },
   "profile": {
+    retryStats: "Försök igen",
+    todayStats: "Dagens statistik",
+    allTimeStats: "Total statistik",
+    statsLoadError: "Statistiken kunde inte laddas. Försök igen när du är online.",
     "loadError": "Något gick fel",
     "level": "Nivå {level}",
     "joined": "Gick med i {date}",

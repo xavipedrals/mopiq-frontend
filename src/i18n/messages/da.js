@@ -70,9 +70,6 @@ export default extendReleaseMessages("da", mergeCatalog(mergeCatalog(mergeCatalo
     "flagImportant": "Vigtigt",
     "flagReviewLater": "Gentag senere",
     "flagDifficult": "Svært",
-    "keyboardHintPrefix": "Du kan også trykke på",
-    "keyboardHintSuffix": "for at vise svaret",
-    "dismissKeyboardHint": "Luk tastaturtip",
     "savingSession": "Gemmer studiesession",
     "last10": "Seneste 10 vurderinger",
     "doneBody": "Kom tilbage senere for at fortsætte.",
@@ -353,6 +350,9 @@ export default extendReleaseMessages("da", mergeCatalog(mergeCatalog(mergeCatalo
     "resetError": "Noget gik galt"
   },
   "editor": {
+    aiAddingTitle: "Tilføjer dine AI-kort…",
+    aiAddingBody: "Du kan fortsætte med at bruge appen, mens vi tilføjer dem i baggrunden.",
+    aiGeneratingMore: "Genererer flere kort...",
     "addTitle": "Opret kort",
     "editTitle": "Redigeringskort",
     "front": "FORSIDE",
@@ -504,6 +504,10 @@ export default extendReleaseMessages("da", mergeCatalog(mergeCatalog(mergeCatalo
     "rememberMessage": "Hjælp mig med at huske dette"
   },
   "profile": {
+    retryStats: "Prøv igen",
+    todayStats: "Dagens statistik",
+    allTimeStats: "Samlet statistik",
+    statsLoadError: "Statistikken kunne ikke indlæses. Prøv igen, når du er online.",
     "loadError": "Noget gik galt",
     "level": "Niveau {level}",
     "joined": "Tiltrådte {date}",

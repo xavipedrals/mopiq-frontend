@@ -177,6 +177,7 @@
 </template>
 
 <script>
+import { trackProductEvent } from '../analytics';
 import { createDeck, createDeckFromSpreadsheet } from '../api/mopiq';
 import { MAX_DECK_NAME_LENGTH } from '../api/emptyDeck';
 import { APP_STORE_URL } from '../constants';
@@ -310,6 +311,7 @@ export default {
     },
     go(page) {
       if (this.saving) return;
+      if (page === 'setName') void trackProductEvent('create_create_deck');
       this.pages = [...this.pages, page];
     },
     onNav() {
@@ -418,6 +420,7 @@ export default {
       this.saving = true;
       try {
         const deck = await createDeck({ name, topic: this.topicId });
+        void trackProductEvent('manual_deck_created');
         this.$emit('created', deck);
       } catch (error) {
         this.formError = error.code === 'deck_name_required'

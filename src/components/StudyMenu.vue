@@ -18,14 +18,14 @@
     <button
       ref="trigger"
       type="button"
-      class="menu-btn"
+      class="menu-btn more-btn"
       :disabled="disabled"
       :aria-label="$t('study.menu')"
       :aria-expanded="open ? 'true' : 'false'"
       :aria-haspopup="true"
       @click="toggle"
     >
-      <StudyMenuIcon name="ellipsis" />
+      <StudyMenuIcon name="dots" />
     </button>
     <Teleport to="body">
       <div v-if="open" class="menu-root" @keydown.esc="close">
@@ -58,7 +58,6 @@
                 <StudyMenuIcon name="chevronRight" class="chevron" />
               </span>
             </button>
-            <button type="button" class="menu-item" role="menuitem" @click="emitAndClose('tutorial')"><span class="label">{{ $t('tutorial.practice') }}</span><StudyMenuIcon name="selectBox" /></button>
             <button
               type="button"
               class="menu-item"
@@ -207,7 +206,6 @@ export default {
     'delete',
     'open-change',
     'flags-change',
-    'tutorial',
   ],
   data() {
     return {
@@ -389,6 +387,7 @@ export default {
   display: flex;
   flex: 0 0 auto;
   height: 44px;
+  gap: 4px;
 }
 .menu-btn {
   display: inline-flex;
@@ -403,6 +402,16 @@ export default {
   background: none !important;
   color: var(--close-button);
   cursor: pointer;
+}
+.menu-btn.more-btn,
+.menu-btn.flag-btn {
+  background: var(--review-chrome-bg) !important;
+  box-shadow: var(--review-chrome-shadow);
+  color: var(--title);
+}
+.menu-btn.more-btn:hover:not(:disabled),
+.menu-btn.flag-btn:hover:not(:disabled) {
+  background: var(--inset-bg) !important;
 }
 .menu-btn :deep(.tabler-icon) {
   width: 24px;

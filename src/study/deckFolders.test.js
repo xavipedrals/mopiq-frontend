@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   addFolder,
+  completedFolders,
   deleteFolder,
   directChildren,
   findFolder,
@@ -80,6 +81,22 @@ describe('folder tree', () => {
     ]);
     assert.equal(folderCanAddChild(root), true);
     assert.equal(folderCanAddChild(findFolder(folders, 4)), false);
+  });
+
+  it('shows imported roots and completes missing ancestors for display', () => {
+    const imported = parseDeckFolders({
+      4: { name: 'Biology::Exam::Definitions' },
+      5: { name: 'Lab' },
+    });
+    const completed = completedFolders(imported);
+    const expanded = { 'missing:Biology': true, 'missing:Biology::Exam': true };
+    assert.deepEqual(flattenFolderRows(completed, null, expanded).map((row) => [row.folder.title, row.depth]), [
+      ['Biology', 0],
+      ['Exam', 1],
+      ['Definitions', 2],
+      ['Lab', 0],
+    ]);
+    assert.deepEqual(imported.map((folder) => folder.id), [4, 5]);
   });
 
   it('scopes a folder to itself and its descendants', () => {

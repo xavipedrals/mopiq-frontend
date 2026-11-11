@@ -43,6 +43,8 @@
       </header>
 
       <div class="creator-shell">
+        <AdditionalGenerationBanner v-if="aiBanner" countdown />
+        <p v-if="additionalGeneration?.error" class="error" role="alert">{{ additionalGeneration.error }}</p>
         <div class="extra" :class="{ open: extraOpen && !lockReason }">
           <div class="extra-inner">
             <div class="extra-row">
@@ -128,7 +130,7 @@
               <editor-content v-if="backEditor" v-show="!contentPending" :editor="backEditor" />
             </div>
 
-            <button type="button" class="add-many" :disabled="saving" @click="openImport">
+            <button type="button" class="add-many" :disabled="saving || additionalGeneration?.submitting" @click="openImport">
               <TablerIcon name="sparkles" />
               {{ $t('editor.addMultiple') }}
             </button>
@@ -141,11 +143,19 @@
           <div class="toolbar" role="toolbar" :aria-label="$t('editor.formatting')">
             <div class="tb-scroll" @scroll="onToolbarScroll">
               <div class="tb-group">
-                <button type="button" class="tb" :title="$t('editor.image')" @click="pickImage">
+                <button
+                  ref="imageMenuTrigger"
+                  type="button"
+                  class="tb image-menu-trigger"
+                  :title="$t('editor.image')"
+                  :aria-label="$t('editor.image')"
+                  aria-haspopup="menu"
+                  :aria-expanded="imageMenuOpen"
+                  aria-controls="card-editor-image-menu"
+                  @click.stop="toggleImageMenu"
+                  @keydown.down.prevent="openImageMenu"
+                >
                   <TablerIcon name="photo" />
-                </button>
-                <button v-if="!card" type="button" class="tb" :title="$t('editor.occlusion')" @click="pickOcclusion">
-                  <TablerIcon name="layersIntersect" />
                 </button>
                 <button type="button" class="tb" :title="$t('editor.ttsButton')" @click="openTts">
                   <TablerIcon name="volume" />
@@ -327,6 +337,9 @@
           <MagicImportPanel
             :source="importSource"
             :deck-id="deck ? deck.id : ''"
+            :target-subdeck-id="selectedSubdeckId || null"
+            background-existing-deck
+            @submitted="onAdditionalGenerationSubmitted"
             @busy="importing = $event"
             @layout="importLayout = $event"
             @done="onMagicImported"
@@ -413,6 +426,25 @@
     </div>
     <Teleport to="body">
       <div
+        v-if="imageMenuOpen"
+        id="card-editor-image-menu"
+        ref="imageMenu"
+        class="tb-menu image-menu"
+        role="menu"
+        :aria-label="$t('editor.image')"
+        :style="imageMenuStyle"
+        @keydown="onImageMenuKeyDown"
+      >
+        <button type="button" role="menuitem" @click="pickImage">
+          <TablerIcon name="photo" />
+          {{ $t('editor.imageFromFile') }}
+        </button>
+        <button v-if="!card" type="button" role="menuitem" @click="pickOcclusion">
+          <TablerIcon name="layersIntersect" />
+          {{ $t('editor.occlusion') }}
+        </button>
+      </div>
+      <div
         v-if="headingOpen"
         class="tb-menu"
         :style="headingMenuStyle"
@@ -437,6 +469,7 @@
 </template>
 
 <script>
+import { trackProductEvent } from '../analytics';
 import { Editor, EditorContent } from '@tiptap/vue-3';
 import SkeletonBlock from './SkeletonBlock.vue';
 import {
@@ -448,6 +481,7 @@ import {
   updateDeckCard,
 } from '../api/mopiq';
 import MagicImportPanel from './MagicImportPanel.vue';
+import AdditionalGenerationBanner from './AdditionalGenerationBanner.vue';
 import ImageOcclusionEditor from './ImageOcclusionEditor.vue';
 import TablerIcon from './TablerIcon.vue';
 import { magicImportRoute, sourcesForExistingDeck } from '../study/magicImport';
@@ -479,12 +513,13 @@ import {
 
 export default {
   name: 'CardEditor',
-  components: { EditorContent, ImageOcclusionEditor, MagicImportPanel, SkeletonBlock, TablerIcon },
+  components: { AdditionalGenerationBanner, EditorContent, ImageOcclusionEditor, MagicImportPanel, SkeletonBlock, TablerIcon },
   props: {
     open: { type: Boolean, default: false },
     embedded: { type: Boolean, default: false },
     deck: { type: Object, default: null },
     card: { type: Object, default: null },
+    additionalGeneration: { type: Object, default: null },
     nextPosition: { type: Number, default: 0 },
   },
   emits: ['dismiss', 'saved', 'magic-imported'],
@@ -504,7 +539,11 @@ export default {
       headingOpen: false,
       headingMenuStyle: {},
       headingIgnoreScroll: false,
+      imageMenuOpen: false,
+      imageMenuStyle: {},
       reverseInfoOpen: false,
+      aiBanner: false,
+      aiBannerTimer: 0,
       importOpen: false,
       importPage: 'menu',
       importSource: 'paste',
@@ -617,13 +656,46 @@ export default {
   },
   methods: {
     closeMenus(event) {
+      if (!event.target?.closest?.('.image-menu, .image-menu-trigger')) this.imageMenuOpen = false;
       if (!this.headingOpen || this.headingIgnoreScroll) return;
       const target = event.target;
       if (target?.closest?.('.tb-wrap') || target?.closest?.('.tb-menu')) return;
       this.headingOpen = false;
     },
     onToolbarScroll() {
+      this.imageMenuOpen = false;
       if (this.headingOpen && !this.headingIgnoreScroll) this.headingOpen = false;
+    },
+    toggleImageMenu(event) {
+      if (this.imageMenuOpen) this.imageMenuOpen = false;
+      else this.openImageMenu(event);
+    },
+    openImageMenu(event) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      this.imageMenuStyle = {
+        left: `${Math.max(12, Math.min(rect.left, window.innerWidth - 252))}px`,
+        top: `${Math.max(8, rect.top - 8)}px`,
+        transform: 'translateY(-100%)',
+      };
+      this.headingOpen = false;
+      this.imageMenuOpen = true;
+      this.$nextTick(() => this.$refs.imageMenu?.querySelector('button')?.focus());
+    },
+    onImageMenuKeyDown(event) {
+      const buttons = [...this.$refs.imageMenu.querySelectorAll('button')];
+      const index = buttons.indexOf(document.activeElement);
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const direction = event.key === 'ArrowDown' ? 1 : -1;
+        buttons[(index + direction + buttons.length) % buttons.length]?.focus();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        this.imageMenuOpen = false;
+        this.$refs.imageMenuTrigger?.focus();
+      } else if (event.key === 'Tab') {
+        this.imageMenuOpen = false;
+      }
     },
     toggleHeadingMenu(event) {
       if (this.headingOpen) {
@@ -722,9 +794,11 @@ export default {
       this.frontEditor?.chain().focus().toggleCloze().run();
     },
     pickImage() {
+      this.imageMenuOpen = false;
       this.$refs.imageInput?.click();
     },
     pickOcclusion() {
+      this.imageMenuOpen = false;
       this.$refs.occlusionInput?.click();
     },
     async onPickOcclusion(event) {
@@ -880,6 +954,7 @@ export default {
       this.reverseCards = false;
       this.extraOpen = false;
       this.headingOpen = false;
+      this.imageMenuOpen = false;
       this.reverseInfoOpen = false;
       this.importOpen = false;
       this.closeTts(true);
@@ -933,6 +1008,11 @@ export default {
     },
     onCancel() {
       if (this.saving || this.importing || this.ttsBusy || this.occlusionSaving) return;
+      if (this.imageMenuOpen) {
+        this.imageMenuOpen = false;
+        this.$refs.imageMenuTrigger?.focus();
+        return;
+      }
       if (this.occlusionOpen) {
         this.closeOcclusion();
         return;
@@ -985,6 +1065,7 @@ export default {
         const saved = this.card
           ? await updateDeckCard(this.deck, this.card, payload)
           : await createDeckCard(this.deck, { ...payload, position: this.nextPosition });
+        if (!this.card) void trackProductEvent('deck_card_saved');
         let extra = null;
         if (!this.card && this.reverseCards && !cloze) {
           extra = await createDeckCard(this.deck, {
@@ -1017,6 +1098,7 @@ export default {
       }
     },
     openImport() {
+      if (this.additionalGeneration?.submitting) return;
       this.importError = '';
       this.pasteText = '';
       this.detectedCards = [];
@@ -1043,6 +1125,13 @@ export default {
       this.importSource = option.id;
       this.importPage = route === 'spreadsheet' ? 'spreadsheet' : 'job';
       this.importError = '';
+    },
+    onAdditionalGenerationSubmitted() {
+      this.importing = false;
+      this.closeImport();
+      clearTimeout(this.aiBannerTimer);
+      this.aiBanner = true;
+      this.aiBannerTimer = setTimeout(() => { this.aiBanner = false; }, 6000);
     },
     onMagicImported() {
       this.importing = false;
@@ -1112,6 +1201,8 @@ export default {
       this.pendingImages = [];
     },
     teardown() {
+      clearTimeout(this.aiBannerTimer);
+      this.aiBanner = false;
       this.hydrateId += 1;
       this.hydrating = false;
       window.clearTimeout(this.toastTimer);
@@ -1123,6 +1214,7 @@ export default {
       this.backEditor = null;
       this.extraOpen = false;
       this.headingOpen = false;
+      this.imageMenuOpen = false;
       this.reverseInfoOpen = false;
       this.importOpen = false;
       this.closeTts(true);
@@ -1506,6 +1598,15 @@ export default {
   cursor: pointer;
 }
 .tb-menu button:hover { background: var(--inset-bg); }
+.image-menu { width: 240px; box-sizing: border-box; }
+.image-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  text-align: start;
+}
+.image-menu svg { width: 22px; height: 22px; flex: 0 0 auto; }
 .file { display: none; }
 
 .hud {

@@ -1,5 +1,5 @@
 <template>
-  <div class="deck-stats">
+  <div class="deck-stats" :class="{ 'has-study': $slots.study }">
     <section class="stat-card ring-card">
       <button
         type="button"
@@ -53,7 +53,7 @@
       </div>
     </section>
 
-    <div class="study-slot">
+    <div v-if="$slots.study" class="study-slot">
       <slot name="study"></slot>
     </div>
 
@@ -135,12 +135,13 @@
         <p class="kicker">{{ $t('deck.timeStudiedToday') }}</p>
         <p class="time-big">
           <SkeletonBlock v-if="timePending" w="4ch" h="0.8em" radius="14px" />
+          <span v-else-if="!time">—</span>
           <span v-for="part in todayParts" v-else :key="part.unit" class="part">{{ part.value }}<i>{{ part.unit }}</i></span>
         </p>
         <div class="time-rule" aria-hidden="true"></div>
         <div class="time-meta">
           <SkeletonBlock v-if="timePending" class="meta-skeleton" w="220px" h="1.05rem" radius="6px" />
-          <template v-else>
+          <template v-else-if="time">
             <b>{{ $t('deck.timeTotal', { time: totalLabel }) }}</b>
             <template v-if="sinceLabel">
               <span class="dot-sep">•</span>
@@ -196,7 +197,7 @@ export default {
     studiedToday: { type: Number, default: 0 },
     time: {
       type: Object,
-      default: () => ({ todayMilliseconds: 0, totalMilliseconds: 0, activeDays: 0, firstStudiedAt: null }),
+      default: null,
     },
     histogram: {
       type: Object,
@@ -290,11 +291,12 @@ export default {
   display: grid;
   gap: 18px;
   grid-template-columns: minmax(240px, 352px) minmax(0, 1fr);
-  grid-template-areas:
-    "ring side"
-    "study study";
+  grid-template-areas: "ring side";
   align-items: start;
   margin: 18px 0 0;
+}
+.deck-stats.has-study {
+  grid-template-areas: "ring side" "study study";
 }
 .ring-card { grid-area: ring; }
 .side { grid-area: side; }
@@ -616,10 +618,10 @@ export default {
 @media (max-width: 720px) {
   .deck-stats {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "ring"
-      "study"
-      "side";
+    grid-template-areas: "ring" "side";
+  }
+  .deck-stats.has-study {
+    grid-template-areas: "ring" "study" "side";
   }
   .chips { flex-direction: row; gap: 18px; }
   .chip { flex: 1 1 0; }

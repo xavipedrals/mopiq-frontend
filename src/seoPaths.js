@@ -16,6 +16,22 @@ export function seoForPath(path) {
       canonicalPath: '/privacy',
     };
   }
+  if (clean === '/delete-account') {
+    return {
+      title: 'Delete your account — Mopiq Flashcards',
+      description: 'How to delete your Mopiq Flashcards account and associated data from the web or by email.',
+      indexable: true,
+      canonicalPath: '/delete-account',
+    };
+  }
+  if (clean === '/delete-data') {
+    return {
+      title: 'Delete selected data — Mopiq Flashcards',
+      description: 'How to request deletion of specific Mopiq Flashcards data while keeping your account.',
+      indexable: true,
+      canonicalPath: '/delete-data',
+    };
+  }
   if (clean === '/terms') {
     return {
       titleKey: 'seo.termsTitle',

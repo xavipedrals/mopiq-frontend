@@ -1,7 +1,7 @@
 <template>
   <svg
     class="tabler-icon"
-    :class="{ filled }"
+    :class="{ filled, dots: name === 'dots' }"
     viewBox="0 0 24 24"
     aria-hidden="true"
     focusable="false"
@@ -13,6 +13,7 @@
 <script>
 // Tabler Icons (MIT). SF Symbols cannot be shipped on the web.
 const ICONS = {
+  dots: ['M6 12h.01M12 12h.01M18 12h.01'],
   ellipsis: [
     'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0',
     'M8 12h.01',
@@ -71,7 +72,6 @@ const ICONS = {
     'M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1',
   ],
   exchange: ['M7 10h14l-4 -4', 'M17 14h-14l4 4'],
-  selectBox: ['M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z'],
   settings: [
     'M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z',
     'M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0',
@@ -106,6 +106,7 @@ export default {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.tabler-icon.dots { stroke-width: 3; }
 .tabler-icon.filled {
   fill: currentColor;
   stroke: none;

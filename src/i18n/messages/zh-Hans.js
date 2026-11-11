@@ -70,9 +70,6 @@ export default extendReleaseMessages("zh-Hans", mergeCatalog(mergeCatalog(mergeC
     "flagImportant": "重要",
     "flagReviewLater": "稍后复习",
     "flagDifficult": "困难",
-    "keyboardHintPrefix": "你也可以按",
-    "keyboardHintSuffix": "以显示答案",
-    "dismissKeyboardHint": "关闭键盘提示",
     "savingSession": "正在保存学习会话",
     "last10": "最近10次评分",
     "doneBody": "稍后回来继续学习。",
@@ -353,6 +350,9 @@ export default extendReleaseMessages("zh-Hans", mergeCatalog(mergeCatalog(mergeC
     "resetError": "出了点问题"
   },
   "editor": {
+    aiAddingTitle: "正在添加你的 AI 闪卡…",
+    aiAddingBody: "我们会在后台添加闪卡，你可以继续正常使用应用。",
+    aiGeneratingMore: "生成更多卡...",
     "addTitle": "创建卡片",
     "editTitle": "编辑卡",
     "front": "正面",
@@ -504,6 +504,10 @@ export default extendReleaseMessages("zh-Hans", mergeCatalog(mergeCatalog(mergeC
     "rememberMessage": "帮我记住这个"
   },
   "profile": {
+    retryStats: "重试",
+    todayStats: "今日统计",
+    allTimeStats: "累计统计",
+    statsLoadError: "无法加载统计数据。请在联网后重试。",
     "loadError": "出了点问题",
     "level": "级别 {level}",
     "joined": "已加入 {date}",

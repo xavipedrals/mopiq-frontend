@@ -150,7 +150,7 @@
     <StudyLimitSheet
       :open="limitOpen"
       :limit="freeLimit"
-      :action-key="answers.length ? 'quiz.seeResults' : 'common.ok'"
+      :action-key="answers.length ? 'quiz.seeResults' : 'limit.deckStats'"
       art="/robo-key.png"
       @dismiss="onLimitDismiss"
     />

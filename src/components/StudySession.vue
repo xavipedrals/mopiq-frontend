@@ -9,10 +9,8 @@
           :aria-label="leaving ? $t('study.savingSession') : $t('study.closeStudy')"
           @click="requestLeave"
         >
-          <span class="study-close-disc"></span>
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" fill="currentColor"/>
-            <path d="M9.05 9.05l5.9 5.9M14.95 9.05l-5.9 5.9" fill="none" stroke="var(--close-x)" stroke-width="1.85" stroke-linecap="round"/>
+            <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </button>
         <div class="top-track">
@@ -23,8 +21,6 @@
               class="slot"
               :class="[answer && answer.toLowerCase(), { current: index === currentSlot }]"
             >
-              <div class="slot-halo"></div>
-              <div class="slot-fill"></div>
             </div>
           </div>
           <div v-else class="mix-bar" aria-hidden="true">
@@ -55,10 +51,17 @@
           @report="openReport"
           @delete="openDelete"
           @open-change="menuOpen = $event"
-          @tutorial="tutorialOpen = true"
         />
         <div v-if="showTimer" class="timer-pill" aria-live="polite">{{ timerLabel }}</div>
       </div>
+
+      <StudyStreakReviewBanner
+        v-if="streakCelebration"
+        :key="streakCelebration.reviewedAt"
+        :count="streakCelebration.count"
+        :is-restart="streakCelebration.isRestart"
+        @dismiss="streakCelebration = null"
+      />
 
       <div v-if="saveError && !loading && !loadError" class="save-banner" role="alert">
         <span>{{ saveError }}</span>
@@ -88,7 +91,7 @@
         <button type="button" class="mopiq-btn" :disabled="leaving" @click="requestLeave">{{ leaving ? $t('study.saving') : $t('study.backToDeck') }}</button>
       </div>
       <div v-else-if="current" class="board">
-        <div class="card-stage" :class="{ 'with-timer': showTimer }">
+        <div class="card-stage">
           <StudyAnswerToast
             v-if="feedbackEase && toastPosition !== 'hide'"
             :ease="feedbackEase"
@@ -98,31 +101,31 @@
             class="card-frame"
             sandbox=""
             :srcdoc="shownHtml"
+            @load="onQuestionLoaded"
             :style="{ colorScheme: studyScheme }"
             title="Flashcard"
           ></iframe>
+          <form v-if="writing" class="write-box" @submit.prevent="submitWrittenAnswer">
+            <textarea
+              ref="writeInput"
+              v-model="draftAnswer"
+              rows="1"
+              :aria-label="$t('study.typeAnswer')"
+              :placeholder="$t('study.writePlaceholder')"
+              enterkeyhint="send"
+              @keydown.enter.exact="onWriteEnter"
+              @keydown.esc.exact="onWriteEscape"
+            ></textarea>
+            <button type="submit" class="write-send" :disabled="!draftAnswer.trim()" :aria-label="$t('askAi.send')">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 19V5m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </form>
+          <div v-else-if="showAnswer && typedAnswer" class="typed-overlay">{{ $t('study.youWrote', { answer: typedAnswer }) }}</div>
         </div>
         <div class="controls">
-          <aside v-if="activeTip && !tutorialOpen" class="study-tip" role="status"><span><strong>{{ $t(`tutorial.${activeTip}Title`) }}</strong> {{ $t(`tutorial.${activeTip}Body`) }}</span><button :aria-label="$t('common.close')" @click="finishStudyTips">×</button></aside>
-          <StudyKeyboardToast v-if="keyboardHintKind" :kind="keyboardHintKind" @dismiss="dismissKeyboardHint" />
           <template v-if="!showAnswer">
-            <div v-if="writing" class="write-box">
-              <label class="write-label" for="study-write-answer">{{ $t('study.typeAnswer') }}</label>
-              <textarea
-                id="study-write-answer"
-                ref="writeInput"
-                v-model="draftAnswer"
-                rows="3"
-                :placeholder="$t('study.writePlaceholder')"
-                @keydown.enter.exact.prevent="submitWrittenAnswer"
-              ></textarea>
-              <div class="write-actions">
-                <button type="button" class="write-cancel" @click="cancelWriting">{{ $t('common.cancel') }}</button>
-                <button type="button" class="mopiq-btn" :disabled="!draftAnswer.trim()" @click="submitWrittenAnswer">
-                  {{ $t('study.check') }}
-                </button>
-              </div>
-            </div>
             <div class="front-row">
               <button
                 type="button"
@@ -144,17 +147,15 @@
                 </svg>
                 {{ $t('study.showAnswer') }}
               </button>
-              <button type="button" class="tool-btn write-btn" @click="startWriting">
-                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                  <path d="M7 10h.01M11 10h.01M15 10h.01M19 10h.01M8 14h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
+              <button ref="writeButton" type="button" class="tool-btn write-btn" aria-keyshortcuts="T"
+                :aria-pressed="typeAnswerMode" @click="toggleWriting">
+                <span v-if="showsKeycaps" class="keycap" aria-hidden="true">T</span>
+                <TablerIcon name="keyboard" />
                 {{ $t('study.writeAnswer') }}
               </button>
             </div>
           </template>
           <template v-else>
-            <div v-if="typedAnswer" class="typed-overlay">{{ $t('study.youWrote', { answer: typedAnswer }) }}</div>
             <div class="grades">
               <div v-for="grade in gradeButtons" :key="grade.ease" class="grade-col">
                 <div class="interval">{{ formatInterval(estimates[grade.ease]) }}</div>
@@ -202,7 +203,7 @@
       <StudyLimitSheet
         :open="limitReached && !loading && !loadError"
         :limit="freeLimit"
-        action-key="study.backToDeck"
+        action-key="limit.deckStats"
         @dismiss="leave"
       />
       <StudyPickerSheet
@@ -272,21 +273,21 @@
 </template>
 
 <script>
+import { createStudyMilestones } from '../analytics';
 import { fetchAllStudyCards, fetchDeck, fetchDeckList, fetchFreeStudyQuota, fetchMediaMap, fetchUserProfile, incrementFreeStudyQuota, deleteDeckCard, moveCardToAnotherDeck, moveCardToSubdeck, submitReview, updateUserProfileAnswerFeedback } from '../api/mopiq';
 import { fetchCustomStudyCards } from '../api/customStudy';
+import { refreshStudyStreak } from '../api/studyStreak';
 import { createCustomStudyQueue, readCustomStudySnapshot } from '../study/customStudy';
 import { applyFilteredAnswer, filteredPreviewIntervals } from '../study/filteredScheduling';
-import { readStudyTips, writeStudyTips, tutorialCompleted, completeTutorial } from '../study/studyTips';
+import { tutorialCompleted, completeTutorial } from '../study/studyTips';
 import StudyTutorial from './StudyTutorial.vue';
 import EnjoyPrompt from './EnjoyPrompt.vue';
 import { isDebugAlwaysShowFeedback, isDebugAlwaysShowStudyTutorial } from '../debug/flags';
 import { reportStudyCard } from '../api/reportCard';
-import { fetchKeyboardHintHistory, saveKeyboardHintHistory } from '../api/keyboardHints';
 import { cachedDeckList } from '../api/deckCache';
 import { onSessionChange, getCurrentUser } from '../auth/session';
-import { createKeyboardHintHistory, desktopKeyboardLikely, isKeyboardEvidence, isTypingTarget,
-  readShowStudyKeycaps, studyShortcutAction, visibleKeyboardHint, writeShowStudyKeycaps } from '../study/keyboardHints';
-import StudyKeyboardToast from './StudyKeyboardToast.vue';
+import { desktopKeyboardLikely, isKeyboardEvidence, isTypingTarget,
+  readShowStudyKeycaps, studyShortcutAction, writeShowStudyKeycaps } from '../study/keyboardHints';
 import { ankiDayString } from '../study/ankiDay';
 import { backHtml, cardDocument, cardPlainText, frontHtml } from '../study/cardHtml';
 import { applyQuota, FREE_CARD_DAILY_LIMIT, isDailyLimitReached } from '../study/freeStudyQuota';
@@ -319,12 +320,14 @@ import AskAISheet from './AskAISheet.vue';
 import CardEditor from './CardEditor.vue';
 import RobotLoader from './RobotLoader.vue';
 import StudyAnswerToast from './StudyAnswerToast.vue';
+import StudyStreakReviewBanner from './StudyStreakReviewBanner.vue';
 import StudyCheckpoint from './StudyCheckpoint.vue';
 import StudyConfirmSheet from './StudyConfirmSheet.vue';
 import StudyLimitSheet from './StudyLimitSheet.vue';
 import StudyMenu from './StudyMenu.vue';
 import StudyPickerSheet from './StudyPickerSheet.vue';
 import StudyReportSheet from './StudyReportSheet.vue';
+import TablerIcon from './TablerIcon.vue';
 
 import { GRADE_BUTTONS } from '../study/gradeIcons';
 import CustomStudyResults from './CustomStudyResults.vue';
@@ -336,16 +339,17 @@ export default {
     CustomStudyResults,
     StudyTutorial,
     EnjoyPrompt,
-    StudyKeyboardToast,
     AskAISheet,
     RobotLoader,
     StudyCheckpoint,
     StudyLimitSheet,
     StudyMenu,
     StudyAnswerToast,
+    StudyStreakReviewBanner,
     StudyPickerSheet,
     StudyReportSheet,
     StudyConfirmSheet,
+    TablerIcon,
   },
   data() {
     return {
@@ -355,19 +359,14 @@ export default {
       retryingCustom: false,
       customRetryError: '',
       sessionOwner: null,
+      studyViewActive: true,
+      streakCelebration: null,
       tutorialOpen: false,
       enjoyOpen: false,
       enjoyHandled: false,
-      tipStage: 'complete',
       keyboardAvailable: false,
       keyboardTyping: false,
-      keyboardPageActive: false,
-      keyboardHintState: { ready: false, shortcutUsed: false, questionSeen: false, answerSeen: false },
-      keyboardHintHistory: null,
-      keyboardHintUserId: null,
       unsubKeyboardSession: null,
-      questionHintDismissed: false,
-      answerHintVisible: false,
       loading: true,
       leaving: false,
       loadError: '',
@@ -381,7 +380,7 @@ export default {
       current: null,
       cardFlagState: { deckId: null, cardId: null, flags: [] },
       showAnswer: false,
-      writing: false,
+      typeAnswerMode: false,
       draftAnswer: '',
       typedAnswer: '',
       askAiOpen: false,
@@ -397,6 +396,8 @@ export default {
       sessionElapsedMs: 0,
       sessionStartedAt: 0,
       reviewSync: null,
+      studyMilestones: createStudyMilestones(),
+      questionLoaded: false,
       unsubReviewSync: null,
       unsubTheme: null,
       timerTick: 0,
@@ -428,24 +429,6 @@ export default {
     };
   },
   computed: {
-    activeTip() {
-      if (this.customMode || this.tipStage === 'complete') return '';
-      return (this.tipStage === 'rating') === this.showAnswer ? this.tipStage : '';
-    },
-    keyboardHintKind() {
-      return visibleKeyboardHint({
-        ready: this.keyboardHintState.ready,
-        active: this.keyboardPageActive && !this.loading && !this.leaving && !this.loadError
-          && !this.done && !!this.current && !this.limitReached && !this.askAiOpen && !this.checkpointOpen
-          && !this.menuOpen && !this.sheetOpen,
-        keyboard: this.keyboardAvailable,
-        typing: this.writing || this.keyboardTyping,
-        showingAnswer: this.showAnswer,
-        flags: this.keyboardHintState,
-        questionDismissed: this.questionHintDismissed,
-        answerVisible: this.answerHintVisible,
-      });
-    },
     gradeButtons() {
       return GRADE_BUTTONS.map((grade) => ({
         ...grade,
@@ -516,6 +499,9 @@ export default {
     canReport() {
       return Boolean(this.deck?.sharedDeckId);
     },
+    writing() {
+      return this.typeAnswerMode && !this.showAnswer;
+    },
     showsKeycaps() {
       return this.showKeycaps && this.keyboardAvailable && !this.writing && !this.keyboardTyping;
     },
@@ -543,18 +529,6 @@ export default {
       return this.targetFolders;
     },
   },
-  watch: {
-    keyboardHintKind: {
-      flush: 'post',
-      handler(kind) {
-        if (kind === 'question') this.keyboardHintHistory?.mark({ questionSeen: true });
-        if (kind === 'answer') {
-          this.answerHintVisible = true;
-          this.keyboardHintHistory?.mark({ answerSeen: true });
-        }
-      },
-    },
-  },
   async created() {
     this.keyboardAvailable = desktopKeyboardLikely({
       maxTouchPoints: navigator.maxTouchPoints,
@@ -563,21 +537,20 @@ export default {
     });
     this.updateKeyboardFocus();
     this.sessionOwner = getCurrentUser()?.supabaseUid;
-    this.tipStage = readStudyTips(this.tipStorage(), this.sessionOwner);
+    void refreshStudyStreak();
     this.customMode = typeof this.$route.query.custom === 'string';
     this.unsubKeyboardSession = onSessionChange(user => {
       if (user?.supabaseUid !== this.sessionOwner) {
         this.current = null; this.queue = null; this.tutorialOpen = false;
+        this.streakCelebration = null;
         this.$router.replace('/decks');
       }
-      this.resetKeyboardHintHistory(user);
     });
     document.addEventListener('focusin', this.updateKeyboardFocus);
     document.addEventListener('focusout', this.onKeyboardFocusOut);
     document.addEventListener('visibilitychange', this.updateKeyboardFocus);
     window.addEventListener('focus', this.updateKeyboardFocus);
     window.addEventListener('blur', this.updateKeyboardFocus);
-    window.addEventListener('online', this.retryKeyboardHintSave);
     window.addEventListener('keydown', this.onKey);
     window.addEventListener('beforeunload', this.onBeforeUnload);
     this.reviewSync = deckReviewSync({
@@ -639,14 +612,13 @@ export default {
     }
   },
   beforeUnmount() {
+    this.studyViewActive = false;
     this.unsubKeyboardSession?.();
-    this.keyboardHintHistory?.dispose();
     document.removeEventListener('focusin', this.updateKeyboardFocus);
     document.removeEventListener('focusout', this.onKeyboardFocusOut);
     document.removeEventListener('visibilitychange', this.updateKeyboardFocus);
     window.removeEventListener('focus', this.updateKeyboardFocus);
     window.removeEventListener('blur', this.updateKeyboardFocus);
-    window.removeEventListener('online', this.retryKeyboardHintSave);
     window.removeEventListener('keydown', this.onKey);
     window.removeEventListener('beforeunload', this.onBeforeUnload);
     this.unsubReviewSync?.();
@@ -661,15 +633,15 @@ export default {
   },
   methods: {
     tipStorage() { try { return window.localStorage; } catch { return null; } },
+    onQuestionLoaded() {
+      if (!this.current || this.showAnswer) return;
+      this.questionLoaded = true;
+      if (!this.tutorialOpen) this.studyMilestones.present();
+    },
     finishTutorial() {
       this.tutorialOpen = false;
+      if (this.questionLoaded && this.current) this.studyMilestones.present();
       completeTutorial(this.tipStorage(), this.sessionOwner);
-      this.tipStage = 'recall';
-      writeStudyTips(this.tipStorage(), this.sessionOwner, this.tipStage);
-    },
-    finishStudyTips() {
-      this.tipStage = 'complete';
-      writeStudyTips(this.tipStorage(), this.sessionOwner, 'complete');
     },
     async flushCustomReviews() {
       await this.reviewSync?.flush();
@@ -945,39 +917,12 @@ export default {
       this.resetCardUi();
       this.nextCard();
     },
-    resetKeyboardHintHistory(user) {
-      const userId = user?.supabaseUid || null;
-      if (userId === this.keyboardHintUserId) return;
-      this.keyboardHintHistory?.dispose();
-      this.keyboardHintUserId = userId;
-      this.questionHintDismissed = false;
-      this.answerHintVisible = false;
-      this.keyboardHintState = { ready: false, shortcutUsed: false, questionSeen: false, answerSeen: false };
-      if (!userId) { this.keyboardHintHistory = null; return; }
-      let storage;
-      try { storage = window.localStorage; } catch { /* Private browsing may disable storage. */ }
-      this.keyboardHintHistory = createKeyboardHintHistory({
-        userId, storage,
-        load: () => fetchKeyboardHintHistory(userId),
-        save: (flags) => saveKeyboardHintHistory(userId, flags),
-        onChange: (state) => { this.keyboardHintState = state; },
-      });
-      void this.keyboardHintHistory.hydrate();
-    },
     updateKeyboardFocus() {
-      this.keyboardPageActive = document.visibilityState !== 'hidden' && document.hasFocus();
       this.keyboardTyping = isTypingTarget(document.activeElement);
     },
     onKeyboardFocusOut() {
       // focusout runs before the next active element has been assigned.
       this.$nextTick(this.updateKeyboardFocus);
-    },
-    retryKeyboardHintSave() {
-      void this.keyboardHintHistory?.flush();
-    },
-    dismissKeyboardHint() {
-      if (this.showAnswer) this.answerHintVisible = false;
-      else this.questionHintDismissed = true;
     },
     requestLeave() {
       if (this.leaving || this.enjoyOpen) return;
@@ -1025,12 +970,11 @@ export default {
       this.shownAt = Date.now();
     },
     resetCardUi() {
-      this.answerHintVisible = false;
       this.showAnswer = false;
-      this.writing = false;
       this.draftAnswer = '';
       this.typedAnswer = '';
       this.askAiOpen = false;
+      this.focusWriteInput();
     },
     goPrevious() {
       if (!this.queue || !this.current || this.checkpointOpen) return;
@@ -1050,29 +994,41 @@ export default {
       this.remaining = this.queue.remaining();
       this.done = false;
     },
-    startWriting() {
-      this.writing = true;
-      this.$nextTick(() => this.$refs.writeInput?.focus());
+    focusWriteInput() {
+      if (!this.writing) return;
+      this.$nextTick(() => {
+        if (!this.checkpointOpen && !this.menuOpen && !this.sheetOpen) this.$refs.writeInput?.focus();
+      });
     },
-    cancelWriting() {
-      this.writing = false;
-      this.draftAnswer = '';
+    toggleWriting() {
+      this.typeAnswerMode = !this.typeAnswerMode;
+      if (this.typeAnswerMode) {
+        this.focusWriteInput();
+      } else {
+        this.draftAnswer = '';
+        this.$refs.writeButton?.focus();
+      }
+    },
+    onWriteEnter(event) {
+      if (event.isComposing || event.keyCode === 229) return;
+      event.preventDefault();
+      if (!event.repeat) this.submitWrittenAnswer();
+    },
+    onWriteEscape(event) {
+      if (event.isComposing || event.keyCode === 229) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggleWriting();
     },
     submitWrittenAnswer() {
       const text = this.draftAnswer.trim();
       if (!text) return;
       this.typedAnswer = text;
-      this.writing = false;
       this.reveal();
     },
     reveal() {
-      if (this.tipStage === 'recall') {
-        this.tipStage = 'rating';
-        writeStudyTips(this.tipStorage(), this.sessionOwner, this.tipStage);
-      } else if (this.tipStage === 'scheduled') this.finishStudyTips();
-      if (this.keyboardHintKind === 'question') this.questionHintDismissed = true;
       this.showAnswer = true;
-      this.writing = false;
+      this.draftAnswer = '';
     },
     answer(ease) {
       if (!this.current || this.checkpointOpen || this.limitReached || !this.showAnswer) return;
@@ -1083,14 +1039,21 @@ export default {
       if (this.customMode) {
         this.customResults = [...this.customResults.filter(result => result.id !== previous.id), {id: previous.id, answer: ease, card: updated}];
       }
-      if (this.tipStage === 'rating') {
-        this.tipStage = 'scheduled';
-        writeStudyTips(this.tipStorage(), this.sessionOwner, this.tipStage);
-      }
       this.queue.afterAnswer(previous, updated);
       this.recordSessionAnswer(ease);
       this.showFeedback(ease);
+      const acknowledge = this.studyMilestones.acknowledge;
+      const owner = this.sessionOwner;
       this.reviewSync.enqueue({
+        onSaved: () => {
+          if (getCurrentUser()?.supabaseUid === owner) acknowledge(previous.id);
+        },
+        onStreakCelebration: (celebration) => {
+          if (this.studyViewActive && !this.leaving && !this.sheetOpen &&
+              !this.menuOpen && !this.checkpointOpen && getCurrentUser()?.supabaseUid === owner) {
+            this.streakCelebration = { ...celebration, reviewedAt: reviewedAt.getTime() };
+          }
+        },
         deckId: this.deck.id,
         card: updated,
         previous,
@@ -1126,6 +1089,7 @@ export default {
       this.last10 = emptyLast10();
       this.checkpointOpen = false;
       this.resumeTimer();
+      this.focusWriteInput();
     },
     pauseTimer() {
       if (!this.sessionStartedAt) return;
@@ -1139,12 +1103,12 @@ export default {
     onKey(event) {
       if (isKeyboardEvidence(event)) this.keyboardAvailable = true;
       if (this.done || this.leaving || this.limitReached || this.loading || !this.current
-          || this.askAiOpen || this.writing || this.checkpointOpen || this.menuOpen || this.sheetOpen) return;
+          || this.askAiOpen || this.enjoyOpen || this.checkpointOpen || this.menuOpen || this.sheetOpen) return;
       const action = studyShortcutAction(event, this.showAnswer);
-      if (!action) return;
+      if (!action || (this.writing && action !== 'write')) return;
       event.preventDefault();
-      this.keyboardHintHistory?.mark({ shortcutUsed: true });
       if (action === 'reveal') this.reveal();
+      else if (action === 'write') this.toggleWriting();
       else this.answer(action);
     },
   },
@@ -1158,6 +1122,7 @@ export default {
   flex-direction: column;
 }
 .study-shell > .container-xl {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1165,48 +1130,39 @@ export default {
   padding-bottom: 20px;
 }
 .top {
-  position: relative;
-  display: flex;
+  --review-chrome-bg: #fff;
+  --review-chrome-shadow: 0 1px 2px rgb(20 30 50 / 6%), 0 6px 20px rgb(20 30 50 / 7%);
+  display: grid;
+  grid-template-columns: minmax(92px, 1fr) minmax(0, 225px) minmax(92px, 1fr);
   align-items: center;
-  height: 60px;
-  padding: 0;
-  overflow: visible;
+  gap: 8px;
+  padding: 6px 0;
+  margin-bottom: 12px;
+}
+html[data-theme='dark'] .top {
+  --review-chrome-bg: var(--card-bg);
+  --slot-empty: color-mix(in srgb, var(--title) 30%, var(--review-chrome-bg));
+  --review-chrome-shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 6px 20px rgb(0 0 0 / 18%);
+}
+.top > .study-menu {
+  justify-self: end;
 }
 .study-close {
-  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
   width: 44px;
   height: 44px;
-}
-.study-close {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: -6px;
   padding: 0 !important;
   border: 0 !important;
   border-radius: 50%;
-  background: none !important;
-  color: var(--close-button);
+  background: var(--review-chrome-bg) !important;
+  box-shadow: var(--review-chrome-shadow);
+  color: var(--title);
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
 }
-.study-close-disc {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--close-x);
-}
-.study-close svg {
-  position: relative;
-  width: 24px;
-  height: 24px;
-  display: block;
-}
+.study-close svg { width: 22px; height: 22px; }
 .study-close:hover:not(:disabled) {
-  color: var(--text);
+  background: var(--inset-bg) !important;
 }
 .study-close:focus-visible {
   outline: 2px solid var(--blue-button);
@@ -1217,19 +1173,18 @@ export default {
   cursor: default;
 }
 .top-track {
-  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
   min-width: 0;
-  overflow: visible;
+  height: 44px;
+  padding: 0 clamp(8px, 4vw, 16px);
+  border-radius: 999px;
+  background: var(--review-chrome-bg);
+  box-shadow: var(--review-chrome-shadow);
 }
 .timer-pill {
-  position: absolute;
-  left: 50%;
-  bottom: -18px;
-  z-index: 2;
-  transform: translateX(-50%);
+  grid-column: 1 / -1;
+  justify-self: center;
   padding: 8px 12px;
   border-radius: 10px;
   background: var(--inset-bg);
@@ -1263,54 +1218,25 @@ export default {
 .last10 {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: clamp(2px, 1vw, 5px);
   width: 100%;
-  max-width: 300px;
-  height: 20px;
-  overflow: visible;
 }
 .slot {
-  position: relative;
   flex: 1;
-  height: 20px;
   min-width: 0;
-  overflow: visible;
-}
-.slot-halo {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 14px;
-  margin-top: -7px;
-  border-radius: 7px;
-  background: transparent;
-  transform: scale(0.9, 0.85);
-  transform-origin: center center;
-  pointer-events: none;
-}
-.slot.current .slot-halo {
-  background: var(--slot-halo);
-  animation: slot-pulse 1s linear infinite alternate;
-}
-.slot-fill {
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  top: 50%;
-  height: 8px;
-  margin-top: -4px;
-  border-radius: 5px;
+  height: 6px;
+  border-radius: 999px;
   background: var(--slot-empty);
-  z-index: 1;
 }
-.slot.current:not(.again):not(.hard):not(.good):not(.easy) .slot-fill {
+.slot.current {
+  flex: 0 0 12%;
+  height: 8px;
   background: var(--slot-current);
 }
-.slot.again .slot-fill { background: #F87171; }
-.slot.hard .slot-fill { background: #FBBF24; }
-.slot.good .slot-fill { background: #A3E635; }
-.slot.easy .slot-fill { background: #38BDF8; }
+.slot.again { background: #F87171; }
+.slot.hard { background: #FBBF24; }
+.slot.good { background: #A3E635; }
+.slot.easy { background: #38BDF8; }
 .mix-bar {
   display: flex;
   width: 100%;
@@ -1326,10 +1252,6 @@ export default {
 .mix-hard { background: #FBBF24; }
 .mix-good { background: #A3E635; }
 .mix-easy { background: #38BDF8; }
-@keyframes slot-pulse {
-  from { transform: scale(0.9, 0.85); }
-  to { transform: scale(1.1, 1.1); }
-}
 .text-btn {
   flex: 0 0 auto;
   white-space: nowrap;
@@ -1343,29 +1265,34 @@ export default {
 .text-btn:hover { background: none !important; }
 .text-btn:disabled { opacity: 0.55; cursor: default; }
 .board {
-  background: var(--study-webview);
-  border: 1px solid var(--card-border);
-  box-shadow: var(--card-shadow);
-  border-radius: 24px;
-  padding: 16px 16px 24px;
+  --write-field-bg: #e2e8f0;
+  --write-active-bg: #0066d6;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
+html[data-theme='dark'] .board {
+  --write-field-bg: #334155;
+  --write-active-bg: var(--blue-button);
+}
 .card-stage {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--study-webview);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: 24px;
   flex: 1 1 auto;
   min-height: 240px;
-}
-.card-stage.with-timer .card-frame {
-  top: 28px;
+  overflow: hidden;
 }
 .card-frame {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 16px 16px 24px;
+  width: calc(100% - 32px);
   border: none;
   background: var(--study-webview);
   color-scheme: inherit;
@@ -1405,51 +1332,54 @@ export default {
 }
 .tool-icon { width: 22px; height: 22px; }
 .write-box {
-  margin-bottom: 12px;
-  padding: 14px;
-  border-radius: 18px;
-  background: var(--inset-bg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 12px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 22px;
+  background: var(--write-field-bg);
 }
-.write-label {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--title);
-  font-size: 0.88rem;
-  font-weight: 650;
+.write-box:focus-within {
+  outline: 2px solid var(--blue-button);
+  outline-offset: -2px;
 }
 .write-box textarea {
-  width: 100%;
-  min-height: 84px;
-  resize: vertical;
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: var(--card-bg);
+  flex: 1;
+  width: 0;
+  min-height: 24px;
+  max-height: 120px;
+  field-sizing: content;
+  resize: none;
+  border: 0;
+  padding: 0;
+  outline: none;
+  background: transparent;
   color: var(--title);
-  font: inherit;
+  font-family: inherit;
   font-size: 1rem;
+  line-height: 24px;
 }
-.write-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
-}
-.write-cancel {
-  border: none;
-  border-radius: 50px;
-  background: var(--secondary-btn-bg);
-  color: var(--secondary-btn-text);
-  font: inherit;
-  font-weight: 600;
-  padding: 12px 28px;
+.write-box textarea::placeholder { color: var(--text); }
+.write-send {
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--blue-button);
+  color: var(--button-text);
   cursor: pointer;
 }
-.write-cancel:hover {
-  background: var(--secondary-btn-hover);
-}
+.write-send svg { width: 18px; height: 18px; }
+.write-send:disabled { opacity: 0.35; cursor: default; }
 .typed-overlay {
-  margin-bottom: 12px;
+  max-height: 160px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
   padding: 12px 18px;
   border-radius: 0 0 24px 24px;
   background: var(--inset-bg);
@@ -1492,6 +1422,12 @@ export default {
   line-height: 23px;
   pointer-events: none;
 }
+.write-btn { position: relative; }
+.write-btn[aria-pressed="true"] {
+  background: var(--write-active-bg) !important;
+  color: var(--button-text) !important;
+}
+.write-btn .keycap,
 .grade .keycap {
   top: 8px;
   right: 8px;
@@ -1625,6 +1561,7 @@ export default {
   font-weight: 600;
 }
 @media (max-width: 640px) {
+  .top { grid-template-columns: minmax(44px, 1fr) minmax(0, 225px) minmax(44px, 1fr); }
   .front-row {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
@@ -1640,12 +1577,7 @@ export default {
 }
 @media (prefers-reduced-motion: reduce) {
   .grade { transition: none; }
-  .slot.current .slot-halo { animation: none; transform: scale(1, 1); }
 }
-</style>
-
-<style scoped>
-.study-tip{display:flex;align-items:center;gap:14px;background:var(--inset-bg);border:1px solid var(--separator);padding:14px 18px;border-radius:16px;color:var(--text);font-size:.9rem}.study-tip strong{color:var(--title)}.study-tip button{border:0;background:transparent;color:var(--text-secondary);font-size:24px}
 </style>
 
 <style scoped>

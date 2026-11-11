@@ -14,19 +14,17 @@
         <p>
           {{ $t('limit.body', { limit }) }}
         </p>
-        <router-link v-if="pricingEnabled" class="mopiq-btn" to="/pricing">{{ $t('limit.upgrade') }}</router-link>
+        <router-link v-if="pricingEnabled" class="mopiq-btn" to="/pricing">{{ $t('limit.pricing') }}</router-link>
         <p class="limit-note">
           {{ $t('limit.note') }}
         </p>
         <button type="button" class="limit-later" @click="$emit('dismiss')">{{ actionText }}</button>
-        <a class="limit-store" :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.getMopiqStore') }}</a>
       </section>
     </div>
   </Teleport>
 </template>
 
 <script>
-import { APP_STORE_URL } from '../constants';
 import { isLocalDebugHost } from '../debug/flags';
 import { loadWebPricingEnabled } from '../pricing/visibility';
 import { FREE_CARD_DAILY_LIMIT } from '../study/freeStudyQuota';
@@ -41,7 +39,7 @@ export default {
   },
   emits: ['dismiss'],
   data() {
-    return { storeUrl: APP_STORE_URL, pricingEnabled: isLocalDebugHost() };
+    return { pricingEnabled: isLocalDebugHost() };
   },
   created() {
     loadWebPricingEnabled().then((enabled) => {
@@ -130,12 +128,5 @@ a.mopiq-btn {
   border-radius: 50px !important;
   font-weight: 600 !important;
   padding: 12px 28px !important;
-}
-.limit-store {
-  display: inline-block;
-  margin-top: 14px;
-  color: var(--blue-button);
-  font-weight: 600;
-  text-decoration: none;
 }
 </style>

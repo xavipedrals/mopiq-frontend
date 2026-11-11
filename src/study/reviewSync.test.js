@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { createStudyMilestones } from '../analytics.js';
 import { createReviewSyncQueue } from './reviewSync.js';
 
 function waitFor(queue, predicate, timeoutMs = 1000) {
@@ -31,6 +32,30 @@ describe('reviewSync queue', () => {
     queue.enqueue({ id: 'b' });
     await waitFor(queue, (state) => state.pending === 0);
     assert.deepEqual(seen, ['a', 'b']);
+  });
+
+  it('reports five distinct answers only after their saves are acknowledged', async () => {
+    let fail = true;
+    const events = [];
+    const study = createStudyMilestones(name => events.push(name));
+    const queue = createReviewSyncQueue({
+      maxAttempts: 1,
+      submit: async () => { if (fail) throw new Error('offline'); },
+    });
+    study.present();
+    study.present();
+    for (const id of ['a', 'a', 'b', 'c', 'd', 'e', 'f']) {
+      queue.enqueue({ id, onSaved: () => study.acknowledge(id) });
+    }
+    await waitFor(queue, state => Boolean(state.error) && !state.pumping);
+    assert.deepEqual(events, ['study_session_started']);
+
+    fail = false;
+    queue.retry();
+    await waitFor(queue, state => state.pending === 0);
+    assert.equal(events.filter(name => name === 'study_review_saved').length, 7);
+    assert.equal(events.filter(name => name === 'study_five_cards_answered').length, 1);
+    assert.equal(events.indexOf('study_five_cards_answered'), 7);
   });
 
   it('retries a failed save then continues', async () => {

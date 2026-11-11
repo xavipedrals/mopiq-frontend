@@ -90,6 +90,7 @@ import {
   isLoggedIn,
 } from '../auth/session';
 import { auth } from '../firebaseInit';
+import { trackProductEvent } from '../analytics';
 
 export default {
   name: 'LoginSheet',
@@ -119,7 +120,11 @@ export default {
         if (!value) return;
         this.error = '';
         this.info = '';
-        this.$nextTick(() => this.$refs.root?.focus());
+        this.$nextTick(() => {
+          if (!this.$refs.root) return;
+          void trackProductEvent('onboarding_sign_in_shown');
+          this.$refs.root.focus();
+        });
         await this.tryResume();
       },
     },
@@ -149,42 +154,32 @@ export default {
         }
       }
     },
-    async submitEmail() {
-      this.error = '';
+    submitEmail() {
+      if (this.busy) return;
       this.info = '';
-      this.busy = true;
-      try {
-        if (this.mode === 'register') {
-          await registerWithEmail(this.name, this.email, this.password);
-        } else {
-          await loginWithEmail(this.email, this.password);
-        }
-        this.goToApp();
-      } catch (error) {
-        this.error = this.friendly(error);
-      } finally {
-        this.busy = false;
-      }
+      return this.attemptSignIn(() => this.mode === 'register'
+        ? registerWithEmail(this.name, this.email, this.password)
+        : loginWithEmail(this.email, this.password));
     },
-    async google() {
+    google() {
+      return this.attemptSignIn(loginWithGoogle);
+    },
+    apple() {
+      return this.attemptSignIn(loginWithApple);
+    },
+    async attemptSignIn(operation) {
+      if (this.busy) return;
       this.error = '';
       this.busy = true;
+      void trackProductEvent('onboarding_sign_in_started');
       try {
-        await loginWithGoogle();
+        const sessionReady = await operation();
+        void trackProductEvent(sessionReady ? 'onboarding_sign_in_succeeded' : 'onboarding_sign_in_failed');
         this.goToApp();
       } catch (error) {
-        this.error = this.friendly(error);
-      } finally {
-        this.busy = false;
-      }
-    },
-    async apple() {
-      this.error = '';
-      this.busy = true;
-      try {
-        await loginWithApple();
-        this.goToApp();
-      } catch (error) {
+        void trackProductEvent(error?.code === 'auth/popup-closed-by-user'
+          ? 'onboarding_sign_in_canceled'
+          : 'onboarding_sign_in_failed');
         this.error = this.friendly(error);
       } finally {
         this.busy = false;

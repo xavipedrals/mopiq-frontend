@@ -47,6 +47,18 @@ describe('webReads mappers', () => {
     assert.equal(deck.config.newCardsPerDay > 0, true);
   });
 
+  it('allows settings for owned file-backed decks independently of card access', () => {
+    for (const mode of ['legacy_firebase_file', 'apkg_base_plus_overlay']) {
+      const row = { id: 'deck-1', content_mode_2: mode, creator_id: 'user-1' };
+      const owned = mapUserDeckRow(row, 'user-1');
+      assert.equal(owned.canManage, true);
+      assert.equal(owned.canStudy, false);
+      assert.equal(owned.canEdit, false);
+      assert.equal(mapUserDeckRow(row, 'user-2').canManage, false);
+      assert.equal(mapUserDeckRow({ ...row, creator_id: null }, 'user-1').canManage, false);
+    }
+  });
+
   it('maps list stats onto the same deck shape', () => {
     const row = mapDeckListRow({
       deck_id: 'deck-1',

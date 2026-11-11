@@ -70,9 +70,6 @@ export default extendReleaseMessages("nl", mergeCatalog(mergeCatalog(mergeCatalo
     "flagImportant": "Belangrijk",
     "flagReviewLater": "Later herhalen",
     "flagDifficult": "Moeilijk",
-    "keyboardHintPrefix": "Je kunt ook drukken op",
-    "keyboardHintSuffix": "om het antwoord te tonen",
-    "dismissKeyboardHint": "Toetsenbordtip sluiten",
     "savingSession": "Studiesessie opslaan",
     "last10": "Laatste 10 beoordelingen",
     "doneBody": "Kom later terug om verder te leren.",
@@ -353,6 +350,9 @@ export default extendReleaseMessages("nl", mergeCatalog(mergeCatalog(mergeCatalo
     "resetError": "Er is iets misgegaan"
   },
   "editor": {
+    aiAddingTitle: "Je AI-flashcards worden toegevoegd…",
+    aiAddingBody: "Je kunt de app blijven gebruiken terwijl we ze op de achtergrond toevoegen.",
+    aiGeneratingMore: "Meer kaarten genereren...",
     "addTitle": "Kaart maken",
     "editTitle": "Kaart bewerken",
     "front": "VOORZIJDE",
@@ -504,6 +504,10 @@ export default extendReleaseMessages("nl", mergeCatalog(mergeCatalog(mergeCatalo
     "rememberMessage": "Help mij dit te onthouden"
   },
   "profile": {
+    retryStats: "Opnieuw proberen",
+    todayStats: "Statistieken vandaag",
+    allTimeStats: "Totale statistieken",
+    statsLoadError: "Statistieken laden mislukt. Probeer het opnieuw zodra je online bent.",
     "loadError": "Er is iets misgegaan",
     "level": "Niveau {level}",
     "joined": "Aangesloten bij {date}",

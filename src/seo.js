@@ -60,8 +60,8 @@ export function applySeo(route) {
   if (typeof document === 'undefined') return;
   const path = route?.path || '/';
   const spec = seoForPath(path);
-  const title = t(spec.titleKey);
-  const description = t(spec.descriptionKey);
+  const title = spec.title ?? t(spec.titleKey);
+  const description = spec.description ?? t(spec.descriptionKey);
   const canonical = spec.canonicalPath == null
     ? null
     : `${SITE_URL}${spec.canonicalPath === '/' ? '/' : spec.canonicalPath}`;
