@@ -12,7 +12,7 @@
       <section class="sheet">
         <header class="sheet-header">
           <h2 :id="titleId">{{ title }}</h2>
-          <button type="button" class="sheet-close" :aria-label="$t('common.close')" @click="onCancel">×</button>
+          <button type="button" class="sheet-close glass-action glass-action--icon" :aria-label="$t('common.close')" @click="onCancel">×</button>
         </header>
         <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
         <p v-if="emptyText && !items.length" class="empty">{{ emptyText }}</p>

@@ -3,7 +3,7 @@
     <div v-if="open" v-dialog-focus class="filter-dialog browse-filter-dialog" role="dialog" aria-modal="true" aria-labelledby="card-browse-title" @keydown.esc.stop.prevent="onCancel">
       <button type="button" class="filter-backdrop" :aria-label="$t('common.close')" @click="onCancel"></button>
       <section class="filter-sheet">
-        <header class="filter-nav"><span></span><h2 id="card-browse-title">{{ $t('deck.filterSort') }}</h2><button type="button" class="filter-nav-action" @click="onCancel">{{ $t('customStudy.done') }}</button></header>
+        <header class="filter-nav"><span></span><h2 id="card-browse-title">{{ $t('deck.filterSort') }}</h2><button type="button" class="filter-nav-action glass-action" @click="onCancel">{{ $t('customStudy.done') }}</button></header>
         <div class="filter-scroll">
           <FilterFolderField v-if="folders.length" :folders="folders" :model-value="folderId" :deck-name="deckName" @update:model-value="$emit('folder-change', $event)"/>
           <CardFilterSections :model-value="currentQuery()" :flags="flags" :flags-loading="flagsLoading" :flags-error="flagsError" @update:model-value="applyFilters" @retry-flags="loadFlags"/>

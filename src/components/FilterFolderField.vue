@@ -12,7 +12,7 @@
     <div v-if="pickerOpen" v-dialog-focus class="filter-dialog folder-picker-dialog" role="dialog" aria-modal="true" :aria-labelledby="`${id}-title`" @keydown.esc.stop.prevent="pickerOpen = false">
       <button type="button" class="filter-backdrop" :aria-label="$t('common.close')" @click="pickerOpen = false"></button>
       <section class="filter-sheet">
-        <header class="filter-nav"><button type="button" class="filter-nav-action" @click="pickerOpen = false">{{ $t('common.cancel') }}</button><h2 :id="`${id}-title`">{{ $t('filterUI.selectFolder') }}</h2><button type="button" class="filter-nav-action" @click="pendingID = ''">{{ $t('common.clear') }}</button></header>
+        <header class="filter-nav"><button type="button" class="filter-nav-action glass-action glass-action--icon" :aria-label="$t('common.close')" @click="pickerOpen = false"><StudyMenuIcon name="x" aria-hidden="true"/></button><h2 :id="`${id}-title`">{{ $t('filterUI.selectFolder') }}</h2><button type="button" class="filter-nav-action glass-action" @click="pendingID = ''">{{ $t('common.clear') }}</button></header>
         <div class="filter-scroll">
           <div class="filter-group" role="group" :aria-label="$t('deck.searchIn')">
             <div v-for="folder in visibleFolders" :key="folder.id" class="folder-choice" :class="{ chosen: String(folder.id) === String(pendingID) }" :style="{ '--folder-depth': folder.depth }">

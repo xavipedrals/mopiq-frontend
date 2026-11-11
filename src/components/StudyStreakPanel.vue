@@ -6,9 +6,9 @@
   <Teleport to="body">
     <dialog ref="detail" class="streak-dialog" aria-labelledby="study-streak-title" @close="closeChildren">
       <header class="streak-header">
-        <button type="button" :aria-label="$t('common.close')" @click="detail.close()">×</button>
+        <button class="glass-action glass-action--icon" type="button" :aria-label="$t('common.close')" @click="detail.close()">×</button>
         <h2 id="study-streak-title">{{ $t('streak.title') }}</h2>
-        <button type="button" :aria-label="$t('streak.rules')" @click="rules.showModal()">ⓘ</button>
+        <button class="glass-action glass-action--icon" type="button" :aria-label="$t('streak.rules')" @click="rules.showModal()">ⓘ</button>
       </header>
       <div class="streak-body">
         <div v-if="streakFailed" class="streak-error" role="status">
@@ -64,7 +64,7 @@
     <dialog ref="freeze" class="streak-dialog freeze-dialog" aria-labelledby="freeze-title">
       <template v-if="state">
         <header class="streak-header freeze-header">
-          <button type="button" :aria-label="$t('common.close')" @click="freeze.close()">×</button>
+          <button class="glass-action glass-action--icon" type="button" :aria-label="$t('common.close')" @click="freeze.close()">×</button>
         </header>
         <div class="freeze-content">
           <div class="freeze-slots">
@@ -90,7 +90,7 @@
     <dialog ref="rules" class="streak-dialog rules-dialog" aria-labelledby="streak-rules-title">
       <header class="streak-header">
         <h2 id="streak-rules-title">{{ $t('streak.rules') }}</h2>
-        <button type="button" :aria-label="$t('common.close')" @click="rules.close()">×</button>
+        <button class="glass-action glass-action--icon" type="button" :aria-label="$t('common.close')" @click="rules.close()">×</button>
       </header>
       <p>{{ $t('streak.rulesBody') }}</p>
     </dialog>
@@ -180,7 +180,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.streak-entry, .streak-header button, .streak-month-title button, .streak-error button {
+.streak-entry, .streak-month-title button, .streak-error button {
   border: 0; background: none; color: var(--blue-button); min-width: 44px; min-height: 44px; cursor: pointer;
 }
 .streak-entry { display: inline-flex; align-items: center; gap: 5px; justify-content: center; padding: 0 10px; border-radius: 999px; background: #fef3c7; color: #92400e; font-weight: 650; }

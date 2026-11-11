@@ -12,7 +12,7 @@
       <section class="sheet">
         <header class="sheet-header">
           <h2 id="study-report-title">{{ $t('study.reportTitle') }}</h2>
-          <button type="button" class="sheet-close" :aria-label="$t('common.close')" @click="onCancel">×</button>
+          <button type="button" class="sheet-close glass-action glass-action--icon" :aria-label="$t('common.close')" @click="onCancel">×</button>
         </header>
         <form class="sheet-body" @submit.prevent="submit">
           <h3>{{ $t('study.reportReason') }}</h3>

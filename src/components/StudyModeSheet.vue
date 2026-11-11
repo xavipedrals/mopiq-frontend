@@ -13,7 +13,7 @@
       <section class="sheet">
         <header class="sheet-header">
           <h2 id="study-mode-title">{{ title }}</h2>
-          <button type="button" class="sheet-close" :aria-label="$t('common.close')" @click="onCancel">
+          <button type="button" class="sheet-close glass-action glass-action--icon" :aria-label="$t('common.close')" @click="onCancel">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>

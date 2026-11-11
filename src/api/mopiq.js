@@ -11,7 +11,9 @@ import { CARD_BROWSE_FIRST_PAGE, defaultCardBrowseQuery, toBrowseDeckCardsParams
 import { ankiDayEndExclusive, ankiDayStart, ankiDayString, studyDayWireFields, toIso } from '../study/ankiDay';
 import { parseDeckConfig } from '../study/deckConfig';
 import { mapDisplayProfileRow, mapProfileStatisticsRow, mergeHighestStats } from '../profile/mapProfile';
-import { getAvatarImageName, getDeckTopicByPostgresId } from '../utils';
+import { getAvatarImageName, getDeckTopicByPostgresId, getDisplayDeckTopic, isPersonalDeckTopic } from '../utils';
+import { hydratePersonalDeckTopics, savePersonalDeckTopic, supportsPersonalDeckTopics } from './personalDeckTopics';
+import { legacyTopicKey, isLegacyTopicKey } from '../study/personalDeckTopics';
 import { edgeFunctionUrl } from './functionsUrl';
 import { cacheDeck, cacheDeckList, clearDeckCache, orderByLastUsed, prependCachedDeck, removeCachedDeck } from './deckCache';
 import { emptyDeckCreatePayload } from './emptyDeck';
@@ -138,17 +140,22 @@ export async function fetchDeckList() {
     offset += page.length;
   } while (page.length >= PAGE_SIZE);
 
-  return cacheDeckList(orderByLastUsed(rows).map((row) => mapDeckListRow(row, supabaseUid)));
+  if (getCurrentUser()?.supabaseUid !== supabaseUid) throw new Error('Account changed');
+  const decks = orderByLastUsed(rows).map(row => mapDeckListRow(row, supabaseUid));
+  return cacheDeckList(await hydratePersonalDeckTopics(decks));
 }
 
 export async function fetchDeck(deckId) {
+  const owner = getCurrentUser()?.supabaseUid;
   const { data, error } = await supabase.rpc('get_user_deck', {
     p_deck_id: deckId,
   });
   throwIfError(error, 'Could not load this deck');
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) throw new Error('Deck not found');
-  return cacheDeck(mapUserDeckRow(row, getCurrentUser()?.supabaseUid));
+  if (getCurrentUser()?.supabaseUid !== owner) throw new Error('Account changed');
+  const [deck] = await hydratePersonalDeckTopics([mapUserDeckRow(row, owner)]);
+  return cacheDeck(deck);
 }
 
 export async function fetchStudyTimeSummary(deckId) {
@@ -372,6 +379,9 @@ export async function fetchSubdeckCardCounts(deckId) {
 }
 
 export async function saveDeckSettings(deck, settings) {
+  const topicChanged = typeof settings.topic === 'string';
+  const canWritePersonal = topicChanged && await supportsPersonalDeckTopics().catch(() => false);
+  if (topicChanged && !isLegacyTopicKey(settings.topic) && !canWritePersonal) throw new Error('Personal topics unavailable');
   const extra = applyDeckSettings(deck.extraConfig, {
     ...settings,
     expandPreset: settings.expandPreset !== false,
@@ -382,16 +392,34 @@ export async function saveDeckSettings(deck, settings) {
     firebaseId: recordId,
     extra_config: extra,
   };
-  if (settings.topic) payload.topic = settings.topic;
+  if (topicChanged) payload.topic = legacyTopicKey(settings.topic);
   if (typeof settings.name === 'string' && settings.name.trim()) {
     payload.name = settings.name.trim();
   }
   await invokeBulkSync([bulkOp(1, 'deck', 'update', recordId, payload)], 'Could not save settings');
+  if (topicChanged && canWritePersonal) {
+    const legacy = getDeckTopicByPostgresId(payload.topic);
+    try {
+      const updated = await savePersonalDeckTopic({ ...deck, legacyTopic: legacy, topic: legacy }, settings.topic);
+      cacheDeck({ ...updated, extraConfig: extra });
+    } catch (cause) {
+      // The bulk update succeeded. Keep the queued topic mutation and tell the
+      // caller about that partial success instead of reporting a generic failure.
+      throw Object.assign(new Error('Settings were saved, but the topic change could not sync. Reopen this deck to retry.'), {
+        code: 'topic_sync_pending', cause,
+      });
+    }
+  }
   return extra;
 }
 
 export async function createDeck({ name, topic }) {
-  const payload = emptyDeckCreatePayload({ name, topic });
+  const payload = emptyDeckCreatePayload({ name, topic: legacyTopicKey(topic) });
+  if (isPersonalDeckTopic(topic)) {
+    // iOS also records choices before a deck is registered. A failed create
+    // leaves harmless account metadata rather than losing the selected topic.
+    await savePersonalDeckTopic({ firebaseId: payload.id }, topic);
+  }
   const results = await invokeBulkSync(
     [bulkOp(1, 'deck', 'create', payload.id, payload)],
     'Could not create this deck',
@@ -421,6 +449,7 @@ export async function createDeck({ name, topic }) {
       config: parseDeckConfig({}),
     });
   }
+  if (isPersonalDeckTopic(topic)) deck = { ...deck, legacyTopic: getDeckTopicByPostgresId(payload.topic), personalTopicKey: topic, topic: getDisplayDeckTopic(topic) };
   return prependCachedDeck({
     ...deck,
     cardCount: deck.cardCount || 0,
@@ -602,14 +631,15 @@ async function uploadMagicSource(userId, file) {
 
 async function deckFromImport(started, { name, topic, existingDeckId }) {
   if (existingDeckId) return null;
+  let deck;
   try {
-    const deck = await fetchDeck(started.deckId);
-    return prependCachedDeck(deck);
+    deck = await fetchDeck(started.deckId);
   } catch {
-    return prependCachedDeck({
+    deck = {
       id: started.deckId,
+      firebaseId: started.firebaseId || '',
       name: name || 'New deck',
-      topic: getDeckTopicByPostgresId(topic || 'other'),
+      topic: getDeckTopicByPostgresId(legacyTopicKey(topic)),
       cardCount: Number(started.insertedCards) || 0,
       statsAvailable: true,
       newRemainingToday: 0,
@@ -619,8 +649,18 @@ async function deckFromImport(started, { name, topic, existingDeckId }) {
       canStudy: true,
       canEdit: true,
       canManage: true,
-    });
+    };
   }
+  if (isPersonalDeckTopic(topic)) {
+    // Keep new keys out of generation/public classification requests.
+    // Resolving firebaseId is required to match the iOS local deck identity.
+    if (!deck.firebaseId) {
+      throw new MagicImportError('Could not resolve this deck topic. Open the deck to choose its topic.', { deckId: started.deckId, jobId: started.jobId });
+    }
+    try { deck = await savePersonalDeckTopic(deck, topic); }
+    catch (error) { throw new MagicImportError(error.message || 'Could not save deck topic', { deckId: started.deckId, jobId: started.jobId }); }
+  }
+  return prependCachedDeck(deck);
 }
 
 export async function fetchMagicImportJob(jobId) {
@@ -643,8 +683,9 @@ export async function startMagicImport({
   generationInstructions = '',
   targetSubdeckId = null,
 } = {}) {
+  if (!deckId && isPersonalDeckTopic(topic) && !await supportsPersonalDeckTopics()) throw new Error('Personal topics unavailable');
   if (sharedGenerationEnabled && source !== 'anki') {
-    const started = await startSharedGeneration({ source, deckId, name, topic, text, file, pages, generationInstructions, targetSubdeckId });
+    const started = await startSharedGeneration({ source, deckId, name, topic: topic ? legacyTopicKey(topic) : '', text, file, pages, generationInstructions, targetSubdeckId });
     const deck = await deckFromImport(started, { name, topic, existingDeckId: deckId });
     return { ...started, deck };
   }
@@ -653,7 +694,7 @@ export async function startMagicImport({
   const preferredLanguage = getLocale() || 'en';
   const body = {
     name: String(name || '').trim(),
-    topic,
+    topic: topic ? legacyTopicKey(topic) : '',
     preferredLanguage,
   };
   if (deckId) body.deckVersionId = deckId;

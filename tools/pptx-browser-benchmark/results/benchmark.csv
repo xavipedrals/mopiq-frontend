@@ -1,0 +1,19 @@
+profile,sampleId,kind,slides,inputMB,successfulRuns,medianMs,maxTimerGapMs,maxLongTaskMs,maxJsHeapGrowthMB,maxArchiveReadMB,textKB
+"Chromium desktop","kurose-transport","downloaded",154,8.866433,3,1811.7000000178814,142.30000001192093,129,60.833674,2.297217,85.699
+"Chromium desktop","stanford-javascript-basics","downloaded",31,0.663368,3,115.90000000596046,26.30000001192093,0,7.770108,0.124854,16.044
+"Chromium desktop","auckland-python-basics","downloaded",26,0.577519,3,59.60000002384186,16.200000017881393,0,3.003106,0.054455,9.182
+"Chromium desktop","auckland-python-introduction","downloaded",32,9.576124,3,78,16.599999994039536,0,3.313446,0.078657,7.82
+"Chromium desktop","stress-300-text","synthetic",300,1.463974,3,1123.9000000059605,32.099999994039536,0,22.898985,1.087544,154.958
+"Chromium desktop","stress-300-image-heavy","synthetic",300,95.152282,3,521.9000000059605,16.900000005960464,0,35.447745,0.707842,72.464
+"WebKit desktop","kurose-transport","downloaded",154,8.866433,3,1625,68,null,null,2.297217,85.699
+"WebKit desktop","stanford-javascript-basics","downloaded",31,0.663368,3,171,21,null,null,0.124854,16.044
+"WebKit desktop","auckland-python-basics","downloaded",26,0.577519,3,99,17,null,null,0.054455,9.182
+"WebKit desktop","auckland-python-introduction","downloaded",32,9.576124,3,123,18,null,null,0.078657,7.82
+"WebKit desktop","stress-300-text","synthetic",300,1.463974,3,1556,25,null,null,1.087544,154.958
+"WebKit desktop","stress-300-image-heavy","synthetic",300,95.152282,3,914,21,null,null,0.707842,72.464
+"Chromium 6× CPU slowdown","kurose-transport","downloaded",154,8.866433,3,10788,808.7999999821186,797,53.950491,2.297217,85.699
+"Chromium 6× CPU slowdown","stanford-javascript-basics","downloaded",31,0.663368,3,630.7999999821186,93.5,80,7.799376,0.124854,16.044
+"Chromium 6× CPU slowdown","auckland-python-basics","downloaded",26,0.577519,3,272.89999997615814,21.19999998807907,0,3.551649,0.054455,9.182
+"Chromium 6× CPU slowdown","auckland-python-introduction","downloaded",32,9.576124,3,335.09999999403954,22.599999994039536,0,4.197953,0.078657,7.82
+"Chromium 6× CPU slowdown","stress-300-text","synthetic",300,1.463974,3,5906.5,101.19999998807907,87,23.043296,1.087544,154.958
+"Chromium 6× CPU slowdown","stress-300-image-heavy","synthetic",300,95.152282,3,2810.5,67.90000000596046,55,24.477689,0.707842,72.464

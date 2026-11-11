@@ -1,7 +1,7 @@
 <template>
   <div class="settings-screen">
     <div v-show="wide || !destination" class="settings-list">
-      <button type="button" class="crumb" @click="$emit('close')">
+      <button type="button" class="crumb glass-action" @click="$emit('close')">
         <TablerIcon name="chevronLeft" />
         {{ $t('nav.profile') }}
       </button>
@@ -42,7 +42,7 @@
 
     <Teleport :key="useInspector ? 'inspector' : 'inline'" to="#browse-inspector" :disabled="!useInspector">
       <div v-if="destination" class="settings-detail">
-        <button type="button" class="crumb" @click="back">
+        <button type="button" class="crumb glass-action" @click="back">
           <TablerIcon name="chevronLeft" />
           {{ destination === 'impersonate' ? $t('settings.sectionAdvanced') : $t('profile.settings') }}
         </button>

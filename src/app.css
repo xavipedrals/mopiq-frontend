@@ -361,3 +361,61 @@ html[dir="rtl"] body.app-shell .shell,
 html[dir="rtl"] body.app-shell .sheet,
 html[dir="rtl"] body.app-shell .menu-panel { text-align: start; }
 html[dir="rtl"] .language-trigger .chevron { margin-inline-start: auto; margin-inline-end: 0; }
+
+/* Shared iOS-style glass surfaces for app navigation actions. */
+body.app-shell :is(.glass-action, .mode-selector) {
+  --glass-action-fill: color-mix(in srgb, var(--card-bg) 78%, transparent);
+  --glass-action-border: color-mix(in srgb, var(--title) 12%, transparent);
+  background: var(--glass-action-fill);
+  border: 1px solid var(--glass-action-border);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 18%),
+    0 2px 8px color-mix(in srgb, var(--title) 7%, transparent);
+  backdrop-filter: blur(16px) saturate(1.35);
+  -webkit-backdrop-filter: blur(16px) saturate(1.35);
+}
+body.app-shell .glass-action {
+  box-sizing: border-box;
+  justify-self: start;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  color: var(--title);
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+  cursor: pointer;
+}
+body.app-shell .glass-action.glass-action--icon {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  flex: 0 0 40px;
+  padding: 0;
+}
+body.app-shell .glass-action.glass-action--icon > svg {
+  width: 20px;
+  height: 20px;
+}
+body.app-shell .glass-action.glass-action--accent {
+  --glass-action-fill: color-mix(in srgb, var(--blue-button) 12%, var(--card-bg));
+  --glass-action-border: color-mix(in srgb, var(--blue-button) 28%, transparent);
+  color: var(--blue-button);
+}
+body.app-shell :is(.glass-action, .mode-selector):is(:hover, [aria-expanded="true"], .on):not(:disabled) {
+  background: color-mix(in srgb, var(--blue-button) 8%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--blue-button) 30%, transparent);
+}
+body.app-shell :is(.glass-action, .mode-selector):focus-visible {
+  outline: 2px solid var(--blue-button);
+  outline-offset: 3px;
+}
+body.app-shell .glass-action:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

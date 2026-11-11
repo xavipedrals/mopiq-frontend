@@ -3,7 +3,7 @@
     <button
       ref="flagTrigger"
       type="button"
-      class="menu-btn flag-btn"
+      class="menu-btn flag-btn glass-action glass-action--icon"
       :class="{ flagged: selectedFlags.length }"
       :style="{ '--flag-color': selectedFlagColor }"
       :disabled="disabled || !canFlag"
@@ -18,7 +18,7 @@
     <button
       ref="trigger"
       type="button"
-      class="menu-btn more-btn"
+      class="menu-btn more-btn glass-action glass-action--icon"
       :disabled="disabled"
       :aria-label="$t('study.menu')"
       :aria-expanded="open ? 'true' : 'false'"
@@ -37,7 +37,7 @@
           :style="panelStyle"
         >
           <header v-if="panel !== 'root'" class="menu-header">
-            <button type="button" class="menu-back" :aria-label="$t('study.menuBack')" @click="panel = 'root'">
+            <button type="button" class="menu-back glass-action glass-action--icon" :aria-label="$t('study.menuBack')" @click="panel = 'root'">
               <StudyMenuIcon name="chevronLeft" />
             </button>
             <h2>{{ panelTitle }}</h2>
@@ -396,22 +396,12 @@ export default {
   width: 44px;
   height: 44px;
   margin: 0;
-  padding: 0 !important;
-  border: 0 !important;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  background: none !important;
+  background: none;
   color: var(--close-button);
   cursor: pointer;
-}
-.menu-btn.more-btn,
-.menu-btn.flag-btn {
-  background: var(--review-chrome-bg) !important;
-  box-shadow: var(--review-chrome-shadow);
-  color: var(--title);
-}
-.menu-btn.more-btn:hover:not(:disabled),
-.menu-btn.flag-btn:hover:not(:disabled) {
-  background: var(--inset-bg) !important;
 }
 .menu-btn :deep(.tabler-icon) {
   width: 24px;

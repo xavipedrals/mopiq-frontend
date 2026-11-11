@@ -5,7 +5,7 @@
         <h2 class="pdf-title">{{ $t('decks.pdfSelectTitle') }}</h2>
         <p class="pdf-sub">{{ subtitle }}</p>
       </div>
-      <button type="button" class="select-all" @click="$emit('toggle-all')">
+      <button type="button" class="select-all glass-action" @click="$emit('toggle-all')">
         {{ allSelected ? $t('decks.pdfClearAll') : $t('decks.pdfSelectAll') }}
       </button>
     </header>

@@ -9,22 +9,21 @@
       @keydown.esc="onCancel"
     >
       <header class="nav">
-          <button type="button" class="nav-text" :disabled="saving" @click="onCancel">
-            {{ $t('common.cancel') }}
+          <button type="button" class="nav-icon glass-action glass-action--icon" :aria-label="$t('common.close')" :disabled="saving" @click="onCancel">
+            <TablerIcon name="x" />
           </button>
           <h2 id="card-editor-title">{{ title }}</h2>
           <div class="nav-trailing">
             <button
               v-if="!lockReason"
               type="button"
-              class="nav-icon"
+              class="nav-icon glass-action glass-action--icon"
               :class="{ on: extraOpen }"
               :aria-label="$t('editor.more')"
               :aria-pressed="extraOpen"
               @click="extraOpen = !extraOpen"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="8.25" fill="none" stroke="currentColor" stroke-width="1.7"/>
                 <circle cx="8" cy="12" r="1.15" fill="currentColor"/>
                 <circle cx="12" cy="12" r="1.15" fill="currentColor"/>
                 <circle cx="16" cy="12" r="1.15" fill="currentColor"/>
@@ -33,7 +32,7 @@
             <button
               v-if="!lockReason"
               type="button"
-              class="nav-text save"
+              class="nav-text save glass-action glass-action--accent"
               :disabled="saving || contentPending"
               @click="save"
             >
@@ -162,7 +161,7 @@
                 </button>
                 <div class="tb-wrap">
                   <button type="button" class="tb" :title="$t('editor.heading')" :aria-expanded="headingOpen" @click.stop="toggleHeadingMenu">
-                    <TablerIcon name="heading" />
+                    <TablerIcon name="textSize" />
                   </button>
                 </div>
               </div>
@@ -181,7 +180,7 @@
                   <TablerIcon name="strikethrough" />
                 </button>
                 <button type="button" class="tb" :class="{ on: isActive('cloze') }" :title="$t('editor.cloze')" @click="toggleCloze">
-                  <TablerIcon name="brackets" />
+                  <TablerIcon name="braces" />
                 </button>
               </div>
               <span class="tb-sep"></span>
@@ -284,7 +283,7 @@
       <button type="button" class="overlay-backdrop" :aria-label="$t('common.close')" @click="reverseInfoOpen = false"></button>
       <section class="sheet reverse-sheet" role="dialog" aria-modal="true" :aria-labelledby="'reverse-info-title'">
         <header class="sheet-nav">
-          <button type="button" class="close-circle" :aria-label="$t('common.close')" @click="reverseInfoOpen = false">×</button>
+          <button type="button" class="close-circle glass-action glass-action--icon" :aria-label="$t('common.close')" @click="reverseInfoOpen = false">×</button>
           <h3 id="reverse-info-title">{{ $t('editor.reverse') }}</h3>
           <span class="sheet-spacer"></span>
         </header>
@@ -311,8 +310,9 @@
       <button type="button" class="overlay-backdrop" :aria-label="$t('common.close')" @click="closeImport"></button>
       <section class="sheet import-sheet" :class="{ 'pdf-pages': importLayout === 'pdf-pages' }" role="dialog" aria-modal="true" :aria-labelledby="'import-title'">
         <header class="sheet-nav">
-          <button type="button" class="nav-text" :disabled="importing" @click="importBack">
-            {{ importPage === 'menu' ? $t('common.cancel') : $t('common.back') }}
+          <button type="button" class="nav-text glass-action" :class="{ 'glass-action--icon': importPage === 'menu' }" :aria-label="$t(importPage === 'menu' ? 'common.close' : 'common.back')" :disabled="importing" @click="importBack">
+            <TablerIcon v-if="importPage === 'menu'" name="x" />
+            <template v-else>{{ $t('common.back') }}</template>
           </button>
           <h3 id="import-title">{{ $t('editor.addMultiple') }}</h3>
           <span class="sheet-spacer"></span>
@@ -381,7 +381,7 @@
       <button type="button" class="overlay-backdrop" :aria-label="$t('common.close')" @click="closeTts"></button>
       <section class="sheet tts-sheet" role="dialog" aria-modal="true" :aria-labelledby="'tts-title'">
         <header class="sheet-nav">
-          <button type="button" class="close-circle" :aria-label="$t('common.close')" :disabled="ttsBusy" @click="closeTts">×</button>
+          <button type="button" class="close-circle glass-action glass-action--icon" :aria-label="$t('common.close')" :disabled="ttsBusy" @click="closeTts">×</button>
           <h3 id="tts-title">{{ $t('editor.ttsTitle') }}</h3>
           <span class="sheet-spacer"></span>
         </header>
@@ -1283,7 +1283,7 @@ export default {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
 }
 .nav-icon {
   width: 36px;
@@ -1706,8 +1706,9 @@ export default {
 .import-sheet.pdf-pages { width: min(920px, 100%); }
 .sheet-nav {
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  grid-template-columns: minmax(40px, max-content) minmax(0, 1fr) 40px;
   align-items: center;
+  gap: 8px;
   padding: 10px 12px 0;
 }
 .sheet-nav h3 {
@@ -1865,6 +1866,9 @@ export default {
   gap: 10px;
 }
 .error { color: var(--error); }
+@media (max-width: 600px) {
+  .nav { grid-template-columns: auto minmax(0, 1fr) auto; }
+}
 
 html[data-theme="dark"] .creator-root { background: #1E293B; }
 html[data-theme="dark"] .side-label { color: #94A3B8; }

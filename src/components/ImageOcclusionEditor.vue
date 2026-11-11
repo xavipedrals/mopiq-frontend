@@ -6,26 +6,26 @@
     :aria-labelledby="'occlusion-title'"
     @keydown.esc.stop="onEscape"
   >
-    <header class="nav">
-      <button type="button" class="nav-text" :disabled="saving" @click="closeEditor">
-        {{ $t('common.cancel') }}
+    <header class="nav" :style="{ '--nav-side-width': headerSideWidth + 'px' }">
+      <button ref="cancelButton" type="button" class="nav-text nav-cancel glass-action glass-action--icon" :aria-label="$t('common.close')" :disabled="saving" @click="closeEditor">
+        <TablerIcon name="x" />
       </button>
       <h2 id="occlusion-title">{{ $t('editor.occlusion') }}</h2>
       <div class="nav-trailing">
         <button
+          ref="modeSelector"
           type="button"
-          class="nav-icon"
-          :aria-label="$t('editor.occlusionModes')"
+          class="mode-selector"
+          aria-haspopup="dialog"
+          :aria-expanded="modeOpen"
           :disabled="saving || detecting"
-          @click="modeOpen = true"
+          @click="openModeSelector"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="6" cy="12" r="1.4" fill="currentColor"/>
-            <circle cx="12" cy="12" r="1.4" fill="currentColor"/>
-            <circle cx="18" cy="12" r="1.4" fill="currentColor"/>
-          </svg>
+          <TablerIcon name="layersIntersect" class="mode-selector-icon" />
+          <span>{{ $t(mode === 'hideAll' ? 'editor.occlusionHideAll' : 'editor.occlusionHideOne') }}</span>
+          <TablerIcon name="chevronRight" class="mode-selector-chevron" />
         </button>
-        <button type="button" class="nav-text save" :disabled="saving || detecting" @click="requestSave">
+        <button ref="saveButton" type="button" class="nav-text save glass-action glass-action--accent" :disabled="saving || detecting" @click="requestSave">
           {{ saving ? $t('common.loading') : $t('common.save') }}
         </button>
       </div>
@@ -101,42 +101,47 @@
       <p>{{ $t('common.loading') }}</p>
     </div>
 
-    <div v-if="modeOpen" class="sheet-back" @click.self="modeOpen = false">
-      <section class="sheet" role="dialog" :aria-label="$t('editor.occlusionModes')">
+    <dialog
+      v-if="modeOpen"
+      ref="modeDialog"
+      class="sheet"
+      :aria-label="$t('editor.occlusionModes')"
+      @cancel.prevent="closeModeSelector"
+      @keydown.esc.stop.prevent="closeModeSelector"
+      @click.self="closeModeSelector"
+    >
+      <div class="sheet-inner">
         <header class="sheet-nav">
-          <button type="button" class="nav-icon" :aria-label="$t('common.cancel')" @click="modeOpen = false">
+          <button type="button" class="nav-icon glass-action glass-action--icon" :aria-label="$t('common.close')" @click="closeModeSelector">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M8 8l8 8M16 8l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
           </button>
           <h3>{{ $t('editor.occlusionModes') }}</h3>
-          <button type="button" class="nav-icon" :aria-label="$t('common.ok')" @click="modeOpen = false">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6.5 12.5l3.2 3.2 7.8-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <button type="button" class="nav-icon confirm-mode glass-action glass-action--icon glass-action--accent" :aria-label="$t('common.ok')" @click="applyModeSelector">
+            <TablerIcon name="check" />
           </button>
         </header>
-        <button
-          type="button"
-          class="choice"
-          :class="{ on: mode === 'hideAll' }"
-          @click="mode = 'hideAll'"
-        >
-          <span class="choice-kicker">{{ $t('editor.occlusionDefault') }}</span>
-          <span class="choice-title">{{ $t('editor.occlusionHideAll') }}</span>
-          <span class="choice-body">{{ $t('editor.occlusionHideAllBody') }}</span>
-        </button>
-        <button
-          type="button"
-          class="choice"
-          :class="{ on: mode === 'hideOne' }"
-          @click="mode = 'hideOne'"
-        >
-          <span class="choice-title">{{ $t('editor.occlusionHideOne') }}</span>
-          <span class="choice-body">{{ $t('editor.occlusionHideOneBody') }}</span>
-        </button>
-      </section>
-    </div>
+        <div class="mode-choices" role="radiogroup" :aria-label="$t('editor.occlusionModes')">
+          <label v-for="option in modeOptions" :key="option.value" class="choice" :class="{ on: pendingMode === option.value }">
+            <input
+              v-model="pendingMode"
+              type="radio"
+              name="occlusion-mode"
+              :value="option.value"
+              :aria-label="$t(option.title)"
+            >
+            <span class="choice-image">
+              <img :src="option.image" alt="" width="636" height="424">
+              <span v-if="pendingMode === option.value" class="choice-check" aria-hidden="true"><TablerIcon name="check" /></span>
+            </span>
+            <span v-if="option.value === 'hideAll'" class="choice-kicker">{{ $t('editor.occlusionDefault') }}</span>
+            <span class="choice-title">{{ $t(option.title) }}</span>
+            <span class="choice-body">{{ $t(option.body) }}</span>
+          </label>
+        </div>
+      </div>
+    </dialog>
   </div>
 </template>
 
@@ -144,6 +149,8 @@
 import { getLocale } from '../i18n';
 import { detectOcclusionText } from '../study/imageOcclusionOcr';
 import TablerIcon from './TablerIcon.vue';
+import hideAllExample from '../assets/image-occlusion/hide-all.png';
+import hideOneExample from '../assets/image-occlusion/hide-one.png';
 
 const HANDLE_PX = 16;
 const ROTATE_OFFSET = 28;
@@ -272,7 +279,13 @@ export default {
       draft: null,
       gesture: null,
       mode: 'hideAll',
+      pendingMode: 'hideAll',
       modeOpen: false,
+      headerSideWidth: 44,
+      modeOptions: [
+        { value: 'hideAll', title: 'editor.occlusionHideAll', body: 'editor.occlusionHideAllBody', image: hideAllExample },
+        { value: 'hideOne', title: 'editor.occlusionHideOne', body: 'editor.occlusionHideOneBody', image: hideOneExample },
+      ],
       localError: '',
       imageSize: null,
       detectionController: null,
@@ -316,12 +329,22 @@ export default {
     },
   },
   mounted() {
+    this.headerObserver = new ResizeObserver(() => {
+      this.headerSideWidth = Math.ceil(Math.max(
+        44,
+        this.$refs.cancelButton.getBoundingClientRect().width,
+        this.$refs.saveButton.getBoundingClientRect().width,
+      ));
+    });
+    this.headerObserver.observe(this.$refs.cancelButton);
+    this.headerObserver.observe(this.$refs.saveButton);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
     window.addEventListener('pointercancel', this.onPointerUp);
     window.addEventListener('keydown', this.onKeyDown);
   },
   beforeUnmount() {
+    this.headerObserver.disconnect();
     this.cancelDetection();
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
@@ -329,6 +352,24 @@ export default {
     window.removeEventListener('keydown', this.onKeyDown);
   },
   methods: {
+    openModeSelector() {
+      if (this.saving || this.detecting) return;
+      this.pendingMode = this.mode;
+      this.modeOpen = true;
+      this.$nextTick(() => {
+        this.$refs.modeDialog.showModal();
+        this.$refs.modeDialog.querySelector('input:checked')?.focus();
+      });
+    },
+    closeModeSelector() {
+      this.$refs.modeDialog?.close();
+      this.modeOpen = false;
+      this.$nextTick(() => this.$refs.modeSelector?.focus());
+    },
+    applyModeSelector() {
+      this.mode = this.pendingMode;
+      this.closeModeSelector();
+    },
     onImageLoad({ currentTarget }) {
       const { naturalWidth, naturalHeight } = currentTarget;
       if (naturalWidth && naturalHeight) this.imageSize = { width: naturalWidth, height: naturalHeight };
@@ -546,7 +587,7 @@ export default {
     },
     onEscape() {
       if (this.modeOpen) {
-        this.modeOpen = false;
+        this.closeModeSelector();
         return;
       }
       if (this.detecting) this.cancelDetection();
@@ -611,9 +652,40 @@ export default {
   cursor: pointer;
 }
 .nav-text { font-size: 17px; padding: 8px 12px; text-align: left; }
+.nav-cancel { justify-self: start; }
 .nav-text.save { font-weight: 650; text-align: right; }
 .nav-text:disabled, .nav-icon:disabled { opacity: 0.45; cursor: default; }
-.nav-trailing { display: flex; justify-content: flex-end; align-items: center; }
+.nav-trailing { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+.mode-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--blue-button, #0a7aff) 18%, var(--card-bg, #fff));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg, #fff) 80%, var(--page-bg, #f8fafc));
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--title, #1e293d) 5%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  text-align: start;
+}
+.mode-selector:hover:not(:disabled), .mode-selector[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--blue-button, #0a7aff) 45%, var(--card-bg, #fff));
+  background: color-mix(in srgb, var(--blue-button, #0a7aff) 6%, var(--card-bg, #fff));
+}
+.mode-selector:focus-visible { outline: 2px solid var(--blue-button, #0a7aff); outline-offset: 3px; }
+.mode-selector:disabled { opacity: 0.45; cursor: default; }
+.mode-selector .mode-selector-icon { width: 18px; height: 18px; color: var(--blue-button, #0a7aff); }
+.mode-selector .mode-selector-chevron { width: 14px; height: 14px; opacity: 0.65; transform: rotate(90deg); }
+.mode-selector[aria-expanded="true"] .mode-selector-chevron { transform: rotate(-90deg); }
 .nav-icon {
   width: 36px;
   height: 36px;
@@ -832,49 +904,128 @@ export default {
   .saving-spin, .scan::after { animation: none; }
 }
 @keyframes io-spin { to { transform: rotate(360deg); } }
-.sheet-back {
-  position: fixed;
-  inset: 0;
-  z-index: 2;
-  background: rgba(15, 23, 42, 0.35);
-  display: grid;
-  align-items: end;
-}
 .sheet {
-  width: min(520px, 100%);
-  margin: 0 auto;
+  box-sizing: border-box;
+  width: min(840px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  border: 0;
+  margin: auto;
+  padding: 0;
+  border-radius: 22px;
   background: var(--card-bg, #fff);
-  border-radius: 18px 18px 0 0;
-  padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
+  color: inherit;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.3);
+  overflow: hidden;
+}
+.sheet::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(3px);
+}
+.sheet-inner {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  max-height: inherit;
 }
 .sheet-nav {
   display: grid;
-  grid-template-columns: 36px 1fr auto;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
   align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  flex: 0 0 auto;
+}
+.confirm-mode {
+  border-radius: 50%;
+}
+.mode-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  overflow-y: auto;
+  padding: 4px 20px 24px;
 }
 .choice {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  text-align: left;
-  border: 0;
-  border-radius: 16px;
+  gap: 10px;
+  text-align: start;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 20px;
   padding: 16px;
-  background: var(--page-bg, #f8fafc);
+  background: var(--card-bg, #fff);
   color: inherit;
   cursor: pointer;
 }
-.choice.on { outline: 2px solid var(--blue-button, #0a7aff); }
+.choice.on {
+  border-color: var(--blue-button, #0a7aff);
+  box-shadow: inset 0 0 0 1px var(--blue-button, #0a7aff);
+  background: color-mix(in srgb, var(--blue-button, #0a7aff) 7%, var(--card-bg, #fff));
+}
+.choice:focus-within { outline: 2px solid var(--blue-button, #0a7aff); outline-offset: 3px; }
+.choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.choice-image {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 12px;
+  background: #fff;
+  margin-top: 16px;
+}
+.choice-image img { display: block; width: 100%; height: auto; }
+.choice-check {
+  position: absolute;
+  bottom: 9px;
+  inset-inline-end: 9px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: var(--blue-button, #0a7aff);
+  color: var(--button-text, #fff);
+}
+.choice-check svg { width: 20px; height: 20px; }
 .choice-kicker {
+  position: absolute;
+  top: 9px;
+  inset-inline-end: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--blue-button, #0a7aff);
+  background: var(--blue-button, #0a7aff);
+  color: var(--button-text, #fff);
 }
-.choice-title { font-size: 17px; font-weight: 650; }
-.choice-body { font-size: 14px; line-height: 1.35; opacity: 0.8; }
+.choice-title { font-size: 18px; font-weight: 650; }
+.choice-body { font-size: 15px; line-height: 1.5; opacity: 0.8; }
+@media (max-width: 760px) {
+  .nav {
+    grid-template-columns: var(--nav-side-width) minmax(0, 1fr) var(--nav-side-width);
+    gap: 6px;
+    padding-inline: 8px;
+  }
+  .nav h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .nav-trailing { display: contents; }
+  .nav-cancel { grid-column: 1; justify-self: start; }
+  .mode-selector { grid-column: 2; justify-self: center; max-width: 100%; }
+  .nav .save { grid-column: 3; justify-self: end; padding-inline: 8px; }
+}
+@media (max-width: 480px) {
+  .nav .nav-cancel { display: grid; place-items: center; width: 44px; min-height: 44px; padding: 0; }
+  .mode-selector { gap: 6px; padding: 6px 10px; font-size: 13px; }
+  .nav .save { font-size: 15px; min-height: 44px; }
+}
+@media (max-width: 600px) {
+  .mode-choices { grid-template-columns: minmax(0, 1fr); }
+}
 </style>

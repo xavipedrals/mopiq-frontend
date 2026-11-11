@@ -4,9 +4,9 @@
       <button type="button" class="filter-backdrop" :disabled="starting" :aria-label="$t('common.close')" @click="dismiss"></button>
       <section class="filter-sheet">
         <header class="filter-nav">
-          <button v-if="option" type="button" class="filter-nav-action" :disabled="starting" @click="back"><StudyMenuIcon name="chevronLeft" aria-hidden="true"/>{{ $t('common.back') }}</button><span v-else></span>
+          <button v-if="option" type="button" class="filter-nav-action glass-action" :disabled="starting" @click="back"><StudyMenuIcon name="chevronLeft" aria-hidden="true"/>{{ $t('common.back') }}</button><span v-else></span>
           <h2 id="custom-study-title">{{ $t(option ? `customStudy.${option}` : 'customStudy.title') }}</h2>
-          <button type="button" class="filter-nav-action" :disabled="starting" @click="dismiss">{{ $t('common.close') }}</button>
+          <button type="button" class="filter-nav-action glass-action glass-action--icon" :aria-label="$t('common.close')" :disabled="starting" @click="dismiss"><StudyMenuIcon name="x" aria-hidden="true"/></button>
         </header>
         <div v-if="!option" class="filter-scroll option-list">
           <div class="focus-copy"><h3>{{ $t('customStudy.focusTitle') }}</h3><p>{{ $t('customStudy.intro') }}</p></div>

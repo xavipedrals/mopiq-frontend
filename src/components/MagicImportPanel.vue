@@ -1,6 +1,14 @@
 <template>
   <form class="magic-form" @submit.prevent="submit">
-    <div v-if="pdfBusy" class="pdf-wait" aria-live="polite" aria-busy="true">
+    <ImportPreparation
+      v-if="officePhase"
+      :file-name="file?.name || ''"
+      :current="officeCurrent"
+      :total="officeTotal"
+      :starting="officePhase === 'starting'"
+      :source="source"
+    />
+    <div v-else-if="pdfBusy" class="pdf-wait" aria-live="polite" aria-busy="true">
       <span class="pdf-spin" aria-hidden="true"></span>
       <p>{{ pdfPhase === 'uploading' ? $t('decks.pdfUploading') : $t('decks.pdfOpening') }}</p>
     </div>
@@ -146,6 +154,8 @@ import { fetchDeck, fetchMagicImportJob, startMagicImport } from '../api/mopiq';
 import DeckTopicsPicker from './DeckTopicsPicker.vue';
 import PdfPageSelector from './PdfPageSelector.vue';
 import GenerationFocusControl from './GenerationFocusControl.vue';
+import ImportPreparation from './ImportPreparation.vue';
+import { preparedOfficeSubmission } from '../study/officeSubmission';
 import { getLocale } from '../i18n';
 import { extractNotePhotoText, MAX_NOTE_PHOTOS } from '../study/notePhotoOcr';
 import { loadPdfPreviews } from '../study/pdfDocument';
@@ -200,11 +210,19 @@ const ERROR_KEYS = {
   pages: 'decks.pdfInvalid',
   pdf_invalid: 'decks.pdfInvalid',
   too_many_pages: 'decks.pdfTooManyPages',
+  docx_invalid: 'decks.wordInvalid',
+  docx_empty: 'decks.wordEmpty',
+  docx_too_short: 'decks.wordTooShort',
+  docx_too_long: 'decks.wordTooLong',
+  pptx_invalid: 'decks.pptInvalid',
+  pptx_empty: 'decks.pptEmpty',
+  pptx_too_short: 'decks.pptTooShort',
+  pptx_too_long: 'decks.pptTooLong',
 };
 
 export default {
   name: 'MagicImportPanel',
-  components: { DeckTopicsPicker, PdfPageSelector, GenerationFocusControl },
+  components: { DeckTopicsPicker, PdfPageSelector, GenerationFocusControl, ImportPreparation },
   props: {
     source: { type: String, required: true },
     deckId: { type: String, default: '' },
@@ -237,9 +255,14 @@ export default {
       pdfPages: [],
       pdfPageSelection: [],
       pdfRenderToken: 0,
+      officePhase: '',
+      officeCurrent: 0,
+      officeTotal: 0,
+      officeController: null,
     };
   },
   computed: {
+    isOfficeSource() { return this.source === 'powerpoint' || this.source === 'word'; },
     sourceMeta() {
       return MAGIC_SOURCES.find((item) => item.id === this.source) || MAGIC_SOURCES[0];
     },
@@ -297,6 +320,7 @@ export default {
     },
   },
   beforeUnmount() {
+    this.officeController?.abort();
     this.pdfRenderToken += 1;
     this.revokePdfThumbnails();
     this.revokePhotoUrls();
@@ -498,6 +522,40 @@ export default {
       this.$emit('submitted');
       return true;
     },
+    async prepareOfficeFile(payload) {
+      const controller = new AbortController();
+      this.officeController = controller;
+      const owner = getCurrentUser()?.supabaseUid;
+      this.officeCurrent = 0;
+      this.officeTotal = 0;
+      this.officePhase = 'opening';
+      this.setBusy(true);
+      // Let the preparation screen paint before loading the parser or opening XML.
+      await this.$nextTick();
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      try {
+        const extract = this.source === 'word'
+          ? (await import('../study/wordImport')).extractWord
+          : (await import('../study/powerpointImport')).extractPowerPoint;
+        const result = await extract(payload.file, {
+          signal: controller.signal,
+          onProgress: (current, total) => {
+            this.officePhase = 'reading';
+            this.officeCurrent = current;
+            this.officeTotal = total;
+          },
+        });
+        controller.signal.throwIfAborted();
+        // Account changes must not send a previous account's selected source.
+        if (owner !== getCurrentUser()?.supabaseUid) throw new DOMException('Import cancelled', 'AbortError');
+        const prepared = preparedOfficeSubmission(payload, result.text, sharedGenerationEnabled);
+        this.officePhase = 'starting';
+        return prepared;
+      } catch (error) {
+        if (error.name === 'AbortError' || ['file_type', 'file_too_large', 'pptx_empty', 'pptx_too_short', 'pptx_too_long', 'docx_empty', 'docx_too_short', 'docx_too_long'].includes(error.code)) throw error;
+        throw Object.assign(new Error(this.$t(this.source === 'word' ? 'decks.wordInvalid' : 'decks.pptInvalid')), { code: this.source === 'word' ? 'docx_invalid' : 'pptx_invalid' });
+      }
+    },
     async submitPhotos() {
       if (this.busy || this.photos.length === 0) {
         this.formError = this.$t('decks.photoNone');
@@ -575,7 +633,7 @@ export default {
         return;
       }
       this.formError = '';
-      const payload = {
+      let payload = {
         source: this.source,
         deckId: this.deckId,
         targetSubdeckId: this.targetSubdeckId,
@@ -586,6 +644,17 @@ export default {
         pages: usesPdfPagePicker(this.source) ? sortedPdfPages(this.pdfPageSelection) : null,
         generationInstructions: this.generationInstructions,
       };
+      if (this.isOfficeSource) {
+        try {
+          payload = await this.prepareOfficeFile(payload);
+        } catch (error) {
+          this.officePhase = '';
+          this.starting = false;
+          this.setBusy(false);
+          if (error.name !== 'AbortError') this.formError = this.messageFor(error);
+          return;
+        }
+      }
       const start = async () => {
         if (payload.source !== 'pdf') return startMagicImport(payload);
         const owner = getCurrentUser()?.supabaseUid;
@@ -596,6 +665,11 @@ export default {
       };
       if (this.backgroundExistingDeck && this.deckId) {
         if (!this.submitInBackground(start) && this.pdfPhase === 'uploading') this.pdfPhase = 'pages';
+        if (this.isOfficeSource) {
+          this.officePhase = '';
+          this.starting = false;
+          this.setBusy(false);
+        }
         return;
       }
       this.setBusy(true);
@@ -610,7 +684,7 @@ export default {
           this.$emit('done', deck);
           return;
         }
-        if ((sharedGenerationEnabled && started.jobId) || backgroundsPromptDeck({
+        if ((sharedGenerationEnabled && started.jobId) || (this.isOfficeSource && started.jobId && !this.deckId) || backgroundsPromptDeck({
           source: this.source,
           deckId: this.deckId,
           jobId: started.jobId,
@@ -632,6 +706,7 @@ export default {
         this.formError = this.messageFor(error);
         if (error?.deckId) this.$emit('queued', { id: error.deckId });
       } finally {
+        this.officePhase = '';
         this.starting = false;
         this.setBusy(false);
         if (this.pdfPhase === 'uploading') {

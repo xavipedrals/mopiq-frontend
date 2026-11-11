@@ -4,7 +4,7 @@
       <button type="button" class="ask-ai-backdrop" :aria-label="$t('askAi.close')" @click="close"></button>
       <section class="ask-ai-sheet" role="dialog" aria-modal="true" aria-labelledby="ask-ai-title">
         <header class="ask-ai-header">
-          <button type="button" class="ask-ai-close" :aria-label="$t('common.close')" @click="close">×</button>
+          <button type="button" class="ask-ai-close glass-action glass-action--icon" :aria-label="$t('common.close')" @click="close">×</button>
           <h2 id="ask-ai-title">{{ $t('askAi.title') }}</h2>
           <span class="ask-ai-header-spacer"></span>
         </header>
@@ -308,11 +308,11 @@ export default {
   height: 36px;
   border: 0;
   border-radius: 50%;
-  background: var(--inset-bg) !important;
-  color: var(--title) !important;
+  background: var(--inset-bg);
+  color: var(--title);
   font-size: 1.4rem;
   line-height: 1;
-  padding: 0 !important;
+  padding: 0;
 }
 .ask-ai-messages {
   flex: 1;

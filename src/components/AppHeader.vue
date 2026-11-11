@@ -5,9 +5,9 @@
       {{ $t('common.brand') }}
     </router-link>
     <nav class="nav">
-      <router-link to="/decks">{{ $t('nav.myDecks') }}</router-link>
-      <router-link to="/profile">{{ $t('nav.profile') }}</router-link>
-      <a :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.getTheApp') }}</a>
+      <router-link class="glass-action" to="/decks">{{ $t('nav.myDecks') }}</router-link>
+      <router-link class="glass-action" to="/profile">{{ $t('nav.profile') }}</router-link>
+      <a class="glass-action" :href="storeUrl" target="_blank" rel="noopener">{{ $t('common.getTheApp') }}</a>
     </nav>
   </header>
 </template>
@@ -51,6 +51,7 @@ export default {
   flex-wrap: wrap;
 }
 .nav a {
+  display: inline-flex;
   color: var(--text);
   text-decoration: none;
   font-size: 0.95rem;

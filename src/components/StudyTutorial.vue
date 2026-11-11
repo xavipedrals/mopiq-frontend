@@ -13,7 +13,7 @@
       <section class="tutorial-sheet">
         <header class="tutorial-utility">
           <span>{{ $t('tutorial.practice') }}</span>
-          <button type="button" @click="$emit('done')">{{ $t('tutorial.skip') }}</button>
+          <button class="glass-action" type="button" @click="$emit('done')">{{ $t('tutorial.skip') }}</button>
         </header>
 
         <div class="tutorial-dots" role="progressbar" :aria-label="$t('tutorial.practice')" :aria-valuenow="step + 1" aria-valuemin="1" aria-valuemax="3">
@@ -167,7 +167,7 @@ export default {
   gap: 24px;
 }
 .tutorial-utility { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 13px; }
-.tutorial-utility button { min-height: 36px; border: 0; padding: 6px 8px; background: transparent; color: var(--blue-button); font: inherit; cursor: pointer; }
+.tutorial-utility button { font: inherit; }
 .tutorial-dots { display: flex; gap: 6px; }
 .tutorial-dots span { height: 4px; flex: 1; border-radius: 99px; background: color-mix(in srgb, var(--text-secondary) 24%, transparent); }
 .tutorial-dots .on { background: var(--blue-button); }

@@ -3,7 +3,7 @@
       <SharedGenerationStatus :deck-id="$route.params.deckId" :inline-job-id="inlineGenerationJob?.jobId" @committed="onGenerationCommitted" />
       <div v-if="deckGeneration" class="detail generation-hold">
         <div class="topbar">
-          <router-link :to="listTo" class="back">
+          <router-link :to="listTo" class="back glass-action">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -13,7 +13,7 @@
             <button
               v-if="deck?.canManage"
               type="button"
-              class="tool"
+              class="tool glass-action glass-action--icon"
               :aria-label="$t('deck.settings')"
               @click="settingsOpen = true"
             >
@@ -36,7 +36,7 @@
       <p v-else-if="error" class="error">{{ error }}</p>
       <div v-else class="detail" :aria-busy="pending">
         <div class="topbar">
-          <router-link :to="listTo" class="back">
+          <router-link :to="listTo" class="back glass-action">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -46,7 +46,7 @@
             <button
               v-if="deck?.canManage"
               type="button"
-              class="tool"
+              class="tool glass-action glass-action--icon"
               :aria-label="$t('deck.settings')"
               @click="settingsOpen = true"
             >
@@ -55,7 +55,7 @@
             <button
               v-if="deck?.canEdit"
               type="button"
-              class="tool add"
+              class="tool add glass-action"
               @click="openAddCard"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1427,13 +1427,15 @@ export default {
       this.addingCard = false;
       if (this.inspectorMode === 'edit') this.closeInspector();
     },
-    onSettingsSaved({ extraConfig, config, name, topic }) {
+    onSettingsSaved({ extraConfig, config, name, topic, personalTopicKey, legacyTopic }) {
       this.deck = cacheDeck({
         ...this.deck,
         extraConfig,
         config,
         name,
         topic,
+        personalTopicKey,
+        legacyTopic,
       });
       this.settingsOpen = false;
       this.statsPending = true;

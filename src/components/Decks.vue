@@ -13,7 +13,7 @@
         <header class="sheet-header">
           <button
             type="button"
-            class="sheet-nav"
+            class="sheet-nav glass-action glass-action--icon"
             :aria-label="isRootPage ? $t('common.close') : $t('common.back')"
             :disabled="saving"
             @click="onNav"
@@ -50,7 +50,7 @@
             </button>
           </div>
 
-          <form v-else-if="page === 'setName'" class="step" @submit.prevent="submitName">
+          <form v-else-if="page === 'setName'" class="step name-step" @submit.prevent="submitName">
             <h2 id="add-deck-name-title" class="page-title">{{ $t('decks.setNameTitle') }}</h2>
             <p class="page-body">{{ $t('decks.setNameBody') }}</p>
             <label class="field">
@@ -64,9 +64,14 @@
                 :disabled="saving"
               >
             </label>
+            <button type="button" class="name-topic-row" :disabled="saving" @click="openTopicPicker">
+              <AutomaticTopicTile :topic="rowTopic" :working="automaticTopic && topicSuggestion.phase === 'reading'" />
+              <span class="name-topic-copy"><span>{{ $t('decks.topicPrefix') }} <strong>{{ rowTopic ? $topic(rowTopic) : $t('decks.topicAuto') }}</strong></span><small v-if="automaticTopic" role="status">{{ rowHelp }}</small></span>
+              <TablerIcon name="chevronRight" />
+            </button>
             <p v-if="formError" class="form-error">{{ formError }}</p>
             <button type="submit" class="primary-btn" :disabled="saving">
-              {{ $t('decks.continue') }}
+              {{ saving ? $t('common.loading') : $t('decks.continue') }}
             </button>
           </form>
 
@@ -75,7 +80,9 @@
             <p class="page-body">{{ $t('decks.selectTagBody') }}</p>
             <div class="topic-picker">
               <DeckTopicsPicker
-                v-model="topicId"
+                v-model="topicDraft"
+                allow-automatic
+                :suggestion="topicSuggestion"
                 :disabled="saving"
                 labelled-by="add-deck-topic-title"
               />
@@ -177,6 +184,12 @@
 </template>
 
 <script>
+import { classifyDeckTopic } from '../api/deckTopicSuggestion';
+import { AUTOMATIC_TOPIC, createTopicSuggestionModel } from '../study/deckTopicSuggestion';
+import { getCurrentUser } from '../auth/session';
+import AutomaticTopicTile from './AutomaticTopicTile.vue';
+import TablerIcon from './TablerIcon.vue';
+import { getDisplayDeckTopic } from '../utils';
 import { trackProductEvent } from '../analytics';
 import { createDeck, createDeckFromSpreadsheet } from '../api/mopiq';
 import { MAX_DECK_NAME_LENGTH } from '../api/emptyDeck';
@@ -205,7 +218,7 @@ const MAGIC_COLORS = [
 
 export default {
   name: 'CreateDeckSheet',
-  components: { DeckTopicsPicker, MagicImportPanel },
+  components: { DeckTopicsPicker, MagicImportPanel, AutomaticTopicTile, TablerIcon },
   props: {
     open: { type: Boolean, default: false },
   },
@@ -216,7 +229,9 @@ export default {
       pages: ['options'],
       topicPurpose: 'create',
       name: '',
-      topicId: 'other',
+      topicId: AUTOMATIC_TOPIC,
+      topicDraft: AUTOMATIC_TOPIC,
+      topicSuggestion: { phase: 'idle' },
       pasteText: '',
       detectedCards: [],
       detectTimer: 0,
@@ -227,7 +242,13 @@ export default {
       storeUrl: APP_STORE_URL,
     };
   },
+  created() {
+    this._topicModel = createTopicSuggestionModel({ classify: classifyDeckTopic, getIdentity: () => getCurrentUser()?.supabaseUid || '', onChange: state => { this.topicSuggestion = state; } });
+  },
   computed: {
+    automaticTopic() { return this.topicId === AUTOMATIC_TOPIC; },
+    rowTopic() { return !this.automaticTopic ? getDisplayDeckTopic(this.topicId) : this.topicSuggestion.phase === 'suggested' ? getDisplayDeckTopic(this.topicSuggestion.topicKey) : null; },
+    rowHelp() { return this.$t(this.topicSuggestion.phase === 'reading' ? 'decks.topicReading' : this.rowTopic ? 'decks.topicAiPicked' : 'decks.topicAutoHelp'); },
     page() {
       return this.pages[this.pages.length - 1] || 'options';
     },
@@ -276,11 +297,15 @@ export default {
     },
   },
   watch: {
+    name(value) { if (this.open && this.automaticTopic) this._topicModel?.nameChanged(value); },
     open(isOpen) {
-      if (!isOpen) return;
+      if (!isOpen) { this._topicModel?.cancel(); return; }
       this.resetCreateForm();
     },
     page(page) {
+      if (['setName', 'pickTopic', 'spreadsheet'].includes(page)) {
+        if (this.automaticTopic) this._topicModel?.nameChanged(this.name);
+      } else this._topicModel?.cancel();
       if (page !== 'magicImport') this.magicLayout = '';
       this.formError = '';
       this.$nextTick(() => {
@@ -295,13 +320,17 @@ export default {
   },
   beforeUnmount() {
     clearTimeout(this.detectTimer);
+    this._topicModel?.cancel();
   },
   methods: {
     resetCreateForm() {
       this.pages = ['options'];
       this.topicPurpose = 'create';
       this.name = '';
-      this.topicId = 'other';
+      this._topicModel?.cancel();
+      this.topicId = AUTOMATIC_TOPIC;
+      this.topicDraft = AUTOMATIC_TOPIC;
+      this.topicSuggestion = { phase: 'idle' };
       this.pasteText = '';
       this.detectedCards = [];
       this.formError = '';
@@ -324,6 +353,7 @@ export default {
     },
     closeCreate() {
       if (this.saving) return;
+      this._topicModel?.cancel();
       this.$emit('dismiss');
     },
     submitName() {
@@ -333,8 +363,7 @@ export default {
         return;
       }
       this.name = name;
-      this.topicPurpose = 'create';
-      this.go('pickTopic');
+      void this.createEmpty();
     },
     selectMagic(option) {
       const route = magicImportRoute(option.id);
@@ -402,16 +431,32 @@ export default {
         return;
       }
       this.topicPurpose = 'spreadsheet';
+      this.topicDraft = this.topicId;
       this.go('pickTopic');
     },
+    openTopicPicker() {
+      this.topicPurpose = 'create';
+      this.topicDraft = this.topicId;
+      this.go('pickTopic');
+    },
+    async resolvedTopic(name) {
+      if (this.topicId !== AUTOMATIC_TOPIC) return this.topicId;
+      try { return await this._topicModel.resolve(name); }
+      catch (error) { if (error.name === 'AbortError') throw error; return 'other'; }
+    },
     async submitTopic() {
+      this.topicId = this.topicDraft;
+      if (!this.automaticTopic) this._topicModel.cancel();
+      else this._topicModel.nameChanged(this.name);
+
       if (this.topicPurpose === 'spreadsheet') {
         await this.createFromSpreadsheet();
         return;
       }
-      await this.createEmpty();
+      this.pages = this.pages.slice(0, -1);
     },
     async createEmpty() {
+      if (this.saving) return;
       const name = this.name.trim().slice(0, MAX_DECK_NAME_LENGTH);
       if (!name) {
         this.formError = this.$t('settings.nameRequired');
@@ -419,10 +464,14 @@ export default {
       }
       this.saving = true;
       try {
-        const deck = await createDeck({ name, topic: this.topicId });
+        const owner = getCurrentUser()?.supabaseUid;
+        const topic = await this.resolvedTopic(name);
+        if (!this.open || getCurrentUser()?.supabaseUid !== owner) return;
+        const deck = await createDeck({ name, topic });
         void trackProductEvent('manual_deck_created');
         this.$emit('created', deck);
       } catch (error) {
+        if (error.name === 'AbortError') return;
         this.formError = error.code === 'deck_name_required'
           ? this.$t('settings.nameRequired')
           : (error.message || this.$t('decks.createError'));
@@ -431,6 +480,7 @@ export default {
       }
     },
     async createFromSpreadsheet() {
+      if (this.saving) return;
       const text = this.pasteText.trim();
       if (!text) {
         this.formError = this.$t('decks.spreadsheetEmpty');
@@ -446,14 +496,18 @@ export default {
       const name = (this.name.trim() || this.$t('decks.defaultImportedName')).slice(0, MAX_DECK_NAME_LENGTH);
       this.saving = true;
       try {
+        const owner = getCurrentUser()?.supabaseUid;
+        const topic = await this.resolvedTopic(name);
+        if (!this.open || getCurrentUser()?.supabaseUid !== owner) return;
         const deck = await createDeckFromSpreadsheet({
           name,
-          topic: this.topicId,
+          topic,
           text,
           cards,
         });
         this.$emit('created', deck);
       } catch (error) {
+        if (error.name === 'AbortError') return;
         const code = error.code;
         if (code === 'no_spreadsheet_cards') this.formError = this.$t('decks.spreadsheetNoCards');
         else if (code === 'spreadsheet_too_large') this.formError = this.$t('decks.spreadsheetTooLarge');
@@ -817,4 +871,14 @@ html[data-theme="dark"] .and-more { color: #5EEAD4; }
 @media (min-width: 560px) {
   .sheet-root { align-items: center; }
 }
+.name-step > .field { margin-bottom:4px; }
+.name-topic-row { margin-bottom:20px; display:flex; align-items:center; gap:12px; width:100%; padding:14px 4px; border:0; background:transparent; color:var(--title); font:inherit; text-align:start; cursor:pointer; }
+.name-topic-row:disabled { opacity:.6; cursor:default; }
+.name-topic-copy { flex:1; display:flex; flex-direction:column; gap:4px; }
+.name-topic-copy small { font-size:13px; color:var(--text); }
+.name-topic-row > svg { width:18px; height:18px; color:var(--text); }
+.sheet-topics .sheet-page { display: flex; overflow: hidden; }
+.topic-step { display: flex; flex-direction: column; min-height: 0; width: 100%; }
+.topic-step > .page-title, .topic-step > .page-body, .topic-step > .primary-btn, .topic-step > .form-error { flex: 0 0 auto; }
+.topic-step .topic-picker { flex: 1 1 auto; min-height: 0; overflow: auto; margin-bottom: 16px; padding: 2px; }
 </style>

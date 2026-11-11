@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { getAllDeckTopics, getDeckTopicByPostgresId, getPickerDeckTopics, sidebarTablerIconUrl } from './utils.js';
+import { getAllDeckTopics, getDeckTopicByPostgresId, getPickerDeckTopics, getDisplayDeckTopic, isPersonalDeckTopic, PERSONAL_DECK_TOPICS, sidebarTablerIconUrl } from './utils.js';
 
 describe('sidebarTablerIconUrl', () => {
   it('maps each topic to the iPad sidebar Tabler icon', () => {
@@ -39,10 +39,16 @@ describe('getPickerDeckTopics', () => {
     assert.deepEqual(
       getPickerDeckTopics().map((topic) => topic.imageName),
       [
-        'other', 'medicine', 'languages', 'anatomy', 'biology', 'law', 'maths',
-        'chemistry', 'physics', 'geography', 'history', 'music', 'school', 'computing', 'games',
+        'medicine', 'languages', 'anatomy', 'biology', 'law', 'chemistry', 'maths',
+        'physics', 'geography', 'psychology', 'business', 'engineering', 'history',
+        'finance', 'economy', 'music', 'other',
       ],
     );
-    assert.equal(getPickerDeckTopics().length, getAllDeckTopics().length);
+    assert.equal(getPickerDeckTopics({ includePersonal: false }).some(topic => isPersonalDeckTopic(topic.imageName)), false);
+    for (const topic of PERSONAL_DECK_TOPICS) {
+      assert.equal(getDeckTopicByPostgresId(topic.imageName).imageName, 'other');
+      assert.equal(getDisplayDeckTopic(topic.imageName).imageName, topic.imageName);
+      assert.equal(sidebarTablerIconUrl(topic.imageName), `/topics/${topic.imageName}.svg`);
+    }
   });
 });

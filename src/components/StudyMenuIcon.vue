@@ -13,6 +13,7 @@
 <script>
 // Tabler Icons (MIT). SF Symbols cannot be shipped on the web.
 const ICONS = {
+  x: ['M18 6l-12 12', 'M6 6l12 12'],
   dots: ['M6 12h.01M12 12h.01M18 12h.01'],
   ellipsis: [
     'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0',

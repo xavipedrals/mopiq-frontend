@@ -1,0 +1,7 @@
+{
+  "name": "mopiq-pptx-browser-benchmark",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "benchmark": "node run-benchmark.mjs" },
+  "dependencies": { "@zip.js/zip.js": "2.8.26" }
+}

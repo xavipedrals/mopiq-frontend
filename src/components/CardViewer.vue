@@ -11,10 +11,9 @@
     >
       <header class="viewer-nav">
         <div class="nav-side">
-          <button type="button" class="icon-btn" :aria-label="$t('common.close')" @click="dismiss">
+          <button type="button" class="icon-btn glass-action glass-action--icon" :aria-label="$t('common.close')" @click="dismiss">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M9 9l6 6M15 9l-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
           </button>
         </div>
@@ -26,7 +25,7 @@
           <button
             v-if="canExpand"
             type="button"
-            class="icon-btn"
+            class="icon-btn glass-action glass-action--icon"
             :aria-label="$t('deck.goFullscreen')"
             @click="$emit('expand')"
           >
@@ -37,7 +36,7 @@
           <button
             ref="moreButton"
             type="button"
-            class="icon-btn"
+            class="icon-btn glass-action glass-action--icon"
             :aria-label="$t('deck.moreOptions')"
             :aria-expanded="menuOpen ? 'true' : 'false'"
             aria-haspopup="menu"
@@ -117,7 +116,7 @@
           <button
             v-if="!wide"
             type="button"
-            class="icon-btn"
+            class="icon-btn glass-action glass-action--icon"
             :disabled="!hasPrevious"
             :aria-label="$t('deck.previousCard')"
             @click="step(-1)"
@@ -129,7 +128,7 @@
             <button
               v-if="canEdit"
               type="button"
-              class="icon-btn"
+              class="icon-btn glass-action glass-action--icon"
               :disabled="!editable || paging"
               :aria-label="$t('study.editCard')"
               @click="$emit('edit')"
@@ -139,7 +138,7 @@
             <button
               ref="flagButton"
               type="button"
-              class="icon-btn flag-btn"
+              class="icon-btn flag-btn glass-action glass-action--icon"
               :class="{ flagged: selectedFlags.length }"
               :style="{ '--flag-color': selectedFlags[0] ? flagColor(selectedFlags[0].color) : undefined }"
               :disabled="!card || !deck?.id || paging || flagsBusy"
@@ -155,7 +154,7 @@
           <button
             v-if="!wide"
             type="button"
-            class="icon-btn"
+            class="icon-btn glass-action glass-action--icon"
             :disabled="!hasNext"
             :aria-label="$t('deck.nextCard')"
             @click="step(1)"
@@ -192,7 +191,7 @@
         </template>
         <template v-else-if="menuPanel === 'appearance'">
           <div class="menu-header">
-            <button type="button" class="menu-back" :aria-label="$t('common.back')" @click="menuPanel = 'root'">
+            <button type="button" class="menu-back glass-action glass-action--icon" :aria-label="$t('common.back')" @click="menuPanel = 'root'">
               <StudyMenuIcon name="chevronLeft" />
             </button>
             <h2>{{ $t('profile.appearance') }}</h2>
@@ -700,6 +699,7 @@ function cardViewerStorage() {
 .nav-side {
   display: flex;
   align-items: center;
+  gap: 8px;
   min-width: 44px;
 }
 .nav-side.end { justify-content: flex-end; }

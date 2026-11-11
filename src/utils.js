@@ -38,20 +38,41 @@ export function getAllDeckTopics() {
   return deckTopics;
 }
 
-// Matches iPad DeckTopicsPicker, plus school/computing/games which exist in the topic enum.
-const PICKER_TOPIC_ORDER = [
-  'other', 'medicine', 'languages', 'anatomy', 'biology', 'law', 'maths',
-  'chemistry', 'physics', 'geography', 'history', 'music', 'school', 'computing', 'games',
+// Personal topics mirror PersonalDeckTopicCatalog.swift. They remain separate
+// from the legacy Postgres enum and APKG numeric values above.
+export const PERSONAL_DECK_TOPICS = [
+  { name: 'Psychology', imageName: 'psychology', color: '#CA8A04', backgroundColor: '#FEF9C3', iconPath: '/topics/psychology.svg' },
+  { name: 'Business', imageName: 'business', color: '#7C3AED', backgroundColor: '#EDE9FE', iconPath: '/topics/business.svg' },
+  { name: 'Engineering', imageName: 'engineering', color: '#059669', backgroundColor: '#D1FAE5', iconPath: '/topics/engineering.svg' },
+  { name: 'Finance', imageName: 'finance', color: '#E11D48', backgroundColor: '#FFE4E6', iconPath: '/topics/finance.svg' },
+  { name: 'Economy', imageName: 'economy', color: '#C026D3', backgroundColor: '#FAE8FF', iconPath: '/topics/economy.svg' },
 ];
 
-export function getPickerDeckTopics() {
-  const byName = Object.fromEntries(deckTopics.map((topic) => [topic.imageName, topic]));
-  return PICKER_TOPIC_ORDER.map((id) => byName[id]).filter(Boolean);
+export function isPersonalDeckTopic(key) {
+  return PERSONAL_DECK_TOPICS.some(topic => topic.imageName === key);
+}
+
+export function getDisplayDeckTopic(key) {
+  return PERSONAL_DECK_TOPICS.find(topic => topic.imageName === key) || getDeckTopicByPostgresId(key);
+}
+
+// Matches the current iOS DeckTopicsPicker. Deprecated enum choices still
+// render on existing decks, but are no longer offered for new selections.
+const PICKER_TOPIC_ORDER = [
+  'medicine', 'languages', 'anatomy', 'biology', 'law', 'chemistry', 'maths',
+  'physics', 'geography', 'psychology', 'business', 'engineering', 'history',
+  'finance', 'economy', 'music', 'other',
+];
+
+export function getPickerDeckTopics({ includePersonal = true } = {}) {
+  const topics = includePersonal ? [...deckTopics, ...PERSONAL_DECK_TOPICS] : deckTopics;
+  const byName = Object.fromEntries(topics.map(topic => [topic.imageName, topic]));
+  return PICKER_TOPIC_ORDER.map(id => byName[id]).filter(Boolean);
 }
 
 export function sidebarTablerIconUrl(imageName) {
-  const topic = getDeckTopicByPostgresId(imageName);
-  return `/topics/tabler/${topic.sidebarIcon}.svg`;
+  const topic = getDisplayDeckTopic(imageName);
+  return topic.iconPath || `/topics/tabler/${topic.sidebarIcon}.svg`;
 }
 
 export function getAvatarImageName(num) {

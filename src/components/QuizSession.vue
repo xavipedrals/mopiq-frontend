@@ -4,14 +4,12 @@
       <div class="top">
         <button
           type="button"
-          class="study-close"
+          class="study-close glass-action glass-action--icon"
           :aria-label="$t('quiz.close')"
           @click="leave"
         >
-          <span class="study-close-disc"></span>
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" fill="currentColor"/>
-            <path d="M9.05 9.05l5.9 5.9M14.95 9.05l-5.9 5.9" fill="none" stroke="var(--close-x)" stroke-width="1.85" stroke-linecap="round"/>
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round"/>
           </svg>
         </button>
         <p class="top-title">{{ $t('quiz.title') }}</p>
@@ -494,12 +492,6 @@ export default {
   background: transparent;
   color: var(--title);
   cursor: pointer;
-}
-.study-close-disc {
-  position: absolute;
-  inset: 8px;
-  border-radius: 50%;
-  background: var(--inset-bg);
 }
 .study-close svg { position: relative; width: 28px; height: 28px; }
 .top-title {

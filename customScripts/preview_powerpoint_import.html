@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PowerPoint import preview</title></head><body class="app-shell"><div id="app"></div><script type="module">
+import { createApp, h } from 'vue';
+import CreateDeckSheet from '/src/components/Decks.vue';
+import MagicImportPanel from '/src/components/MagicImportPanel.vue';
+import ImportPreparation from '/src/components/ImportPreparation.vue';
+import { createI18nPlugin } from '/src/i18n/index.js';
+import { bindGenerationUser } from '/src/study/generationJobs.js';
+import '/src/app.css';
+const params = new URLSearchParams(location.search);
+document.documentElement.dataset.theme = params.get('theme') || 'light';
+const source = params.get('source') === 'word' ? 'word' : 'powerpoint';
+const existing = params.get('existing') === 'true';
+const design = params.get('design') === 'true';
+if (existing) bindGenerationUser('preview-owner');
+const app = createApp({
+ data: () => ({ open: true }),
+ render() {
+  if (design) return h('div', { style: 'width:min(520px,calc(100% - 32px));margin:70px auto;background:var(--card-bg);border-radius:28px;padding:28px;' }, [h(ImportPreparation, { fileName: 'Biology Lecture Notes.pptx', current: 128, total: 300 })]);
+  if (existing) return h('div', { style: 'width:min(520px,calc(100% - 32px));margin:70px auto;background:var(--card-bg);border-radius:28px;padding:28px;' }, [h(MagicImportPanel, { ref:'panel', source, deckId:'existing-deck', targetSubdeckId:42, backgroundExistingDeck:true, onSubmitted:()=>{window.submitted=true;} })]);
+  return h(CreateDeckSheet, {ref:'sheet',open:this.open,onBackground:job=>{window.completed=job;this.open=false;},onQueued:deck=>{window.queued=deck;}});
+ }
+});
+window.preview=app.use(createI18nPlugin()).mount('#app');
+if (!existing && !design) window.preview.$refs.sheet.selectMagic({id:source});
+window.previewReady = true;
+</script></body></html>

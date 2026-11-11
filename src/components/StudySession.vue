@@ -4,7 +4,7 @@
       <div v-if="!(customMode && done)" class="top">
         <button
           type="button"
-          class="study-close"
+          class="study-close glass-action glass-action--icon"
           :disabled="leaving"
           :aria-label="leaving ? $t('study.savingSession') : $t('study.closeStudy')"
           @click="requestLeave"
@@ -1152,17 +1152,17 @@ html[data-theme='dark'] .top {
   place-items: center;
   width: 44px;
   height: 44px;
-  padding: 0 !important;
-  border: 0 !important;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  background: var(--review-chrome-bg) !important;
+  background: var(--review-chrome-bg);
   box-shadow: var(--review-chrome-shadow);
   color: var(--title);
   cursor: pointer;
 }
 .study-close svg { width: 22px; height: 22px; }
 .study-close:hover:not(:disabled) {
-  background: var(--inset-bg) !important;
+  background: var(--inset-bg);
 }
 .study-close:focus-visible {
   outline: 2px solid var(--blue-button);
